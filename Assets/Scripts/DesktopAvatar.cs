@@ -61,12 +61,12 @@ public class DesktopAvatar : MonoBehaviour
         ctx.ParseGlb(vrmBlob.Data);
 
         var meta = ctx.ReadMeta();
-        Logger.Write($"Loading VRM {meta.Title} created by {meta.Author} ({meta.ContactInformation})");
-        Logger.Write($"AllowedUser={meta.AllowedUser}, ViolentUsage={meta.ViolentUssage}");
-        Logger.Write($"SexualUsage={meta.SexualUssage}, CommercialUsage={meta.CommercialUssage}");
-        Logger.Write($"OtherPermissionUrl={meta.OtherLicenseUrl}");
-        Logger.Write($"LicenseType={meta.LicenseType}");
-        Logger.Write($"OtherLicenseUrl={meta.OtherLicenseUrl}");
+        Logger.Log("DesktopAvatar", $"Loading VRM {meta.Title} created by {meta.Author} ({meta.ContactInformation})");
+        Logger.Log("DesktopAvatar", $"AllowedUser={meta.AllowedUser}, ViolentUsage={meta.ViolentUssage}");
+        Logger.Log("DesktopAvatar", $"SexualUsage={meta.SexualUssage}, CommercialUsage={meta.CommercialUssage}");
+        Logger.Log("DesktopAvatar", $"OtherPermissionUrl={meta.OtherLicenseUrl}");
+        Logger.Log("DesktopAvatar", $"LicenseType={meta.LicenseType}");
+        Logger.Log("DesktopAvatar", $"OtherLicenseUrl={meta.OtherLicenseUrl}");
 
         await ctx.LoadAsyncTask();
         ctx.Root.transform.SetParent(transform, false);
@@ -74,7 +74,7 @@ public class DesktopAvatar : MonoBehaviour
         ctx.EnableUpdateWhenOffscreen();
         ctx.ShowMeshes();
         
-        Logger.Write($"VRM loaded");
+        Logger.Log("DesktopAvatar", $"VRM loaded");
     }
 
     void OnDestroy()

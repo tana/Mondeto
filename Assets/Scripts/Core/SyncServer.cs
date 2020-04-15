@@ -34,9 +34,9 @@ public class SyncServer : SyncNode
     public override async Task Initialize()
     {
         await signaler.ConnectAsync();
-        Logger.Write("Server: Connected to signaling server");
+        Logger.Log("Server", "Connected to signaling server");
         signaler.ClientConnected += async (string sigClientId) => {
-            Logger.Write($"Server: Accepting client {sigClientId}");
+            Logger.Log("Server", $"Accepting client {sigClientId}");
             var conn = new Connection();
             await conn.SetupAsync(signaler, true, sigClientId);
             await InitClient(conn);
@@ -47,7 +47,7 @@ public class SyncServer : SyncNode
     {
         var clientId = clientIdRegistry.Create();
         clients[clientId] = conn;
-        Logger.Write($"Registered client NodeId={clientId}");
+        Logger.Log("Server", $"Registered client NodeId={clientId}");
 
         // NodeIdMessage have to be sent after client become ready to receive it.
         await Task.Delay(1000); // FIXME
@@ -77,7 +77,7 @@ public class SyncServer : SyncNode
         foreach (uint id in closedClients)
         {
             clients.Remove(id);
-            Logger.Write($"Client id={id} disconnected");
+            Logger.Log("Server", $"Client id={id} disconnected");
             // Delete objects which is original in disconnected clients
             var objectsToDelete = Objects.Where(pair => pair.Value.OriginalNodeId == id).Select(pair => pair.Key).ToList();
             foreach (var oid in objectsToDelete)
@@ -150,7 +150,7 @@ public class SyncServer : SyncNode
         ITcpMessage msg = new ObjectCreatedMessage { ObjectId = id, OriginalNodeId = originalNodeId };
         SendToAllClients(msg);
 
-        Logger.Write($"Created ObjectId={id}");
+        Logger.Debug("Server", $"Created ObjectId={id}");
         return id;
     }
 
@@ -164,7 +164,7 @@ public class SyncServer : SyncNode
         ITcpMessage msg = new ObjectDeletedMessage { ObjectId = id };
         SendToAllClients(msg);
 
-        Logger.Write($"Deleted ObjectId={id}");
+        Logger.Debug("Server", $"Deleted ObjectId={id}");
     }
 
     uint RegisterSymbolAndNotify(string symbol)
@@ -175,7 +175,7 @@ public class SyncServer : SyncNode
         ITcpMessage msg = new SymbolRegisteredMessage { Symbol = symbol, SymbolId = sid };
         SendToAllClients(msg);
 
-        Logger.Write($"Registered Symbol {symbol}->{sid}");
+        Logger.Debug("Server", $"Registered Symbol {symbol}->{sid}");
 
         return sid;
     }

@@ -45,7 +45,7 @@ public class Signaler : IDisposable
             }
             catch (Exception e)
             {
-                Logger.Write((isServer ? "Server: " : "Client: ") + e.ToString());
+                Logger.Error("Signaler", (isServer ? "Server: " : "Client: ") + e.ToString());
             }
         });
 
@@ -65,8 +65,8 @@ public class Signaler : IDisposable
             }
             catch (JsonException)
             {
-                Logger.Write("Invalid JSON");
-                Logger.Write(Encoding.UTF8.GetString(buf, 0, res.Count));
+                Logger.Error("Signaler", "Invalid JSON");
+                Logger.Error("Signaler", Encoding.UTF8.GetString(buf, 0, res.Count));
                 continue;
             }
             var type = (string)msg["type"];

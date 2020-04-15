@@ -55,7 +55,7 @@ public class Connection : IDisposable
         };
 
         pc.IceStateChanged += (IceConnectionState state) => {
-            Logger.Write($"ICE state changed to {state}");
+            Logger.Debug("Connection", $"ICE state changed to {state}");
             if (state == IceConnectionState.Connected)
             {
                 Connected = true;
@@ -105,10 +105,10 @@ public class Connection : IDisposable
                 }
             };
 
-            Logger.Write("Server: Server is ready for signaling");
+            Logger.Debug("Connection", "Server is ready for signaling");
             await signaler.NotifyReadyAsync(clientId);
 
-            Logger.Write("Server: Waiting for DC");
+            Logger.Debug("Connection", "Server: Waiting for DC");
             foreach (var type in channelTypes)
             {
                 channels[(int)type] = await completionSources[(int)type].Task;
@@ -130,7 +130,7 @@ public class Connection : IDisposable
             channels[(int)ChannelType.Audio] = await pc.AddDataChannelAsync(
                 channelLabels[(int)ChannelType.Audio], ordered: false, reliable: false);
 
-            Logger.Write("Client: Waiting for server ready");
+            Logger.Debug("Connection", "Client: Waiting for server ready");
             await signaler.WaitReadyAsync();
 
             pc.CreateOffer();
@@ -142,7 +142,7 @@ public class Connection : IDisposable
                 queues[idx].Enqueue(data);
             };
             dc.StateChanged += () => {
-                Logger.Write($"DC {(ChannelType)idx} state changed to {dc.State}");
+                Logger.Debug("Connection", $"DC {(ChannelType)idx} state changed to {dc.State}");
                 if (dc.State == DataChannel.ChannelState.Closing) {
                     // Disconnect handling
                     Connected = false;

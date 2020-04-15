@@ -9,12 +9,12 @@ public class BlobStorage
 
     public void Write(BlobHandle handle, Blob blob)
     {
-        Logger.Write($"Blob {handle} writing");
+        Logger.Debug("BlobStorage", $"Blob {handle} writing");
 
         var tcs = dict.GetOrAdd(handle, new TaskCompletionSource<Blob>());
         if (tcs.Task.IsCompleted)
         {
-            Logger.Write($"Trying to overwrite {handle}. Ignoring");
+            Logger.Error("BlobStorage", $"Trying to overwrite {handle}. Ignoring");
             return;
         }
         tcs.SetResult(blob);

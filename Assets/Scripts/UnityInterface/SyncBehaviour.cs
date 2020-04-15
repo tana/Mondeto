@@ -84,7 +84,7 @@ public class SyncBehaviour : MonoBehaviour
                 var tag = ((Primitive<int>)obj.Fields["tag"]).Value;
                 if (tag == 0)
                 {
-                    Logger.Write("ObjectId=" + id + " is not ready");
+                    Logger.Log("SyncBehaviour", "ObjectId=" + id + " is not ready");
                     continue;   // state is not ready
                 }
                 if (!gameObjects.ContainsKey(id))
@@ -96,7 +96,7 @@ public class SyncBehaviour : MonoBehaviour
                     sync.NetManager = this.gameObject;
                     gameObjects[id] = gameObj;
                     gameObjects[id].GetComponent<ObjectSync>().SyncObject = obj;
-                    Logger.Write("Created GameObject " + gameObj.ToString() + " for ObjectId=" + id);
+                    Logger.Debug("SyncBehaviour", "Created GameObject " + gameObj.ToString() + " for ObjectId=" + id);
                 }
                 //gameObjects[id].GetComponent<ObjectSync>().ApplyState(obj);
             }

@@ -73,13 +73,13 @@ public class MicrophoneCapture : MonoBehaviour
         ObjectSync sync = GetComponent<ObjectSync>();
         if (sync.IsOriginal)
         {
-            Logger.Write($"MicrophoneCapture Original (obj={gameObject.name})");
+            Logger.Debug("MicrophoneCapture", $"MicrophoneCapture Original (obj={gameObject.name})");
             micClip = Microphone.Start(DeviceName, true, ClipLength, SamplingRate);
             tempBuf = new float[micClip.samples];
         }
         else
         {
-            Logger.Write($"MicrophoneCapture Clone (obj={gameObject.name})");
+            Logger.Debug("MicrophoneCapture", $"MicrophoneCapture Clone (obj={gameObject.name})");
             var source = GetComponent<AudioSource>();
             source.Stop();
 

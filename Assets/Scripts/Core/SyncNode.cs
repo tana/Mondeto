@@ -58,12 +58,12 @@ public abstract class SyncNode : IDisposable
                 var id = update.ObjectId;
                 if (!Objects.ContainsKey(id))
                 {
-                    Logger.Write($"Ignoring update for non-registered ObjectId={id}");
+                    Logger.Log("Node", $"Ignoring update for non-registered ObjectId={id}");
                     continue;
                 }
                 if (Objects[id].OriginalNodeId == NodeId)
                 {
-                    Logger.Write($"Blocked invalid update for ObjectId={id}");
+                    Logger.Error("Node", $"Blocked invalid update for ObjectId={id}");
                     continue;   // Original object cannot be updated by nodes other than OriginalNodeId
                 }
 
@@ -98,7 +98,7 @@ public abstract class SyncNode : IDisposable
 
     protected void SendBlob(Connection conn, BlobHandle handle, Blob blob)
     {
-        Logger.Write($"Sending Blob");
+        Logger.Debug("Node", $"Sending Blob");
         conn.SendMessage<IBlobMessage>(
             Connection.ChannelType.Blob,
             new BlobInfoMessage { Handle = handle, Size = (uint)blob.Data.Length, MimeType = blob.MimeType }
@@ -125,7 +125,7 @@ public abstract class SyncNode : IDisposable
             var msg = await conn.ReceiveMessageAsync<IBlobMessage>(Connection.ChannelType.Blob, cancel);
             if (msg is BlobInfoMessage infoMsg)
             {
-                Logger.Write($"Receiving Blob {infoMsg.Handle} (size={infoMsg.Size}) from Node {nodeId}");
+                Logger.Debug("Node", $"Receiving Blob {infoMsg.Handle} (size={infoMsg.Size}) from Node {nodeId}");
                 // 今はBlobInfoMessageの後にBlobBodyMessageが連続で来て全部送られるという想定
                 byte[] data = await ReceiveBlobBodyAsync(conn, (int)infoMsg.Size, cancel);
                 BlobStorage.Write(
@@ -135,7 +135,7 @@ public abstract class SyncNode : IDisposable
             }
             else if (msg is BlobRequestMessage requestMsg)
             {
-                Logger.Write($"Received request for Blob {requestMsg.Handle}");
+                Logger.Debug("Node", $"Received request for Blob {requestMsg.Handle}");
                 var _ = Task.Run(async () => {
                     Blob blob = await BlobStorage.Read(requestMsg.Handle);
                     SendBlob(conn, requestMsg.Handle, blob);
@@ -143,11 +143,11 @@ public abstract class SyncNode : IDisposable
             }
             else if (msg is BlobBodyMessage bodyMsg)
             {
-                Logger.Write($"Blob body Offset={bodyMsg.Offset} DataLen={bodyMsg.Data.Length}");
+                Logger.Debug("Node", $"Blob body Offset={bodyMsg.Offset} DataLen={bodyMsg.Data.Length}");
             }
             else
             {
-                Logger.Write($"Unknown blob message {msg}");
+                Logger.Error("Node", $"Unknown blob message {msg}");
             }
         }
     }

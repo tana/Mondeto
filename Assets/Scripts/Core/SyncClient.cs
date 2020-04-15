@@ -27,15 +27,15 @@ public class SyncClient : SyncNode
     {
         await Task.Delay(1000);
         await signaler.ConnectAsync();
-        Logger.Write("Client: Connected to signaling server");
+        Logger.Log("Client", "Connected to signaling server");
         await Task.Delay(1000);
         await conn.SetupAsync(signaler, false);
-        Logger.Write("Client: Connected to server");
+        Logger.Log("Client", "Connected to server");
 
         if (await conn.ReceiveMessageAsync<ITcpMessage>(Connection.ChannelType.Control) is NodeIdMessage nodeIdMsg)
         {
             NodeId = nodeIdMsg.NodeId;
-            Logger.Write($"Received NodeId={NodeId}");
+            Logger.Debug("Client", $"Received NodeId={NodeId}");
         }
         else
         {
@@ -77,7 +77,7 @@ public class SyncClient : SyncNode
                     }
                 }
 
-                Logger.Write($"Received ObjectId={id}");
+                Logger.Debug("Client", $"Received ObjectId={id}");
                 break;
             }
             case ObjectDeletedMessage delMsg:
@@ -85,7 +85,7 @@ public class SyncClient : SyncNode
                 var id = delMsg.ObjectId;
                 Objects.Remove(id);
 
-                Logger.Write($"Received Deletion of ObjectId={id}");
+                Logger.Debug("Client", $"Received Deletion of ObjectId={id}");
                 break;
             }
             case SymbolRegisteredMessage symMsg:
@@ -94,7 +94,7 @@ public class SyncClient : SyncNode
                 if (symbolNotifier.IsWaiting(symMsg.Symbol))
                     symbolNotifier.Notify(symMsg.Symbol, symMsg.SymbolId);
 
-                Logger.Write($"Received Symbol {symMsg.Symbol}->{symMsg.SymbolId}");
+                Logger.Debug("Client", $"Received Symbol {symMsg.Symbol}->{symMsg.SymbolId}");
                 break;
             }
         }
@@ -111,7 +111,7 @@ public class SyncClient : SyncNode
 
     public override async Task<uint> CreateObject()
     {
-        Logger.Write("Creating object");
+        Logger.Debug("Client", "Creating object");
         conn.SendMessage<ITcpMessage>(Connection.ChannelType.Control, new CreateObjectMessage());
         var tcs = new TaskCompletionSource<uint>();
         lock (creationQueue)
@@ -120,13 +120,13 @@ public class SyncClient : SyncNode
         }
         //var id = await Task.WhenAny(tcs.Task, ProtocolUtil.Timeout<int>(100000, "object creation timeout")).Result;
         var id = await tcs.Task;
-        Logger.Write($"Created ObjectId={id}");
+        Logger.Debug("Client", $"Created ObjectId={id}");
         return id;
     }
 
     public override void DeleteObject(uint id)
     {
-        Logger.Write($"Deleting ObjectId={id}");
+        Logger.Debug("Client", $"Deleting ObjectId={id}");
         conn.SendMessage<ITcpMessage>(Connection.ChannelType.Control, new DeleteObjectMessage { ObjectId = id });
     }
 
