@@ -80,3 +80,6 @@ Assets/Standard\ Assets/
 Assets/Scripts/MessagePack/
 # Exclude plugin files
 Assets/Plugins/
+# Exclude built files
+server-build/
+client-build/
