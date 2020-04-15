@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,6 +10,8 @@ public abstract class SyncNode : IDisposable
     protected abstract Dictionary<uint, Connection> Connections { get; }
 
     public abstract uint NodeId { get; protected set; }
+
+    public const uint ServerNodeId = 0;
 
     //public Dictionary<IPAddress, int> UdpEpToNodeId { get; } = new Dictionary<IPAddress, int>();
 
@@ -25,6 +28,8 @@ public abstract class SyncNode : IDisposable
     protected BlobStorage BlobStorage = new BlobStorage();
 
     protected const int BlobChunkSize = 1024;
+
+    private ConcurrentDictionary<uint, object> blobSendLockTokens = new ConcurrentDictionary<uint, object>();
 
     // TODO naming
     public void SyncFrame()
@@ -96,24 +101,31 @@ public abstract class SyncNode : IDisposable
         return await BlobStorage.Read(handle);
     }
 
-    protected void SendBlob(Connection conn, BlobHandle handle, Blob blob)
+    protected void SendBlob(uint nodeId, BlobHandle handle, Blob blob)
     {
-        Logger.Debug("Node", $"Sending Blob");
-        conn.SendMessage<IBlobMessage>(
-            Connection.ChannelType.Blob,
-            new BlobInfoMessage { Handle = handle, Size = (uint)blob.Data.Length, MimeType = blob.MimeType }
-        );
-        int pos = 0;
-        while (pos < blob.Data.Length)
+        blobSendLockTokens.TryAdd(nodeId, new object());
+
+        lock (blobSendLockTokens[nodeId])
         {
-            int len = Math.Min(BlobChunkSize, blob.Data.Length - pos);
-            byte[] chunk = new byte[len];
-            Array.Copy(blob.Data, pos, chunk, 0, len);
+            Logger.Debug("Node", $"Sending Blob");
+
+            Connection conn = Connections[nodeId];
             conn.SendMessage<IBlobMessage>(
                 Connection.ChannelType.Blob,
-                new BlobBodyMessage { Handle = handle, Offset = (uint)pos, Data = chunk }
+                new BlobInfoMessage { Handle = handle, Size = (uint)blob.Data.Length, MimeType = blob.MimeType }
             );
-            pos += len;
+            int pos = 0;
+            while (pos < blob.Data.Length)
+            {
+                int len = Math.Min(BlobChunkSize, blob.Data.Length - pos);
+                byte[] chunk = new byte[len];
+                Array.Copy(blob.Data, pos, chunk, 0, len);
+                conn.SendMessage<IBlobMessage>(
+                    Connection.ChannelType.Blob,
+                    new BlobBodyMessage { Handle = handle, Offset = (uint)pos, Data = chunk }
+                );
+                pos += len;
+            }
         }
     }
 
@@ -138,12 +150,12 @@ public abstract class SyncNode : IDisposable
                 Logger.Debug("Node", $"Received request for Blob {requestMsg.Handle}");
                 var _ = Task.Run(async () => {
                     Blob blob = await BlobStorage.Read(requestMsg.Handle);
-                    SendBlob(conn, requestMsg.Handle, blob);
+                    SendBlob(nodeId, requestMsg.Handle, blob);
                 }, cancel);
             }
             else if (msg is BlobBodyMessage bodyMsg)
             {
-                Logger.Debug("Node", $"Blob body Offset={bodyMsg.Offset} DataLen={bodyMsg.Data.Length}");
+                Logger.Error("Node", $"Blob body Offset={bodyMsg.Offset} DataLen={bodyMsg.Data.Length}");
             }
             else
             {
@@ -172,6 +184,7 @@ public abstract class SyncNode : IDisposable
             }
             else
             {
+                Logger.Error("Node", "Invalid message during receiving blob body " + msg.ToString());
                 break;
             }
         } while (pos < size);

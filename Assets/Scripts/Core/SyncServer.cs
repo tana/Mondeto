@@ -16,7 +16,7 @@ public class SyncServer : SyncNode
     public readonly int UdpPort;
     public readonly int TcpPort;
 
-    public override uint NodeId { get; protected set; } = 0; // Node ID for server is always 0
+    public override uint NodeId { get; protected set; } = ServerNodeId; // Node ID for server is always 0
 
     IdRegistry clientIdRegistry = new IdRegistry(1);    // Node ID for clients start from 1
 

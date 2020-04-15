@@ -44,7 +44,7 @@ public class SyncClient : SyncNode
 
         var cancelSource = new CancellationTokenSource();
         conn.OnDisconnect += () => cancelSource.Cancel();
-        var _ = ProcessBlobMessagesAsync(0, conn, cancelSource.Token);
+        var _ = ProcessBlobMessagesAsync(ServerNodeId, conn, cancelSource.Token);
     }
 
     protected override void ProcessControlMessages()
@@ -145,7 +145,7 @@ public class SyncClient : SyncNode
 
     protected override void OnNewBlob(BlobHandle handle, Blob blob)
     {
-        SendBlob(conn, handle, blob);
+        SendBlob(ServerNodeId, handle, blob);
     }
 
     protected override void RequestBlob(BlobHandle handle)
