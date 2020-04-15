@@ -24,10 +24,13 @@ public class DesktopAvatar : MonoBehaviour
         var textDisplay = GetComponentInChildren<TextMesh>();
         textDisplay.text = $"NodeId={obj.OriginalNodeId}";
         // Text is always facing the screen
-        textDisplay.transform.rotation = Quaternion.LookRotation(
-            -(Camera.main.transform.position - textDisplay.transform.position),
-            Camera.main.transform.up
-        );
+        if (Camera.main != null)
+        {
+            textDisplay.transform.rotation = Quaternion.LookRotation(
+                -(Camera.main.transform.position - textDisplay.transform.position),
+                Camera.main.transform.up
+            );
+        }
     }
 
     // Called by ObjectSync when become ready

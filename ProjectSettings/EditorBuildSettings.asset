@@ -5,10 +5,10 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
+  - enabled: 1
     path: Assets/Scenes/WalkServer.unity
     guid: 08509e1db29b7b04f8b1e98734136672
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/WalkClient.unity
     guid: 50c7bf4d4a2dbb64c89dcdfa52c190c3
   m_configObjects: {}
