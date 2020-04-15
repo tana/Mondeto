@@ -58,7 +58,17 @@ public class Signaler : IDisposable
         while (ws.State == WebSocketState.Open)
         {
             var res = await ws.ReceiveAsync(new ArraySegment<byte>(buf), CancellationToken.None);
-            var msg = JsonMapper.ToObject(Encoding.UTF8.GetString(buf, 0, res.Count));
+            JsonData msg;
+            try
+            {
+                msg = JsonMapper.ToObject(Encoding.UTF8.GetString(buf, 0, res.Count));
+            }
+            catch (JsonException)
+            {
+                Logger.Write("Invalid JSON");
+                Logger.Write(Encoding.UTF8.GetString(buf, 0, res.Count));
+                continue;
+            }
             var type = (string)msg["type"];
             var clientId = isServer ? (string)msg["clientID"] : "";
             if ((string)msg["type"] == "hello")
