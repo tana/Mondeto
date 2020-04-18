@@ -566,3 +566,4 @@ MonoBehaviour:
   - Tag: 2
     Prefab: {fileID: 3306593312451113530, guid: 384136553599544419de75f6aabee293,
       type: 3}
+  LogToUnityConsole: 1

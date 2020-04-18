@@ -830,6 +830,7 @@ MonoBehaviour:
   - Tag: 1
     Prefab: {fileID: 7750428759976842894, guid: 92acc6079fd763f4783d1ecdf56001f0,
       type: 3}
+  LogToUnityConsole: 1
 --- !u!4 &1904763789
 Transform:
   m_ObjectHideFlags: 0

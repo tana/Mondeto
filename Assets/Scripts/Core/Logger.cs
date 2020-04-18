@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 
 public class Logger
 {
@@ -9,17 +8,23 @@ public class Logger
         Debug, Log, Error
     }
 
+    public delegate void LogHandler(LogType type, string component, string msg);
+    public static event LogHandler OnLog;
+
     static Dictionary<LogType, string> TypeString = new Dictionary<LogType, String> {
         { LogType.Debug, "DBG" },
         { LogType.Log, "LOG" },
         { LogType.Error, "ERR" }
     };
 
+    public static string LogTypeToString(LogType type) => TypeString[type];
+
     public static void Write(LogType type, string component, string msg)
     {
-        string line = $"[{TypeString[type]}] {component}: {msg}";
-        UnityEngine.Debug.Log(line);
+        string line = $"[{LogTypeToString(type)}] {component}: {msg}";
         Console.WriteLine(line);
+
+        OnLog?.Invoke(type, component, msg);
     }
     
     public static void Debug(string component, string msg) => Write(LogType.Debug, component, msg);

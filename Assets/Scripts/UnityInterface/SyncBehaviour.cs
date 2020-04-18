@@ -17,6 +17,8 @@ public class SyncBehaviour : MonoBehaviour
 
     public PrefabEntry[] PrefabsForClones = new PrefabEntry[0];
 
+    public bool LogToUnityConsole = false;
+
     [System.Serializable]
     public struct PrefabEntry
     {
@@ -30,6 +32,13 @@ public class SyncBehaviour : MonoBehaviour
         foreach (PrefabEntry entry in PrefabsForClones)
         {
             prefabs[entry.Tag] = entry.Prefab;
+        }
+
+        if (LogToUnityConsole)
+        {
+            Logger.OnLog += (type, component, msg) => {
+                Debug.Log($"[{Logger.LogTypeToString(type)}] {component}: {msg}");
+            };
         }
 
         if (IsServer)
