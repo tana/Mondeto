@@ -72,9 +72,12 @@ public abstract class SyncNode : IDisposable
                     continue;   // Original object cannot be updated by nodes other than OriginalNodeId
                 }
 
+                //Logger.Log("Node", $"ObjectId={id} updated");
+
                 // fields
                 foreach (var field in update.Fields)
                 {
+                    //Logger.Log("Node", $"Field {field.Name} = {field.Value}");
                     Objects[id].Fields[field.Name] = field.Value;
                 }
             }

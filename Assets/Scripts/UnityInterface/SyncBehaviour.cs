@@ -19,6 +19,11 @@ public class SyncBehaviour : MonoBehaviour
 
     public bool LogToUnityConsole = false;
 
+    // For FPS measurement
+    float countStartTime = -1;
+    int count = 0;
+    const int countPeriod = 5000;
+
     [System.Serializable]
     public struct PrefabEntry
     {
@@ -57,9 +62,21 @@ public class SyncBehaviour : MonoBehaviour
     }
 
     // Update is called once per frame
-    void LateUpdate()
+    void FixedUpdate()
     {
         if (!Ready) return;
+
+        // FPS measurement
+        if (count == 0)
+        {
+            if (countStartTime > 0)
+            {
+                float fps = countPeriod / (Time.time - countStartTime);
+                Logger.Log("SyncBehaviour", $"Average frame rate = {fps} fps");
+            }
+            countStartTime = Time.time;
+        }
+        count = (count + 1) % countPeriod;
 
         //if (Time.frameCount % 6 != 0) return;
 

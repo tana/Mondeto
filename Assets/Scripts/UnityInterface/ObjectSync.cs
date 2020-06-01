@@ -28,7 +28,7 @@ public class ObjectSync : MonoBehaviour
         posOffset = NetManager.transform.position;
     }
 
-    void Update()
+    void FixedUpdate()
     {
         if (!syncBehaviour.Ready) return;
         if (!added)
