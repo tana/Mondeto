@@ -17,8 +17,6 @@ public class SyncBehaviour : MonoBehaviour
 
     public PrefabEntry[] PrefabsForClones = new PrefabEntry[0];
 
-    public bool LogToUnityConsole = false;
-
     // For FPS measurement
     float countStartTime = -1;
     int count = 0;
@@ -37,13 +35,6 @@ public class SyncBehaviour : MonoBehaviour
         foreach (PrefabEntry entry in PrefabsForClones)
         {
             prefabs[entry.Tag] = entry.Prefab;
-        }
-
-        if (LogToUnityConsole)
-        {
-            Logger.OnLog += (type, component, msg) => {
-                Debug.Log($"[{Logger.LogTypeToString(type)}] {component}: {msg}");
-            };
         }
 
         if (IsServer)
