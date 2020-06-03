@@ -20,6 +20,7 @@ public abstract class SyncNode : IDisposable
 
     public BidirectionalDictionary<string, uint> SymbolTable { get; } = new BidirectionalDictionary<string, uint>();
 
+    // 2^32 * 1/50 s = approx. 994 days
     public uint Tick { get; protected set; } = 0;
 
     // Make it ready to SyncFrame
@@ -30,6 +31,9 @@ public abstract class SyncNode : IDisposable
     protected const int BlobChunkSize = 1024;
 
     private ConcurrentDictionary<uint, object> blobSendLockTokens = new ConcurrentDictionary<uint, object>();
+
+    // Latest Tick received from a particular node
+    private Dictionary<uint, uint> LatestTickReceived = new Dictionary<uint, uint>();
 
     // TODO naming
     public void SyncFrame()
@@ -59,19 +63,30 @@ public abstract class SyncNode : IDisposable
             }
             // Construct message and send
             UpdateMessage msg = new UpdateMessage {
-                FrameNumber = 0,    // TODO
+                Tick = Tick,
                 ObjectUpdates = updates
             };
             conn.SendMessage<UpdateMessage>(Connection.ChannelType.Sync, msg);
         }
 
         // Receive states of copy objects
-        foreach (var conn in Connections.Values)
+        foreach (var connPair in Connections)
         {
+            uint connNodeId = connPair.Key;
+            Connection conn = connPair.Value;
+            
             //ObjectUpdate update;
             UpdateMessage msg;
             while (conn.TryReceiveMessage<UpdateMessage>(Connection.ChannelType.Sync, out msg))
             {
+                // Ignore out-of-order updates
+                if (LatestTickReceived.ContainsKey(connNodeId)
+                    && LatestTickReceived[connNodeId] > msg.Tick)
+                {
+                    continue;
+                }
+                LatestTickReceived[connNodeId] = msg.Tick;
+
                 foreach (ObjectUpdate update in msg.ObjectUpdates)
                 {
                     var id = update.ObjectId;

@@ -113,7 +113,7 @@ public class ObjectState
 public class UpdateMessage
 {
     [Key(0)]
-    public uint FrameNumber;
+    public uint Tick;
     [Key(1)]
     public List<ObjectUpdate> ObjectUpdates;
 }
