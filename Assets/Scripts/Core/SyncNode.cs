@@ -37,48 +37,63 @@ public abstract class SyncNode : IDisposable
         ProcessControlMessages();
 
         // Send states of objects
-        foreach (var pair in Objects)
+        foreach (var connPair in Connections)
         {
-            var id = pair.Key;
-            var obj = pair.Value;
-            // field updates
-            var fields = obj.Fields.Select(field =>
-                new FieldUpdate { Name = field.Key, Value = field.Value }).ToList();
-            ObjectUpdate update = new ObjectUpdate { ObjectId = id, Fields = fields };
-            foreach (var connPair in Connections)
+            uint connNodeId = connPair.Key;
+            Connection conn = connPair.Value;
+            // Collect object updates
+            var updates = new List<ObjectUpdate>();
+            foreach (var pair in Objects)
             {
-                uint connNodeId = connPair.Key;
-                Connection conn = connPair.Value;
-                if (obj.OriginalNodeId != connNodeId)
-                    conn.SendMessage<ObjectUpdate>(Connection.ChannelType.Sync, update);
+                var id = pair.Key;
+                var obj = pair.Value;
+                // Don't send object to the node which has original
+                if (obj.OriginalNodeId == connNodeId)
+                    continue;
+
+                // field updates
+                var fields = obj.Fields.Select(field =>
+                    new FieldUpdate { Name = field.Key, Value = field.Value }).ToList();
+                ObjectUpdate update = new ObjectUpdate { ObjectId = id, Fields = fields };
+                updates.Add(update);
             }
+            // Construct message and send
+            UpdateMessage msg = new UpdateMessage {
+                FrameNumber = 0,    // TODO
+                ObjectUpdates = updates
+            };
+            conn.SendMessage<UpdateMessage>(Connection.ChannelType.Sync, msg);
         }
 
         // Receive states of copy objects
         foreach (var conn in Connections.Values)
         {
-            ObjectUpdate update;
-            while (conn.TryReceiveMessage<ObjectUpdate>(Connection.ChannelType.Sync, out update))
+            //ObjectUpdate update;
+            UpdateMessage msg;
+            while (conn.TryReceiveMessage<UpdateMessage>(Connection.ChannelType.Sync, out msg))
             {
-                var id = update.ObjectId;
-                if (!Objects.ContainsKey(id))
+                foreach (ObjectUpdate update in msg.ObjectUpdates)
                 {
-                    Logger.Log("Node", $"Ignoring update for non-registered ObjectId={id}");
-                    continue;
-                }
-                if (Objects[id].OriginalNodeId == NodeId)
-                {
-                    Logger.Error("Node", $"Blocked invalid update for ObjectId={id}");
-                    continue;   // Original object cannot be updated by nodes other than OriginalNodeId
-                }
+                    var id = update.ObjectId;
+                    if (!Objects.ContainsKey(id))
+                    {
+                        Logger.Log("Node", $"Ignoring update for non-registered ObjectId={id}");
+                        continue;
+                    }
+                    if (Objects[id].OriginalNodeId == NodeId)
+                    {
+                        Logger.Error("Node", $"Blocked invalid update for ObjectId={id}");
+                        continue;   // Original object cannot be updated by nodes other than OriginalNodeId
+                    }
 
-                //Logger.Log("Node", $"ObjectId={id} updated");
+                    //Logger.Log("Node", $"ObjectId={id} updated");
 
-                // fields
-                foreach (var field in update.Fields)
-                {
-                    //Logger.Log("Node", $"Field {field.Name} = {field.Value}");
-                    Objects[id].Fields[field.Name] = field.Value;
+                    // fields
+                    foreach (var field in update.Fields)
+                    {
+                        //Logger.Log("Node", $"Field {field.Name} = {field.Value}");
+                        Objects[id].Fields[field.Name] = field.Value;
+                    }
                 }
             }
         }

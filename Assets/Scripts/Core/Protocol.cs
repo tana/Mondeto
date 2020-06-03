@@ -110,6 +110,15 @@ public class ObjectState
 */
 
 [MessagePackObject]
+public class UpdateMessage
+{
+    [Key(0)]
+    public uint FrameNumber;
+    [Key(1)]
+    public List<ObjectUpdate> ObjectUpdates;
+}
+
+[MessagePackObject]
 public class ObjectUpdate
 {
     [Key(0)]
