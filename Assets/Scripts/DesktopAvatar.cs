@@ -31,6 +31,17 @@ public class DesktopAvatar : MonoBehaviour
                 Camera.main.transform.up
             );
         }
+
+        if (isOriginal && Input.GetKeyDown(KeyCode.M))
+        {
+            var micCap = GetComponent<MicrophoneCapture>();
+            if (micCap != null)
+            {
+                // TODO: better way for microphone control
+                micCap.enabled = !micCap.enabled;
+                Logger.Debug("DesktopAvatar", "microphone " + (micCap.enabled ? "on" : "off"));
+            }
+        }
     }
 
     // Called by ObjectSync when become ready
