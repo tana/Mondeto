@@ -10,7 +10,7 @@ public class SyncObject
 
     public SyncNode Node;
 
-    public readonly Dictionary<string, IValue> Fields = new Dictionary<string, IValue>();
+    public readonly Dictionary<string, Field> Fields = new Dictionary<string, Field>();
 
     public delegate void AudioReceivedDelegate(byte[] data);
     // Called when the original used SendAudio
@@ -23,13 +23,27 @@ public class SyncObject
         OriginalNodeId = originalNodeId;
 
         // All objects have position and rotation fields
-        Fields["position"] = new Vec();
-        Fields["rotation"] = new Quat();
+        SetField("position", new Vec());
+        SetField("rotation", new Quat());
 
-        Fields["velocity"] = new Vec();
-        Fields["angularVelocity"] = new Vec();
+        SetField("velocity", new Vec());
+        SetField("angularVelocity", new Vec());
 
-        Fields["tag"] = new Primitive<int> { Value = 0 };
+        SetField("tag", new Primitive<int> { Value = 0 });
+    }
+
+    // Update field value and refresh last updated time.
+    public void SetField(string key, IValue val)
+    {
+        Field field = Fields.ContainsKey(key) ? Fields[key] : new Field();
+        field.Value = val;
+        field.LastUpdatedTick = Node.Tick;
+        Fields[key] = field;
+    }
+
+    public IValue GetField(string key)
+    {
+        return Fields[key].Value;
     }
 
     public void SendAudio(byte[] data)
@@ -40,5 +54,11 @@ public class SyncObject
     internal void HandleAudio(byte[] data)
     {
         AudioReceived?.Invoke(data);
+    }
+
+    public struct Field
+    {
+        public IValue Value;
+        public uint LastUpdatedTick;
     }
 }

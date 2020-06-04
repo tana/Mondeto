@@ -68,20 +68,20 @@ public class ObjectSync : MonoBehaviour
 
     void EncodeState(SyncObject obj)
     {
-        obj.Fields["tag"] = new Primitive<int> { Value = this.ObjectTag };
-        obj.Fields["position"] = UnityUtil.ToVec(transform.position - posOffset);
-        obj.Fields["rotation"] = UnityUtil.ToQuat(transform.rotation);
-        obj.Fields["velocity"] = UnityUtil.ToVec(GetComponent<Rigidbody>().velocity);
-        obj.Fields["angularVelocity"] = UnityUtil.ToVec(GetComponent<Rigidbody>().angularVelocity);
+        obj.SetField("tag", new Primitive<int> { Value = this.ObjectTag });
+        obj.SetField("position", UnityUtil.ToVec(transform.position - posOffset));
+        obj.SetField("rotation", UnityUtil.ToQuat(transform.rotation));
+        obj.SetField("velocity", UnityUtil.ToVec(GetComponent<Rigidbody>().velocity));
+        obj.SetField("angularVelocity", UnityUtil.ToVec(GetComponent<Rigidbody>().angularVelocity));
     }
 
     void ApplyState(SyncObject obj)
     {
         var rb = GetComponent<Rigidbody>();
         // TODO error check
-        transform.position = UnityUtil.FromVec((Vec)obj.Fields["position"]) + posOffset;
-        transform.rotation = UnityUtil.FromQuat((Quat)obj.Fields["rotation"]);
-        rb.velocity = UnityUtil.FromVec((Vec)obj.Fields["velocity"]);
-        rb.angularVelocity = UnityUtil.FromVec((Vec)obj.Fields["angularVelocity"]);
+        transform.position = UnityUtil.FromVec((Vec)obj.GetField("position")) + posOffset;
+        transform.rotation = UnityUtil.FromQuat((Quat)obj.GetField("rotation"));
+        rb.velocity = UnityUtil.FromVec((Vec)obj.GetField("velocity"));
+        rb.angularVelocity = UnityUtil.FromVec((Vec)obj.GetField("angularVelocity"));
     }
 }
