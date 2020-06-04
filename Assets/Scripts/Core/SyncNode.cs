@@ -40,46 +40,23 @@ public abstract class SyncNode : IDisposable
     {
         ProcessControlMessages();
 
-        // Receive states of copy objects
+        // Receive states of copy objects and ACK from other nodes
         foreach (var connPair in Connections)
         {
             uint connNodeId = connPair.Key;
             Connection conn = connPair.Value;
             
-            //ObjectUpdate update;
-            UpdateMessage msg;
-            while (conn.TryReceiveMessage<UpdateMessage>(Connection.ChannelType.Sync, out msg))
+            ISyncMessage msg;
+            while (conn.TryReceiveMessage<ISyncMessage>(Connection.ChannelType.Sync, out msg))
             {
-                // Ignore out-of-order updates
-                if (LatestTickReceived.ContainsKey(connNodeId)
-                    && LatestTickReceived[connNodeId] > msg.Tick)
+                switch (msg)
                 {
-                    continue;
-                }
-                LatestTickReceived[connNodeId] = msg.Tick;
-
-                foreach (ObjectUpdate update in msg.ObjectUpdates)
-                {
-                    var id = update.ObjectId;
-                    if (!Objects.ContainsKey(id))
-                    {
-                        Logger.Log("Node", $"Ignoring update for non-registered ObjectId={id}");
-                        continue;
-                    }
-                    if (Objects[id].OriginalNodeId == NodeId)
-                    {
-                        Logger.Error("Node", $"Blocked invalid update for ObjectId={id}");
-                        continue;   // Original object cannot be updated by nodes other than OriginalNodeId
-                    }
-
-                    //Logger.Log("Node", $"ObjectId={id} updated");
-
-                    // fields
-                    foreach (var field in update.Fields)
-                    {
-                        //Logger.Log("Node", $"Field {field.Name} = {field.Value}");
-                        Objects[id].Fields[field.Name] = field.Value;
-                    }
+                    case UpdateMessage updateMsg:
+                        ProcessUpdateMessage(updateMsg, connNodeId, conn);
+                        break;
+                    case AckMessage ackMsg:
+                        // TODO
+                        break;
                 }
             }
         }
@@ -110,10 +87,51 @@ public abstract class SyncNode : IDisposable
                 Tick = Tick,
                 ObjectUpdates = updates
             };
-            conn.SendMessage<UpdateMessage>(Connection.ChannelType.Sync, msg);
+            conn.SendMessage<ISyncMessage>(Connection.ChannelType.Sync, msg);
         }
 
         Tick += 1;
+    }
+
+    private void ProcessUpdateMessage(UpdateMessage msg, uint connNodeId, Connection conn)
+    {
+        // Ignore out-of-order updates
+        if (LatestTickReceived.ContainsKey(connNodeId)
+            && LatestTickReceived[connNodeId] > msg.Tick)
+        {
+            return;
+        }
+        LatestTickReceived[connNodeId] = msg.Tick;
+
+        foreach (ObjectUpdate update in msg.ObjectUpdates)
+        {
+            var id = update.ObjectId;
+            if (!Objects.ContainsKey(id))
+            {
+                Logger.Log("Node", $"Ignoring update for non-registered ObjectId={id}");
+                continue;
+            }
+            if (Objects[id].OriginalNodeId == NodeId)
+            {
+                Logger.Error("Node", $"Blocked invalid update for ObjectId={id}");
+                continue;   // Original object cannot be updated by nodes other than OriginalNodeId
+            }
+
+            //Logger.Log("Node", $"ObjectId={id} updated");
+
+            // fields
+            foreach (var field in update.Fields)
+            {
+                //Logger.Log("Node", $"Field {field.Name} = {field.Value}");
+                Objects[id].Fields[field.Name] = field.Value;
+            }
+        }
+
+        // Notify the sender that this node have processed the message
+        conn.SendMessage<ISyncMessage>(
+            Connection.ChannelType.Sync,
+            new AckMessage { AcknowledgedTick = msg.Tick }
+        );
     }
 
     public BlobHandle GenerateBlobHandle()

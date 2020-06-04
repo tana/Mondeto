@@ -109,13 +109,27 @@ public class ObjectState
 }
 */
 
+// Messages sent through unreliable and unordered Sync Channel
+[MessagePack.Union(0, typeof(UpdateMessage))]
+[MessagePack.Union(1, typeof(AckMessage))]
+public interface ISyncMessage
+{
+}
+
 [MessagePackObject]
-public class UpdateMessage
+public class UpdateMessage : ISyncMessage
 {
     [Key(0)]
     public uint Tick;
     [Key(1)]
     public List<ObjectUpdate> ObjectUpdates;
+}
+
+[MessagePackObject]
+public class AckMessage : ISyncMessage
+{
+    [Key(0)]
+    public uint AcknowledgedTick;
 }
 
 [MessagePackObject]
