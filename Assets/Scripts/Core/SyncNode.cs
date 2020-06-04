@@ -40,35 +40,6 @@ public abstract class SyncNode : IDisposable
     {
         ProcessControlMessages();
 
-        // Send states of objects
-        foreach (var connPair in Connections)
-        {
-            uint connNodeId = connPair.Key;
-            Connection conn = connPair.Value;
-            // Collect object updates
-            var updates = new List<ObjectUpdate>();
-            foreach (var pair in Objects)
-            {
-                var id = pair.Key;
-                var obj = pair.Value;
-                // Don't send object to the node which has original
-                if (obj.OriginalNodeId == connNodeId)
-                    continue;
-
-                // field updates
-                var fields = obj.Fields.Select(field =>
-                    new FieldUpdate { Name = field.Key, Value = field.Value }).ToList();
-                ObjectUpdate update = new ObjectUpdate { ObjectId = id, Fields = fields };
-                updates.Add(update);
-            }
-            // Construct message and send
-            UpdateMessage msg = new UpdateMessage {
-                Tick = Tick,
-                ObjectUpdates = updates
-            };
-            conn.SendMessage<UpdateMessage>(Connection.ChannelType.Sync, msg);
-        }
-
         // Receive states of copy objects
         foreach (var connPair in Connections)
         {
@@ -111,6 +82,35 @@ public abstract class SyncNode : IDisposable
                     }
                 }
             }
+        }
+
+        // Send states of objects
+        foreach (var connPair in Connections)
+        {
+            uint connNodeId = connPair.Key;
+            Connection conn = connPair.Value;
+            // Collect object updates
+            var updates = new List<ObjectUpdate>();
+            foreach (var pair in Objects)
+            {
+                var id = pair.Key;
+                var obj = pair.Value;
+                // Don't send object to the node which has original
+                if (obj.OriginalNodeId == connNodeId)
+                    continue;
+
+                // field updates
+                var fields = obj.Fields.Select(field =>
+                    new FieldUpdate { Name = field.Key, Value = field.Value }).ToList();
+                ObjectUpdate update = new ObjectUpdate { ObjectId = id, Fields = fields };
+                updates.Add(update);
+            }
+            // Construct message and send
+            UpdateMessage msg = new UpdateMessage {
+                Tick = Tick,
+                ObjectUpdates = updates
+            };
+            conn.SendMessage<UpdateMessage>(Connection.ChannelType.Sync, msg);
         }
 
         Tick += 1;
