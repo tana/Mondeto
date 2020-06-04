@@ -78,7 +78,7 @@ public abstract class SyncNode : IDisposable
 
                 // field updates
                 var fields = obj.Fields.Select(field =>
-                    new FieldUpdate { Name = field.Key, Value = field.Value }).ToList();
+                    new FieldUpdate { Name = field.Key, Value = field.Value.Value }).ToList();
                 ObjectUpdate update = new ObjectUpdate { ObjectId = id, Fields = fields };
                 updates.Add(update);
             }
@@ -123,7 +123,8 @@ public abstract class SyncNode : IDisposable
             foreach (var field in update.Fields)
             {
                 //Logger.Log("Node", $"Field {field.Name} = {field.Value}");
-                Objects[id].Fields[field.Name] = field.Value;
+                //Objects[id].Fields[field.Name] = field.Value;
+                Objects[id].SetField(field.Name, field.Value);
             }
         }
 

@@ -98,7 +98,7 @@ public class SyncBehaviour : MonoBehaviour
             {
                 // Apply state to clone objects
                 // TODO error check
-                var tag = ((Primitive<int>)obj.Fields["tag"]).Value;
+                var tag = ((Primitive<int>)obj.GetField("tag")).Value;
                 if (tag == 0)
                 {
                     Logger.Log("SyncBehaviour", "ObjectId=" + id + " is not ready");

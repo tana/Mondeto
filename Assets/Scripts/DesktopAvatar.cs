@@ -60,11 +60,11 @@ public class DesktopAvatar : MonoBehaviour
             // Use MIME type for GLTF binary https://www.iana.org/assignments/media-types/model/gltf-binary
             vrmBlob = new Blob { MimeType = "model/gltf-binary", Data = vrmData };
             node.WriteBlob(vrmHandle, vrmBlob);
-            obj.Fields["vrm"] = vrmHandle;
+            obj.SetField("vrm", vrmHandle);
         }
         else
         {
-            BlobHandle texHandle = (BlobHandle)obj.Fields["vrm"];
+            BlobHandle texHandle = (BlobHandle)obj.GetField("vrm");
             vrmBlob = await node.ReadBlob(texHandle);
         }
 
