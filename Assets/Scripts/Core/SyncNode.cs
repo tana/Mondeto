@@ -35,6 +35,9 @@ public abstract class SyncNode : IDisposable
     // Latest Tick received from a particular node
     private Dictionary<uint, uint> LatestTickReceived = new Dictionary<uint, uint>();
 
+    // Last tick acknowledged by a particular node
+    private Dictionary<uint, uint> LastTickAcknowledged = new Dictionary<uint, uint>();
+
     // TODO naming
     public void SyncFrame()
     {
@@ -55,7 +58,7 @@ public abstract class SyncNode : IDisposable
                         ProcessUpdateMessage(updateMsg, connNodeId, conn);
                         break;
                     case AckMessage ackMsg:
-                        // TODO
+                        ProcessAckMessage(ackMsg, connNodeId);
                         break;
                 }
             }
@@ -66,6 +69,9 @@ public abstract class SyncNode : IDisposable
         {
             uint connNodeId = connPair.Key;
             Connection conn = connPair.Value;
+            uint ackedTick = LastTickAcknowledged.ContainsKey(connNodeId)
+                                ? LastTickAcknowledged[connNodeId] : 0;
+
             // Collect object updates
             var updates = new List<ObjectUpdate>();
             foreach (var pair in Objects)
@@ -77,11 +83,22 @@ public abstract class SyncNode : IDisposable
                     continue;
 
                 // field updates
-                var fields = obj.Fields.Select(field =>
-                    new FieldUpdate { Name = field.Key, Value = field.Value.Value }).ToList();
+                var fields = obj.Fields.Where(field =>
+                    // Send fields which have been updated
+                    // Because updates run after sending, lastUpdatedTick==ackedTick must be included.
+                    field.Value.LastUpdatedTick >= ackedTick
+                ).Select(field =>
+                    new FieldUpdate { Name = field.Key, Value = field.Value.Value }
+                ).ToList();
+
+                if (fields.Count == 0) continue;    // When no field have to be sent, skip entire object
+
                 ObjectUpdate update = new ObjectUpdate { ObjectId = id, Fields = fields };
                 updates.Add(update);
             }
+
+            if (updates.Count == 0) continue;   // When no object have to be sent, skip the receiving node
+
             // Construct message and send
             UpdateMessage msg = new UpdateMessage {
                 Tick = Tick,
@@ -133,6 +150,20 @@ public abstract class SyncNode : IDisposable
             Connection.ChannelType.Sync,
             new AckMessage { AcknowledgedTick = msg.Tick }
         );
+    }
+
+    private void ProcessAckMessage(AckMessage msg, uint connNodeId)
+    {
+        if (!LastTickAcknowledged.ContainsKey(connNodeId)
+            || LastTickAcknowledged[connNodeId] < msg.AcknowledgedTick)
+        {
+            LastTickAcknowledged[connNodeId] = msg.AcknowledgedTick;
+        }
+        else
+        {
+            // If AcknowledgedTick is decreasing, something is wrong
+            Logger.Debug("SyncNode", $"Acknowledged Tick from NodeId={connNodeId} is decreasing. It's strange!");
+        }
     }
 
     public BlobHandle GenerateBlobHandle()
