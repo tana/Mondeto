@@ -20,7 +20,10 @@ class DummyNode : SyncNode
         var obj = new SyncObject(this, objectIdCounter, NodeId);
         Objects[obj.Id] = obj;
         objectIdCounter++;
-        return new Task<uint>(() => obj.Id);
+        // This task always completes immediately
+        var tcs = new TaskCompletionSource<uint>();
+        tcs.SetResult(obj.Id);
+        return tcs.Task;
     }
 
     public override void DeleteObject(uint id) => throw new NotImplementedException();
