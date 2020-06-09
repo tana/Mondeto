@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
@@ -77,6 +78,12 @@ public class SceneLoader
                 return new Primitive<float> { Value = floatValue };
             else
                 return new Primitive<string> { Value = scalar.Value };
+        }
+        else if (yaml is YamlSequenceNode seq)
+        {
+            return new Sequence {
+                Elements = seq.Children.Select(YamlToValue).ToList()
+            };
         }
         else
         {
