@@ -1,0 +1,4 @@
+objects:
+  - position: !vec [0, 0, 0]
+    rotation: !quat [1, 0, 0, 0]
+    tag: 2

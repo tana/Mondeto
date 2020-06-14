@@ -31,14 +31,6 @@ public class ObjectSync : MonoBehaviour
     void FixedUpdate()
     {
         if (!syncBehaviour.Ready) return;
-        if (!added)
-        {
-            if (IsOriginal)
-            {
-                syncBehaviour.AddOriginal(gameObject);
-            }
-            added = true;
-        }
         if (SyncObject == null) return;
         if (!ready)
         {
@@ -56,6 +48,13 @@ public class ObjectSync : MonoBehaviour
         {
             EncodeState(SyncObject);
         }
+    }
+
+    // Apply state of the SyncObject even if it is original
+    // FIXME: refactor needed
+    public void ForceApplyState()
+    {
+        ApplyState(SyncObject);
     }
 
     void OnDestroy()
