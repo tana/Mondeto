@@ -46,6 +46,8 @@ public class SyncBehaviour : MonoBehaviour
             Node = new SyncClient(signalerUri);
         }
 
+        Node.ObjectDeleted += OnObjectDeleted;
+
         Task.Run(async () => {
             await Node.Initialize();
             Ready = true;
@@ -78,11 +80,8 @@ public class SyncBehaviour : MonoBehaviour
 
             if (obj.OriginalNodeId == Node.NodeId)
             {
-                // Encode state of original objects
                 if (!gameObjects.ContainsKey(id) || gameObjects[id] == null)
                     continue;
-                //gameObjects[id].GetComponent<ObjectSync>().EncodeState(obj);
-                //gameObjects[id].SendMessage("EncodeState", obj);
                 gameObjects[id].GetComponent<ObjectSync>().SyncObject = obj;
             }
         }
@@ -115,21 +114,14 @@ public class SyncBehaviour : MonoBehaviour
                     gameObjects[id].GetComponent<ObjectSync>().SyncObject = obj;
                     Logger.Debug("SyncBehaviour", "Created GameObject " + gameObj.ToString() + " for ObjectId=" + id);
                 }
-                //gameObjects[id].GetComponent<ObjectSync>().ApplyState(obj);
             }
         }
+    }
 
+    void OnObjectDeleted(uint id)
+    {
         // destroy and remove deleted objects
-        var ids = new HashSet<uint>();
-        foreach (var pair in gameObjects)
-        {
-            if (!Node.Objects.ContainsKey(pair.Key))
-            {
-                // deleted
-                ids.Add(pair.Key);
-            }
-        }
-        foreach (var id in ids)
+        if (gameObjects.ContainsKey(id))
         {
             Destroy(gameObjects[id]);
             gameObjects.Remove(id);
