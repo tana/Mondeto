@@ -16,6 +16,7 @@ using MessagePack;
 [MessagePack.Union(7, typeof(Vec))]
 [MessagePack.Union(8, typeof(Quat))]
 [MessagePack.Union(9, typeof(BlobHandle))]
+[MessagePack.Union(10, typeof(Sequence))]
 public interface IValue
 {
 }
@@ -26,6 +27,13 @@ public class Primitive<T> : IValue
 {
     [Key(0)]
     public T Value;
+
+    public override bool Equals(object obj)
+    {
+        return (obj is Primitive<T> other) && (other != null) && (Value.Equals(other.Value));
+    }
+
+    public override int GetHashCode() => this.GetHashCode();
 }
 
 // TODO array of IValue
@@ -89,6 +97,14 @@ public class BlobHandle : IValue
         }
         return sb.ToString();
     }
+}
+
+// TODO reconsider naming
+[MessagePackObject]
+public class Sequence : IValue
+{
+    [Key(0)]
+    public List<IValue> Elements;
 }
 
 // State of an object

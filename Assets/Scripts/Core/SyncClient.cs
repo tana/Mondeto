@@ -78,6 +78,9 @@ public class SyncClient : SyncNode
                 }
 
                 Logger.Debug("Client", $"Received ObjectId={id}");
+
+                InvokeObjectCreated(id);
+
                 break;
             }
             case ObjectDeletedMessage delMsg:
@@ -86,6 +89,9 @@ public class SyncClient : SyncNode
                 Objects.Remove(id);
 
                 Logger.Debug("Client", $"Received Deletion of ObjectId={id}");
+
+                InvokeObjectDeleted(id);
+
                 break;
             }
             case SymbolRegisteredMessage symMsg:

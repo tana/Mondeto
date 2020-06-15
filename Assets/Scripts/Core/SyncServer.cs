@@ -151,6 +151,9 @@ public class SyncServer : SyncNode
         SendToAllClients(msg);
 
         Logger.Debug("Server", $"Created ObjectId={id}");
+
+        InvokeObjectCreated(id);
+
         return id;
     }
 
@@ -165,6 +168,8 @@ public class SyncServer : SyncNode
         SendToAllClients(msg);
 
         Logger.Debug("Server", $"Deleted ObjectId={id}");
+
+        InvokeObjectDeleted(id);
     }
 
     uint RegisterSymbolAndNotify(string symbol)

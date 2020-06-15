@@ -38,6 +38,13 @@ public abstract class SyncNode : IDisposable
     // Last tick acknowledged by a particular node
     private Dictionary<uint, uint> LastTickAcknowledged = new Dictionary<uint, uint>();
 
+    public delegate void ObjectCreatedHandler(uint objId);
+    // Fired when an object is created 
+    public event ObjectCreatedHandler ObjectCreated;
+
+    public delegate void ObjectDeletedHandler(uint objId);
+    public event ObjectDeletedHandler ObjectDeleted;
+
     // TODO naming
     public void SyncFrame()
     {
@@ -300,6 +307,10 @@ public abstract class SyncNode : IDisposable
         if (obj.OriginalNodeId == NodeId) return;
         obj.HandleAudio(msg.Data);
     }
+
+    protected void InvokeObjectCreated(uint objId) => ObjectCreated?.Invoke(objId);
+
+    protected void InvokeObjectDeleted(uint objId) => ObjectDeleted?.Invoke(objId);
 
     public abstract void Dispose();
 }

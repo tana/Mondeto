@@ -17,6 +17,11 @@ public class SyncBehaviour : MonoBehaviour
 
     public PrefabEntry[] PrefabsForClones = new PrefabEntry[0];
 
+    // For adding objects not defined in YAML (e.g. player avatar)
+    public GameObject[] OriginalObjects = new GameObject[0];
+
+    public string SceneYamlPath = "scene.yml";
+
     // For FPS measurement
     float countStartTime = -1;
     int count = 0;
@@ -30,7 +35,7 @@ public class SyncBehaviour : MonoBehaviour
     }
 
     // Start is called before the first frame update
-    void Start()
+    async void Start()
     {
         foreach (PrefabEntry entry in PrefabsForClones)
         {
@@ -46,10 +51,26 @@ public class SyncBehaviour : MonoBehaviour
             Node = new SyncClient(signalerUri);
         }
 
-        Task.Run(async () => {
-            await Node.Initialize();
-            Ready = true;
-        });
+        Node.ObjectDeleted += OnObjectDeleted;
+
+        await Node.Initialize();
+        Ready = true;
+
+        if (IsServer)
+        {
+            // Load scene from YAML
+            var loader = new SceneLoader(Node);
+            await loader.Load(new System.IO.StreamReader(SceneYamlPath));
+        }
+
+        // Add objects defined in Unity scene, such as player avatar
+        foreach (GameObject obj in OriginalObjects)
+        {
+            var id = await Node.CreateObject();
+            // With SynchronizationContext of Unity, the line below will run in main thread.
+            // https://qiita.com/toRisouP/items/a2c1bb1b0c4f73366bc6
+            gameObjects[id] = obj;
+        }
     }
 
     // Update is called once per frame
@@ -78,11 +99,8 @@ public class SyncBehaviour : MonoBehaviour
 
             if (obj.OriginalNodeId == Node.NodeId)
             {
-                // Encode state of original objects
                 if (!gameObjects.ContainsKey(id) || gameObjects[id] == null)
                     continue;
-                //gameObjects[id].GetComponent<ObjectSync>().EncodeState(obj);
-                //gameObjects[id].SendMessage("EncodeState", obj);
                 gameObjects[id].GetComponent<ObjectSync>().SyncObject = obj;
             }
         }
@@ -94,54 +112,36 @@ public class SyncBehaviour : MonoBehaviour
             var id = pair.Key;
             var obj = pair.Value;
 
-            if (obj.OriginalNodeId != Node.NodeId)
+            // Prepare Unity GameObject for new SyncObject
+            var tag = ((Primitive<int>)obj.GetField("tag")).Value;
+            if (tag == 0)
             {
-                // Apply state to clone objects
-                // TODO error check
-                var tag = ((Primitive<int>)obj.GetField("tag")).Value;
-                if (tag == 0)
-                {
-                    Logger.Log("SyncBehaviour", "ObjectId=" + id + " is not ready");
-                    continue;   // state is not ready
-                }
-                if (!gameObjects.ContainsKey(id))
-                {
-                    var gameObj = Instantiate(prefabs[tag], transform);
-                    var sync = gameObj.AddComponent<ObjectSync>();
-                    sync.ObjectTag = tag;
-                    sync.IsOriginal = false;
-                    sync.NetManager = this.gameObject;
-                    gameObjects[id] = gameObj;
-                    gameObjects[id].GetComponent<ObjectSync>().SyncObject = obj;
-                    Logger.Debug("SyncBehaviour", "Created GameObject " + gameObj.ToString() + " for ObjectId=" + id);
-                }
-                //gameObjects[id].GetComponent<ObjectSync>().ApplyState(obj);
+                Logger.Log("SyncBehaviour", "ObjectId=" + id + " is not ready");
+                continue;   // state is not ready
+            }
+            if (!gameObjects.ContainsKey(id))
+            {
+                var gameObj = Instantiate(prefabs[tag], transform);
+                var sync = gameObj.AddComponent<ObjectSync>();
+                sync.ObjectTag = tag;
+                sync.IsOriginal = (obj.OriginalNodeId == Node.NodeId);
+                sync.NetManager = this.gameObject;
+                gameObjects[id] = gameObj;
+                gameObjects[id].GetComponent<ObjectSync>().SyncObject = obj;
+                Logger.Debug("SyncBehaviour", "Created GameObject " + gameObj.ToString() + " for ObjectId=" + id);
+                sync.ForceApplyState(); // Set initial state of Unity GameObject based on SyncObject
             }
         }
+    }
 
+    void OnObjectDeleted(uint id)
+    {
         // destroy and remove deleted objects
-        var ids = new HashSet<uint>();
-        foreach (var pair in gameObjects)
-        {
-            if (!Node.Objects.ContainsKey(pair.Key))
-            {
-                // deleted
-                ids.Add(pair.Key);
-            }
-        }
-        foreach (var id in ids)
+        if (gameObjects.ContainsKey(id))
         {
             Destroy(gameObjects[id]);
             gameObjects.Remove(id);
         }
-    }
-
-    public async void AddOriginal(GameObject obj)
-    {
-        var id = await Node.CreateObject();
-        // With SynchronizationContext of Unity, the line below will run in main thread.
-        // https://qiita.com/toRisouP/items/a2c1bb1b0c4f73366bc6
-        gameObjects[id] = obj;
     }
 
     public void DeleteOriginal(GameObject obj)
