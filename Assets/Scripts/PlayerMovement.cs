@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(CharacterController))]
+[RequireComponent(typeof(WalkAnimation))]
 public class PlayerMovement : MonoBehaviour
 {
-    public float speed = 1.0f;
-    public float angularSpeed = 60.0f;
+    public float MaxSpeed = 1.0f;
+    public float MaxAngularSpeed = 60.0f;
 
     Vector3 initPos;
     Quaternion initRot;
@@ -22,9 +24,15 @@ public class PlayerMovement : MonoBehaviour
     {
         var characterController = GetComponent<CharacterController>();
 
-        var velocity = speed * (new Vector3(0, 0, Input.GetAxis("Vertical")));
-        var angularVelocity = angularSpeed * (new Vector3(0, Input.GetAxis("Horizontal"), 0));
+        var forward = MaxSpeed * Input.GetAxis("Vertical");
+        var turn = MaxAngularSpeed * Input.GetAxis("Horizontal");
+
+        var velocity = new Vector3(0, 0, forward);
+        var angularVelocity = new Vector3(0, turn, 0);
         transform.rotation *= Quaternion.Euler(angularVelocity * Time.deltaTime);
         characterController.SimpleMove(transform.rotation * velocity);
+
+        var walkAnimation = GetComponent<WalkAnimation>();
+        walkAnimation.SetAnimationParameters(forward, turn);
     }
 }

@@ -5,9 +5,15 @@ using System.Threading.Tasks;
 using UnityEngine;
 using VRM;
 
+[RequireComponent(typeof(CharacterController))]
+[RequireComponent(typeof(WalkAnimation))]
 public class DesktopAvatar : MonoBehaviour
 {
     public string VrmPath = "avatar.vrm";
+
+    // Locomotion-related settings
+    public float MaxSpeed = 1.0f;
+    public float MaxAngularSpeed = 60.0f;
 
     private VRMImporterContext ctx;
 
@@ -42,7 +48,49 @@ public class DesktopAvatar : MonoBehaviour
                 Logger.Debug("DesktopAvatar", "microphone " + (micCap.enabled ? "on" : "off"));
             }
         }
+
+        // State values for walking animation
+        float forward, turn;
+
+        if (isOriginal)
+        {
+            // Walking control
+            var characterController = GetComponent<CharacterController>();
+
+            forward = MaxSpeed * Input.GetAxis("Vertical");
+            turn = MaxAngularSpeed * Input.GetAxis("Horizontal");
+
+            var velocity = new Vector3(0, 0, forward);
+            var angularVelocity = new Vector3(0, turn, 0);
+            transform.rotation *= Quaternion.Euler(angularVelocity * Time.deltaTime);
+            characterController.SimpleMove(transform.rotation * velocity);
+
+            // This two values are synchronized
+            obj.SetField("forward", new Primitive<float> { Value = forward });
+            obj.SetField("turn", new Primitive<float> { Value = turn });
+        }
+        else
+        {
+            forward = (obj.GetField("forward") as Primitive<float>)?.Value ?? 0.0f;
+            turn = (obj.GetField("forward") as Primitive<float>)?.Value ?? 0.0f;
+        }
+
+        // Walking animation
+        GetComponent<WalkAnimation>().SetAnimationParameters(forward, turn);
     }
+
+    /*
+    void FixedUpdate()
+    {
+        bool isOriginal = GetComponent<ObjectSync>().IsOriginal;
+        SyncObject obj = GetComponent<ObjectSync>().SyncObject;
+
+        if (isOriginal)
+        {
+            obj.SetField()
+        }
+    }
+    */
 
     // Called by ObjectSync when become ready
     async void OnSyncReady()
@@ -72,6 +120,7 @@ public class DesktopAvatar : MonoBehaviour
         // https://github.com/vrm-c/UniVRM/wiki/Runtime-import
         // https://qiita.com/sh_akira/items/8155e4b69107c2a7ede6
         ctx = new VRMImporterContext();
+        ctx.Root = this.gameObject;
         ctx.ParseGlb(vrmBlob.Data);
 
         var meta = ctx.ReadMeta();
@@ -83,8 +132,7 @@ public class DesktopAvatar : MonoBehaviour
         Logger.Log("DesktopAvatar", $"OtherLicenseUrl={meta.OtherLicenseUrl}");
 
         await ctx.LoadAsyncTask();
-        ctx.Root.transform.SetParent(transform, false);
-        // TODO animation
+
         ctx.EnableUpdateWhenOffscreen();
         ctx.ShowMeshes();
         
