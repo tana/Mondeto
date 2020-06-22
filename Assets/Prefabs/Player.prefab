@@ -193,7 +193,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   VrmPath: avatar.vrm
-  MaxSpeed: 1
+  MaxSpeed: 2
   MaxAngularSpeed: 60
 --- !u!82 &8490544229981949920
 AudioSource:
