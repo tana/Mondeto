@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
 using VRM;
+using Cysharp.Threading.Tasks;
 
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(WalkAnimation))]
@@ -50,7 +51,7 @@ public class DesktopAvatar : MonoBehaviour
         }
 
         // State values for walking animation
-        float forward, turn;
+        float forward = 0.0f, turn = 0.0f;
 
         if (isOriginal)
         {
@@ -71,8 +72,11 @@ public class DesktopAvatar : MonoBehaviour
         }
         else
         {
-            forward = (obj.GetField("forward") as Primitive<float>)?.Value ?? 0.0f;
-            turn = (obj.GetField("forward") as Primitive<float>)?.Value ?? 0.0f;
+            if (obj.HasField("forward") && obj.HasField("turn"))
+            {
+                forward = (obj.GetField("forward") as Primitive<float>)?.Value ?? 0.0f;
+                turn = (obj.GetField("turn") as Primitive<float>)?.Value ?? 0.0f;
+            }
         }
 
         // Walking animation
@@ -112,8 +116,13 @@ public class DesktopAvatar : MonoBehaviour
         }
         else
         {
-            BlobHandle texHandle = (BlobHandle)obj.GetField("vrm");
-            vrmBlob = await node.ReadBlob(texHandle);
+            while (!obj.HasField("vrm") || !(obj.GetField("vrm") is BlobHandle))
+            {
+                Logger.Debug("DesktopAvatar", "Field vrm not ready");
+                await UniTask.WaitForFixedUpdate();
+            }
+            BlobHandle blobHandle = (BlobHandle)obj.GetField("vrm");
+            vrmBlob = await node.ReadBlob(blobHandle);
         }
 
         // Load VRM from byte array
