@@ -46,6 +46,11 @@ public class SyncObject
         return Fields[key].Value;
     }
 
+    public bool HasField(string key)
+    {
+        return Fields.ContainsKey(key);
+    }
+
     public void SendAudio(byte[] data)
     {
         Node.SendAudioData(Id, data);
