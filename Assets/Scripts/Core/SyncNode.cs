@@ -28,7 +28,7 @@ public abstract class SyncNode : IDisposable
 
     protected BlobStorage BlobStorage = new BlobStorage();
 
-    protected const int BlobChunkSize = 1024;
+    protected const int BlobChunkSize = 65536;
 
     private ConcurrentDictionary<uint, object> blobSendLockTokens = new ConcurrentDictionary<uint, object>();
 
@@ -197,7 +197,7 @@ public abstract class SyncNode : IDisposable
 
         lock (blobSendLockTokens[nodeId])
         {
-            Logger.Debug("Node", $"Sending Blob");
+            Logger.Debug("Node", $"Sending Blob {handle} to NodeId={nodeId}");
 
             Connection conn = Connections[nodeId];
             conn.SendMessage<IBlobMessage>(
@@ -216,6 +216,8 @@ public abstract class SyncNode : IDisposable
                 );
                 pos += len;
             }
+
+            Logger.Debug("Node", $"Sent Blob {handle}");
         }
     }
 
@@ -234,6 +236,7 @@ public abstract class SyncNode : IDisposable
                     infoMsg.Handle,
                     new Blob { MimeType = infoMsg.MimeType, Data = data }
                 );
+                Logger.Debug("Node", $"Received Blob {infoMsg.Handle}");
             }
             else if (msg is BlobRequestMessage requestMsg)
             {
@@ -271,6 +274,7 @@ public abstract class SyncNode : IDisposable
                     Math.Min(bodyMsg.Data.Length, size - pos)
                 );
                 pos += bodyMsg.Data.Length;
+                //Logger.Debug("Node", $"Received {bodyMsg.Data.Length} bytes");
             }
             else
             {
