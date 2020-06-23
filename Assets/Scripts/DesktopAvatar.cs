@@ -125,6 +125,11 @@ public class DesktopAvatar : MonoBehaviour
             vrmBlob = await node.ReadBlob(blobHandle);
         }
 
+        // Disable collision detection during VRM load
+        // When the avatar collides with something during creation,
+        // it goes to wrong position (e.g. floating).
+        GetComponent<Collider>().enabled = false;
+
         // Load VRM from byte array
         // https://github.com/vrm-c/UniVRM/wiki/Runtime-import
         // https://qiita.com/sh_akira/items/8155e4b69107c2a7ede6
@@ -144,6 +149,9 @@ public class DesktopAvatar : MonoBehaviour
 
         ctx.EnableUpdateWhenOffscreen();
         ctx.ShowMeshes();
+
+        // Enable collision again
+        GetComponent<Collider>().enabled = true;
         
         Logger.Log("DesktopAvatar", $"VRM loaded");
     }
