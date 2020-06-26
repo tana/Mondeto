@@ -38,23 +38,6 @@ public class ObjectSync : MonoBehaviour
             SendMessage("OnSyncReady", options: SendMessageOptions.DontRequireReceiver);
             return;
         }
-
-        if (!IsOriginal)
-        {
-            ApplyState(SyncObject);
-        }
-
-        if (IsOriginal)
-        {
-            EncodeState(SyncObject);
-        }
-    }
-
-    // Apply state of the SyncObject even if it is original
-    // FIXME: refactor needed
-    public void ForceApplyState()
-    {
-        ApplyState(SyncObject);
     }
 
     void OnDestroy()
@@ -65,22 +48,29 @@ public class ObjectSync : MonoBehaviour
         }
     }
 
-    void EncodeState(SyncObject obj)
+    public void EncodeState()
     {
-        obj.SetField("tag", new Primitive<int> { Value = this.ObjectTag });
-        obj.SetField("position", UnityUtil.ToVec(transform.position - posOffset));
-        obj.SetField("rotation", UnityUtil.ToQuat(transform.rotation));
-        obj.SetField("velocity", UnityUtil.ToVec(GetComponent<Rigidbody>().velocity));
-        obj.SetField("angularVelocity", UnityUtil.ToVec(GetComponent<Rigidbody>().angularVelocity));
+        if (SyncObject == null) return;
+
+        SyncObject.SetField("tag", new Primitive<int> { Value = this.ObjectTag });
+        SyncObject.SetField("position", UnityUtil.ToVec(transform.position - posOffset));
+        SyncObject.SetField("rotation", UnityUtil.ToQuat(transform.rotation));
+        SyncObject.SetField("velocity", UnityUtil.ToVec(GetComponent<Rigidbody>().velocity));
+        SyncObject.SetField("angularVelocity", UnityUtil.ToVec(GetComponent<Rigidbody>().angularVelocity));
     }
 
-    void ApplyState(SyncObject obj)
+    public void ApplyState()
     {
+        if (SyncObject == null) return;
+
         var rb = GetComponent<Rigidbody>();
-        // TODO error check
-        transform.position = UnityUtil.FromVec((Vec)obj.GetField("position")) + posOffset;
-        transform.rotation = UnityUtil.FromQuat((Quat)obj.GetField("rotation"));
-        rb.velocity = UnityUtil.FromVec((Vec)obj.GetField("velocity"));
-        rb.angularVelocity = UnityUtil.FromVec((Vec)obj.GetField("angularVelocity"));
+        if (SyncObject.HasField("position"))
+            transform.position = UnityUtil.FromVec((Vec)SyncObject.GetField("position")) + posOffset;
+        if (SyncObject.HasField("rotation"))
+            transform.rotation = UnityUtil.FromQuat((Quat)SyncObject.GetField("rotation"));
+        if (SyncObject.HasField("velocity"))
+            rb.velocity = UnityUtil.FromVec((Vec)SyncObject.GetField("velocity"));
+        if (SyncObject.HasField("angularVelocity"))
+            rb.angularVelocity = UnityUtil.FromVec((Vec)SyncObject.GetField("angularVelocity"));
     }
 }

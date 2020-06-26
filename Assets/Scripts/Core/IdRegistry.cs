@@ -6,6 +6,8 @@ public class IdRegistry
     uint lastId;
     LinkedList<uint> deleted = new LinkedList<uint>();
 
+    object lockObject = new object();
+
     public IdRegistry(uint min)
     {
         lastId = min - 1;
@@ -13,8 +15,11 @@ public class IdRegistry
 
     public uint Create()
     {
-        // TODO reuse
-        lastId++;
+        lock (lockObject)
+        {
+            // TODO reuse
+            lastId++;
+        }
         return lastId;
     }
 
