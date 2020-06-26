@@ -46,8 +46,11 @@ public class SyncServer : SyncNode
     async Task InitClient(Connection conn)
     {
         var clientId = clientIdRegistry.Create();
-        clients[clientId] = conn;
-        Logger.Log("Server", $"Registered client NodeId={clientId}");
+        lock (clients)
+        {
+            clients[clientId] = conn;
+            Logger.Log("Server", $"Registered client NodeId={clientId}");
+        }
 
         // NodeIdMessage have to be sent after client become ready to receive it.
         await Task.Delay(1000); // FIXME

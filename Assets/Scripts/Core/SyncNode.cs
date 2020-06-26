@@ -51,7 +51,13 @@ public abstract class SyncNode : IDisposable
         ProcessControlMessages();
 
         // Receive states of copy objects and ACK from other nodes
-        foreach (var connPair in Connections)
+        List<KeyValuePair<uint, Connection>> pairs;
+        lock (Connections)
+        {
+            pairs = Connections.ToList();
+        }
+
+        foreach (var connPair in pairs)
         {
             uint connNodeId = connPair.Key;
             Connection conn = connPair.Value;
@@ -72,7 +78,7 @@ public abstract class SyncNode : IDisposable
         }
 
         // Send states of objects
-        foreach (var connPair in Connections)
+        foreach (var connPair in pairs)
         {
             uint connNodeId = connPair.Key;
             Connection conn = connPair.Value;
@@ -85,8 +91,9 @@ public abstract class SyncNode : IDisposable
             {
                 var id = pair.Key;
                 var obj = pair.Value;
-                // Don't send object to the node which has original
-                if (obj.OriginalNodeId == connNodeId)
+                // If this is the server, don't send object to the node which has original
+                // If this is a client, don't send objects that this node does not have original
+                if (obj.OriginalNodeId == connNodeId || (NodeId != ServerNodeId && obj.OriginalNodeId != NodeId))
                     continue;
 
                 // field updates
@@ -135,10 +142,10 @@ public abstract class SyncNode : IDisposable
                 Logger.Log("Node", $"Ignoring update for non-registered ObjectId={id}");
                 continue;
             }
-            if (Objects[id].OriginalNodeId == NodeId)
+            if (Objects[id].OriginalNodeId != connNodeId && connNodeId != ServerNodeId)
             {
                 Logger.Error("Node", $"Blocked invalid update for ObjectId={id}");
-                continue;   // Original object cannot be updated by nodes other than OriginalNodeId
+                continue;   // Original object cannot be updated by nodes other than OriginalNodeId or the server (NodeId=0)
             }
 
             //Logger.Log("Node", $"ObjectId={id} updated");
@@ -147,6 +154,12 @@ public abstract class SyncNode : IDisposable
             foreach (var field in update.Fields)
             {
                 //Logger.Log("Node", $"Field {field.Name} = {field.Value}");
+                /*
+                if (field.Name == "position" && field.Value is Vec vec)
+                {
+                    Logger.Debug("Node", $"{connNodeId} {id} ({vec.X}, {vec.Y}, {vec.Z})");
+                }
+                */
                 //Objects[id].Fields[field.Name] = field.Value;
                 Objects[id].SetField(field.Name, field.Value);
             }
