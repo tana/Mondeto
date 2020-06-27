@@ -48,6 +48,11 @@ public abstract class SyncNode : IDisposable
     // TODO naming
     public void SyncFrame()
     {
+        foreach (var obj in Objects.Values)
+        {
+            obj.InvokeBeforeSync();
+        }
+
         ProcessControlMessages();
 
         // Receive states of copy objects and ACK from other nodes
@@ -122,6 +127,11 @@ public abstract class SyncNode : IDisposable
         }
 
         Tick += 1;
+
+        foreach (var obj in Objects.Values)
+        {
+            obj.InvokeAfterSync();
+        }
     }
 
     private void ProcessUpdateMessage(UpdateMessage msg, uint connNodeId, Connection conn)

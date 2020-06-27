@@ -105,22 +105,7 @@ public class SyncBehaviour : MonoBehaviour
             }
         }
 
-        foreach (var gameObj in gameObjects.Values)
-        {
-            if (gameObj == null) continue;
-            gameObj.GetComponent<ObjectSync>().EncodeState();
-        }
-
         Node.SyncFrame();
-
-        foreach (var gameObj in gameObjects.Values)
-        {
-            if (gameObj == null) continue;
-            if (!gameObj.GetComponent<ObjectSync>().IsOriginal)
-            {
-                gameObj.GetComponent<ObjectSync>().ApplyState();
-            }
-        }
 
         foreach (var pair in Node.Objects)
         {
@@ -144,7 +129,8 @@ public class SyncBehaviour : MonoBehaviour
                 gameObjects[id] = gameObj;
                 gameObjects[id].GetComponent<ObjectSync>().SyncObject = obj;
                 Logger.Debug("SyncBehaviour", "Created GameObject " + gameObj.ToString() + " for ObjectId=" + id);
-                sync.ApplyState(); // Set initial state of Unity GameObject based on SyncObject
+                // TODO: consider better design
+                sync.ForceApplyState(); // Set initial state of Unity GameObject based on SyncObject
             }
         }
     }
