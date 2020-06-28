@@ -18,6 +18,9 @@ public class DesktopAvatar : MonoBehaviour
 
     private VRMImporterContext ctx;
 
+    // State values for walking animation
+    private float forward = 0.0f, turn = 0.0f;
+
     void Start()
     {
     }
@@ -50,9 +53,6 @@ public class DesktopAvatar : MonoBehaviour
             }
         }
 
-        // State values for walking animation
-        float forward = 0.0f, turn = 0.0f;
-
         if (isOriginal)
         {
             // Walking control
@@ -65,36 +65,28 @@ public class DesktopAvatar : MonoBehaviour
             var angularVelocity = new Vector3(0, turn, 0);
             transform.rotation *= Quaternion.Euler(angularVelocity * Time.deltaTime);
             characterController.SimpleMove(transform.rotation * velocity);
-
-            // This two values are synchronized
-            obj.SetField("forward", new Primitive<float> { Value = forward });
-            obj.SetField("turn", new Primitive<float> { Value = turn });
-        }
-        else
-        {
-            if (obj.HasField("forward") && obj.HasField("turn"))
-            {
-                forward = (obj.GetField("forward") as Primitive<float>)?.Value ?? 0.0f;
-                turn = (obj.GetField("turn") as Primitive<float>)?.Value ?? 0.0f;
-            }
         }
 
         // Walking animation
         GetComponent<WalkAnimation>().SetAnimationParameters(forward, turn);
     }
 
-    /*
-    void FixedUpdate()
+    void OnBeforeSync(SyncObject obj)
     {
-        bool isOriginal = GetComponent<ObjectSync>().IsOriginal;
-        SyncObject obj = GetComponent<ObjectSync>().SyncObject;
+        obj.SetField("forward", new Primitive<float> { Value = forward });
+        obj.SetField("turn", new Primitive<float> { Value = turn });
+    }
 
-        if (isOriginal)
+    void OnAfterSync(SyncObject obj)
+    {
+        if (GetComponent<ObjectSync>().IsOriginal) return;
+
+        if (obj.HasField("forward") && obj.HasField("turn"))
         {
-            obj.SetField()
+            forward = (obj.GetField("forward") as Primitive<float>)?.Value ?? 0.0f;
+            turn = (obj.GetField("turn") as Primitive<float>)?.Value ?? 0.0f;
         }
     }
-    */
 
     // Called by ObjectSync when become ready
     async void OnSyncReady()
@@ -103,6 +95,9 @@ public class DesktopAvatar : MonoBehaviour
 
         SyncObject obj = GetComponent<ObjectSync>().SyncObject;
         SyncNode node = GetComponent<ObjectSync>().Node;
+
+        obj.BeforeSync += OnBeforeSync;
+        obj.AfterSync += OnAfterSync;
 
         Blob vrmBlob;
         if (GetComponent<ObjectSync>().IsOriginal)
