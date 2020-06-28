@@ -16,6 +16,11 @@ public class DesktopAvatar : MonoBehaviour
     public float MaxSpeed = 1.0f;
     public float MaxAngularSpeed = 60.0f;
 
+    public Camera FirstPersonCamera;
+    public Camera ThirdPersonCamera;
+
+    private bool firstPerson = false;
+
     private VRMImporterContext ctx;
 
     // State values for walking animation
@@ -29,6 +34,10 @@ public class DesktopAvatar : MonoBehaviour
 
     void Start()
     {
+        if (FirstPersonCamera != null)
+            FirstPersonCamera.enabled = firstPerson;
+        if (ThirdPersonCamera != null)
+            ThirdPersonCamera.enabled = !firstPerson;
     }
 
     void Update()
@@ -75,6 +84,23 @@ public class DesktopAvatar : MonoBehaviour
 
         // Walking animation
         GetComponent<WalkAnimation>().SetAnimationParameters(forward, turn);
+
+        // Viewpoint change
+        if (isOriginal && Input.GetKeyDown(KeyCode.F))
+        {
+            firstPerson = !firstPerson;
+            FirstPersonCamera.enabled = firstPerson;
+            ThirdPersonCamera.enabled = !firstPerson;
+            Logger.Debug("DesktopAvatar", (firstPerson ? "first" : "third") + "person camera");
+        }
+
+        if (isOriginal && FirstPersonCamera != null)
+        {
+            // Camera control
+            float azimuth = 60.0f * (Input.mousePosition.x / Screen.width - 0.5f);
+            float elevation = 60.0f * (Input.mousePosition.y / Screen.height - 0.5f);
+            FirstPersonCamera.transform.rotation = transform.rotation * Quaternion.Euler(elevation, azimuth, 0.0f);
+        }
     }
 
     public void FixedUpdate()
@@ -191,7 +217,43 @@ public class DesktopAvatar : MonoBehaviour
         GetComponent<CharacterController>().enabled = true;
         
         Logger.Log("DesktopAvatar", $"VRM loaded");
+
+        if (GetComponent<ObjectSync>().IsOriginal)
+        {
+            // Set up first person view (do not display avatar of the player)
+            //  https://vrm.dev/en/univrm/components/univrm_firstperson/
+            //  https://vrm.dev/en/dev/univrm-0.xx/programming/univrm_use_firstperson/
+            var fp = GetComponent<VRMFirstPerson>();
+            fp.Setup();
+            if (FirstPersonCamera != null)
+            {
+                FirstPersonCamera.transform.position = fp.FirstPersonBone.position + fp.FirstPersonBone.rotation * fp.FirstPersonOffset;
+                FirstPersonCamera.transform.rotation = transform.rotation;  // face forward
+                // Do not render layer "VRMThirdPersonOnly" on first person camera
+                FirstPersonCamera.cullingMask &= ~LayerMask.GetMask("VRMThirdPersonOnly");
+            }
+            if (ThirdPersonCamera != null)
+            {
+                // Do not render layer "VRMFirstPersonOnly" on third person camera
+                ThirdPersonCamera.cullingMask &= ~LayerMask.GetMask("VRMFirstPersonOnly");
+            }
+        }
     }
+
+    // Control avatar through IK
+    // https://docs.unity3d.com/2019.3/Documentation/Manual/InverseKinematics.html
+    // TODO: enable IK, sync looking direction
+    /*
+    void OnAnimatorIK()
+    {
+        var anim = GetComponent<Animator>();
+        if (FirstPersonCamera != null)
+        {
+            anim.SetLookAtWeight(1.0f);
+            anim.SetLookAtPosition(FirstPersonCamera.transform.TransformPoint(Vector3.forward));
+        }
+    }
+    */
 
     void OnDestroy()
     {
