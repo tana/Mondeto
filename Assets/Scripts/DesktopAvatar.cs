@@ -21,6 +21,12 @@ public class DesktopAvatar : MonoBehaviour
     // State values for walking animation
     private float forward = 0.0f, turn = 0.0f;
 
+    private Vector3 velocity = Vector3.zero, angularVelocity = Vector3.zero;
+
+    // For calculation of velocity and angular velocity
+    private Vector3 lastPosition = Vector3.zero;
+    private Quaternion lastRotation = Quaternion.identity;
+
     void Start()
     {
     }
@@ -71,10 +77,32 @@ public class DesktopAvatar : MonoBehaviour
         GetComponent<WalkAnimation>().SetAnimationParameters(forward, turn);
     }
 
+    public void FixedUpdate()
+    {
+        SyncObject obj = GetComponent<ObjectSync>()?.SyncObject;
+        if (obj == null) return;
+
+        if (GetComponent<ObjectSync>().IsOriginal)
+        {
+            velocity = (transform.position - lastPosition) / Time.fixedDeltaTime;
+            angularVelocity = Mathf.Deg2Rad * (Quaternion.Inverse(lastRotation) * transform.rotation).eulerAngles / Time.fixedDeltaTime;
+            lastPosition = transform.position;
+            lastRotation = transform.rotation;
+        }
+        else
+        {
+            transform.position += velocity * Time.fixedDeltaTime;
+            transform.rotation *= Quaternion.Euler(Mathf.Rad2Deg * angularVelocity * Time.fixedDeltaTime);
+        }
+    }
+
     void OnBeforeSync(SyncObject obj)
     {
         obj.SetField("forward", new Primitive<float> { Value = forward });
         obj.SetField("turn", new Primitive<float> { Value = turn });
+
+        obj.SetField("velocity", UnityUtil.ToVec(velocity));
+        obj.SetField("angularVelocity", UnityUtil.ToVec(angularVelocity));
     }
 
     void OnAfterSync(SyncObject obj)
@@ -86,6 +114,15 @@ public class DesktopAvatar : MonoBehaviour
             forward = (obj.GetField("forward") as Primitive<float>)?.Value ?? 0.0f;
             turn = (obj.GetField("turn") as Primitive<float>)?.Value ?? 0.0f;
         }
+
+        if (obj.HasField("velocity") && obj.GetField("velocity") is Vec velocityVec)
+        {
+            velocity = UnityUtil.FromVec(velocityVec);
+        }
+        if (obj.HasField("angularVelocity") && obj.GetField("angularVelocity") is Vec angularVelocityVec)
+        {
+            angularVelocity = UnityUtil.FromVec(angularVelocityVec);
+        }
     }
 
     // Called by ObjectSync when become ready
@@ -95,6 +132,9 @@ public class DesktopAvatar : MonoBehaviour
 
         SyncObject obj = GetComponent<ObjectSync>().SyncObject;
         SyncNode node = GetComponent<ObjectSync>().Node;
+
+        lastPosition = transform.position;
+        lastRotation = transform.rotation;
 
         obj.BeforeSync += OnBeforeSync;
         obj.AfterSync += OnAfterSync;
@@ -120,10 +160,12 @@ public class DesktopAvatar : MonoBehaviour
             vrmBlob = await node.ReadBlob(blobHandle);
         }
 
-        // Disable collision detection during VRM load
+        // Disable collision detection (and character control) during VRM load
         // When the avatar collides with something during creation,
         // it goes to wrong position (e.g. floating).
-        GetComponent<Collider>().enabled = false;
+        // Note: CharacterController inherits Collider.
+        //  (See https://docs.unity3d.com/2019.3/Documentation/ScriptReference/CharacterController.html )
+        GetComponent<CharacterController>().enabled = false;
 
         // Load VRM from byte array
         // https://github.com/vrm-c/UniVRM/wiki/Runtime-import
@@ -145,8 +187,8 @@ public class DesktopAvatar : MonoBehaviour
         ctx.EnableUpdateWhenOffscreen();
         ctx.ShowMeshes();
 
-        // Enable collision again
-        GetComponent<Collider>().enabled = true;
+        // Enable collision (and character controller) again (see the disabling line above)
+        GetComponent<CharacterController>().enabled = true;
         
         Logger.Log("DesktopAvatar", $"VRM loaded");
     }
