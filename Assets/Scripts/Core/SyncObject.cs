@@ -16,6 +16,10 @@ public class SyncObject
     // Called when the original used SendAudio
     public event AudioReceivedDelegate AudioReceived;
 
+    public delegate void BeforeAfterSyncDelegate(SyncObject sender);
+    public event BeforeAfterSyncDelegate BeforeSync;
+    public event BeforeAfterSyncDelegate AfterSync;
+
     public SyncObject(SyncNode node, uint id, uint originalNodeId)
     {
         Node = node;
@@ -59,6 +63,16 @@ public class SyncObject
     internal void HandleAudio(byte[] data)
     {
         AudioReceived?.Invoke(data);
+    }
+
+    internal void InvokeBeforeSync()
+    {
+        BeforeSync?.Invoke(this);
+    }
+
+    internal void InvokeAfterSync()
+    {
+        AfterSync?.Invoke(this);
     }
 
     public struct Field
