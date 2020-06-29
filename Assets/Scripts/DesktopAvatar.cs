@@ -13,13 +13,18 @@ public class DesktopAvatar : MonoBehaviour
     public string VrmPath = "avatar.vrm";
 
     // Locomotion-related settings
-    public float MaxSpeed = 1.0f;
-    public float MaxAngularSpeed = 60.0f;
+    public float SpeedCoeff = 1.0f;
+    public float AngularSpeedCoeff = 60.0f;
+
+    public Camera FirstPersonCamera;
+    public Camera ThirdPersonCamera;
+
+    private bool firstPerson = false;
 
     private VRMImporterContext ctx;
 
     // State values for walking animation
-    private float forward = 0.0f, turn = 0.0f;
+    private float forward = 0.0f, sideways = 0.0f, turn = 0.0f;
 
     private Vector3 velocity = Vector3.zero, angularVelocity = Vector3.zero;
 
@@ -27,8 +32,15 @@ public class DesktopAvatar : MonoBehaviour
     private Vector3 lastPosition = Vector3.zero;
     private Quaternion lastRotation = Quaternion.identity;
 
+    private Vector3 lastMousePosition;
+    private Quaternion camRotBeforeDrag;
+
     void Start()
     {
+        if (FirstPersonCamera != null)
+            FirstPersonCamera.enabled = firstPerson;
+        if (ThirdPersonCamera != null)
+            ThirdPersonCamera.enabled = !firstPerson;
     }
 
     void Update()
@@ -59,22 +71,57 @@ public class DesktopAvatar : MonoBehaviour
             }
         }
 
+        // Viewpoint change
+        if (isOriginal && Input.GetKeyDown(KeyCode.F))
+        {
+            firstPerson = !firstPerson;
+            FirstPersonCamera.enabled = firstPerson;
+            ThirdPersonCamera.enabled = !firstPerson;
+            Logger.Debug("DesktopAvatar", (firstPerson ? "first" : "third") + "person camera");
+        }
+
         if (isOriginal)
         {
+            // Orientation and camera control
+            turn = 0.0f;
+            Camera cam = firstPerson ? FirstPersonCamera : ThirdPersonCamera;
+            // Use mouse movement during drag (similar to Mozilla Hubs?)
+            // because Unity's cursor lock feature seemed somewhat strange especially in Editor.
+            if (Input.GetKeyDown(KeyCode.Mouse0))
+            {
+                lastMousePosition = Input.mousePosition;
+                camRotBeforeDrag = cam.transform.localRotation;
+            }
+            if (Input.GetKey(KeyCode.Mouse0))
+            {
+                Vector3 mouseDiff = Input.mousePosition - lastMousePosition;
+                lastMousePosition = Input.mousePosition;
+                turn = -AngularSpeedCoeff * mouseDiff.x;
+                float elevation = AngularSpeedCoeff * mouseDiff.y;
+                if (cam != null)
+                    cam.transform.localRotation *= Quaternion.Euler(elevation * Time.deltaTime, 0.0f, 0.0f);
+            }
+            if (Input.GetKeyUp(KeyCode.Mouse0))
+            {
+                // Reset camera elevation when mouse button is released
+                if (cam != null)
+                    cam.transform.localRotation = camRotBeforeDrag;
+            }
+
             // Walking control
             var characterController = GetComponent<CharacterController>();
 
-            forward = MaxSpeed * Input.GetAxis("Vertical");
-            turn = MaxAngularSpeed * Input.GetAxis("Horizontal");
+            forward = SpeedCoeff * Input.GetAxis("Vertical");
+            sideways = SpeedCoeff * Input.GetAxis("Horizontal");
 
-            var velocity = new Vector3(0, 0, forward);
+            var velocity = new Vector3(sideways, 0, forward);
             var angularVelocity = new Vector3(0, turn, 0);
             transform.rotation *= Quaternion.Euler(angularVelocity * Time.deltaTime);
             characterController.SimpleMove(transform.rotation * velocity);
         }
 
         // Walking animation
-        GetComponent<WalkAnimation>().SetAnimationParameters(forward, turn);
+        GetComponent<WalkAnimation>().SetAnimationParameters(forward, sideways, turn);
     }
 
     public void FixedUpdate()
@@ -99,6 +146,7 @@ public class DesktopAvatar : MonoBehaviour
     void OnBeforeSync(SyncObject obj)
     {
         obj.SetField("forward", new Primitive<float> { Value = forward });
+        obj.SetField("sideways", new Primitive<float> { Value = sideways });
         obj.SetField("turn", new Primitive<float> { Value = turn });
 
         obj.SetField("velocity", UnityUtil.ToVec(velocity));
@@ -109,9 +157,10 @@ public class DesktopAvatar : MonoBehaviour
     {
         if (GetComponent<ObjectSync>().IsOriginal) return;
 
-        if (obj.HasField("forward") && obj.HasField("turn"))
+        if (obj.HasField("forward") && obj.HasField("sideways") && obj.HasField("turn"))
         {
             forward = (obj.GetField("forward") as Primitive<float>)?.Value ?? 0.0f;
+            sideways = (obj.GetField("sideways") as Primitive<float>)?.Value ?? 0.0f;
             turn = (obj.GetField("turn") as Primitive<float>)?.Value ?? 0.0f;
         }
 
@@ -191,7 +240,43 @@ public class DesktopAvatar : MonoBehaviour
         GetComponent<CharacterController>().enabled = true;
         
         Logger.Log("DesktopAvatar", $"VRM loaded");
+
+        if (GetComponent<ObjectSync>().IsOriginal)
+        {
+            // Set up first person view (do not display avatar of the player)
+            //  https://vrm.dev/en/univrm/components/univrm_firstperson/
+            //  https://vrm.dev/en/dev/univrm-0.xx/programming/univrm_use_firstperson/
+            var fp = GetComponent<VRMFirstPerson>();
+            fp.Setup();
+            if (FirstPersonCamera != null)
+            {
+                FirstPersonCamera.transform.position = fp.FirstPersonBone.position + fp.FirstPersonBone.rotation * fp.FirstPersonOffset;
+                FirstPersonCamera.transform.rotation = transform.rotation;  // face forward
+                // Do not render layer "VRMThirdPersonOnly" on first person camera
+                FirstPersonCamera.cullingMask &= ~LayerMask.GetMask("VRMThirdPersonOnly");
+            }
+            if (ThirdPersonCamera != null)
+            {
+                // Do not render layer "VRMFirstPersonOnly" on third person camera
+                ThirdPersonCamera.cullingMask &= ~LayerMask.GetMask("VRMFirstPersonOnly");
+            }
+        }
     }
+
+    // Control avatar through IK
+    // https://docs.unity3d.com/2019.3/Documentation/Manual/InverseKinematics.html
+    // TODO: enable IK, sync looking direction
+    /*
+    void OnAnimatorIK()
+    {
+        var anim = GetComponent<Animator>();
+        if (FirstPersonCamera != null)
+        {
+            anim.SetLookAtWeight(1.0f);
+            anim.SetLookAtPosition(FirstPersonCamera.transform.TransformPoint(Vector3.forward));
+        }
+    }
+    */
 
     void OnDestroy()
     {
