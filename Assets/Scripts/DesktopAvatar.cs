@@ -13,8 +13,8 @@ public class DesktopAvatar : MonoBehaviour
     public string VrmPath = "avatar.vrm";
 
     // Locomotion-related settings
-    public float MaxSpeed = 1.0f;
-    public float MaxAngularSpeed = 60.0f;
+    public float SpeedCoeff = 1.0f;
+    public float AngularSpeedCoeff = 60.0f;
 
     public Camera FirstPersonCamera;
     public Camera ThirdPersonCamera;
@@ -24,13 +24,16 @@ public class DesktopAvatar : MonoBehaviour
     private VRMImporterContext ctx;
 
     // State values for walking animation
-    private float forward = 0.0f, turn = 0.0f;
+    private float forward = 0.0f, sideways = 0.0f, turn = 0.0f;
 
     private Vector3 velocity = Vector3.zero, angularVelocity = Vector3.zero;
 
     // For calculation of velocity and angular velocity
     private Vector3 lastPosition = Vector3.zero;
     private Quaternion lastRotation = Quaternion.identity;
+
+    private Vector3 lastMousePosition;
+    private Quaternion camRotBeforeDrag;
 
     void Start()
     {
@@ -68,23 +71,6 @@ public class DesktopAvatar : MonoBehaviour
             }
         }
 
-        if (isOriginal)
-        {
-            // Walking control
-            var characterController = GetComponent<CharacterController>();
-
-            forward = MaxSpeed * Input.GetAxis("Vertical");
-            turn = MaxAngularSpeed * Input.GetAxis("Horizontal");
-
-            var velocity = new Vector3(0, 0, forward);
-            var angularVelocity = new Vector3(0, turn, 0);
-            transform.rotation *= Quaternion.Euler(angularVelocity * Time.deltaTime);
-            characterController.SimpleMove(transform.rotation * velocity);
-        }
-
-        // Walking animation
-        GetComponent<WalkAnimation>().SetAnimationParameters(forward, turn);
-
         // Viewpoint change
         if (isOriginal && Input.GetKeyDown(KeyCode.F))
         {
@@ -94,13 +80,48 @@ public class DesktopAvatar : MonoBehaviour
             Logger.Debug("DesktopAvatar", (firstPerson ? "first" : "third") + "person camera");
         }
 
-        if (isOriginal && FirstPersonCamera != null)
+        if (isOriginal)
         {
-            // Camera control
-            float azimuth = 60.0f * (Input.mousePosition.x / Screen.width - 0.5f);
-            float elevation = 60.0f * (Input.mousePosition.y / Screen.height - 0.5f);
-            FirstPersonCamera.transform.rotation = transform.rotation * Quaternion.Euler(elevation, azimuth, 0.0f);
+            // Orientation and camera control
+            turn = 0.0f;
+            Camera cam = firstPerson ? FirstPersonCamera : ThirdPersonCamera;
+            // Use mouse movement during drag (similar to Mozilla Hubs?)
+            // because Unity's cursor lock feature seemed somewhat strange especially in Editor.
+            if (Input.GetKeyDown(KeyCode.Mouse0))
+            {
+                lastMousePosition = Input.mousePosition;
+                camRotBeforeDrag = cam.transform.localRotation;
+            }
+            if (Input.GetKey(KeyCode.Mouse0))
+            {
+                Vector3 mouseDiff = Input.mousePosition - lastMousePosition;
+                lastMousePosition = Input.mousePosition;
+                turn = -AngularSpeedCoeff * mouseDiff.x;
+                float elevation = AngularSpeedCoeff * mouseDiff.y;
+                if (cam != null)
+                    cam.transform.localRotation *= Quaternion.Euler(elevation * Time.deltaTime, 0.0f, 0.0f);
+            }
+            if (Input.GetKeyUp(KeyCode.Mouse0))
+            {
+                // Reset camera elevation when mouse button is released
+                if (cam != null)
+                    cam.transform.localRotation = camRotBeforeDrag;
+            }
+
+            // Walking control
+            var characterController = GetComponent<CharacterController>();
+
+            forward = SpeedCoeff * Input.GetAxis("Vertical");
+            sideways = SpeedCoeff * Input.GetAxis("Horizontal");
+
+            var velocity = new Vector3(sideways, 0, forward);
+            var angularVelocity = new Vector3(0, turn, 0);
+            transform.rotation *= Quaternion.Euler(angularVelocity * Time.deltaTime);
+            characterController.SimpleMove(transform.rotation * velocity);
         }
+
+        // Walking animation
+        GetComponent<WalkAnimation>().SetAnimationParameters(forward, sideways, turn);
     }
 
     public void FixedUpdate()
@@ -125,6 +146,7 @@ public class DesktopAvatar : MonoBehaviour
     void OnBeforeSync(SyncObject obj)
     {
         obj.SetField("forward", new Primitive<float> { Value = forward });
+        obj.SetField("sideways", new Primitive<float> { Value = sideways });
         obj.SetField("turn", new Primitive<float> { Value = turn });
 
         obj.SetField("velocity", UnityUtil.ToVec(velocity));
@@ -135,9 +157,10 @@ public class DesktopAvatar : MonoBehaviour
     {
         if (GetComponent<ObjectSync>().IsOriginal) return;
 
-        if (obj.HasField("forward") && obj.HasField("turn"))
+        if (obj.HasField("forward") && obj.HasField("sideways") && obj.HasField("turn"))
         {
             forward = (obj.GetField("forward") as Primitive<float>)?.Value ?? 0.0f;
+            sideways = (obj.GetField("sideways") as Primitive<float>)?.Value ?? 0.0f;
             turn = (obj.GetField("turn") as Primitive<float>)?.Value ?? 0.0f;
         }
 

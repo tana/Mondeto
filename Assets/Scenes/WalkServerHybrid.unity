@@ -470,7 +470,7 @@ MonoBehaviour:
   Step: 0.3
   MaxDescent: 10
   Controller: {fileID: 871269826}
-  ButtonName: Fire1
+  ButtonName: Fire2
   parabolaRenderer: {fileID: 935515054}
 --- !u!1 &1590439883
 GameObject:

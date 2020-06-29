@@ -230,7 +230,7 @@ MonoBehaviour:
   Step: 0.3
   MaxDescent: 10
   Controller: {fileID: 950543187}
-  ButtonName: Fire1
+  ButtonName: Fire2
   parabolaRenderer: {fileID: 1395983565}
 --- !u!4 &196204999 stripped
 Transform:

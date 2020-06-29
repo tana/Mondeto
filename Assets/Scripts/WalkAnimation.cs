@@ -18,11 +18,14 @@ public class WalkAnimation : MonoBehaviour
         animator = GetComponent<Animator>();
     }
 
-    public void SetAnimationParameters(float forward, float turn)
+    public void SetAnimationParameters(float forward, float sideways, float turn)
     {
-        if (Mathf.Abs(forward) > 0.01f)
+        // TODO: side walking animation
+        float speedSign = (forward >= 0.0f) ? 1 : -1;   // Pure side walking is currently considered as forward
+        float speed = Mathf.Sqrt(forward * forward + sideways * sideways) * speedSign;
+        if (Mathf.Abs(speed) > 0.01f)
         {
-            animator.SetFloat("Speed", AnimForwardCoeff * forward);
+            animator.SetFloat("Speed", AnimForwardCoeff * speed);
         }
         else
         {
