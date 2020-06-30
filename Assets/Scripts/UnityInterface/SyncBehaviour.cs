@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 
 public class SyncBehaviour : MonoBehaviour
 {
@@ -51,6 +52,7 @@ public class SyncBehaviour : MonoBehaviour
             Node = new SyncClient(signalerUri);
         }
 
+        Node.ObjectCreated += OnObjectCreated;
         Node.ObjectDeleted += OnObjectDeleted;
 
         await Node.Initialize();
@@ -70,6 +72,7 @@ public class SyncBehaviour : MonoBehaviour
             // With SynchronizationContext of Unity, the line below will run in main thread.
             // https://qiita.com/toRisouP/items/a2c1bb1b0c4f73366bc6
             gameObjects[id] = obj;
+            obj.GetComponent<ObjectSync>().SyncObject = Node.Objects[id];
         }
     }
 
@@ -92,46 +95,32 @@ public class SyncBehaviour : MonoBehaviour
 
         //if (Time.frameCount % 6 != 0) return;
 
-        foreach (var pair in Node.Objects)
-        {
-            var id = pair.Key;
-            var obj = pair.Value;
-
-            if (obj.OriginalNodeId == Node.NodeId)
-            {
-                if (!gameObjects.ContainsKey(id) || gameObjects[id] == null)
-                    continue;
-                gameObjects[id].GetComponent<ObjectSync>().SyncObject = obj;
-            }
-        }
-
         Node.SyncFrame();
+    }
 
-        foreach (var pair in Node.Objects)
+    // Prepare Unity GameObject for new SyncObject
+    async void OnObjectCreated(uint id)
+    {
+        SyncObject obj = Node.Objects[id];
+
+        int tag;
+        while (!(obj.HasField("tag") && obj.GetField("tag") is Primitive<int> tagPrimitive && (tag = tagPrimitive.Value) != 0))
         {
-            var id = pair.Key;
-            var obj = pair.Value;
-
-            // Prepare Unity GameObject for new SyncObject
-            var tag = ((Primitive<int>)obj.GetField("tag")).Value;
-            if (tag == 0)
-            {
-                Logger.Log("SyncBehaviour", "ObjectId=" + id + " is not ready");
-                continue;   // state is not ready
-            }
-            if (!gameObjects.ContainsKey(id))
-            {
-                var gameObj = Instantiate(prefabs[tag], transform);
-                var sync = gameObj.AddComponent<ObjectSync>();
-                sync.ObjectTag = tag;
-                sync.IsOriginal = (obj.OriginalNodeId == Node.NodeId);
-                sync.NetManager = this.gameObject;
-                gameObjects[id] = gameObj;
-                gameObjects[id].GetComponent<ObjectSync>().SyncObject = obj;
-                Logger.Debug("SyncBehaviour", "Created GameObject " + gameObj.ToString() + " for ObjectId=" + id);
-                // TODO: consider better design
-                sync.ForceApplyState(); // Set initial state of Unity GameObject based on SyncObject
-            }
+            Logger.Log("SyncBehaviour", "ObjectId=" + id + " is not ready");
+            await UniTask.WaitForFixedUpdate();   // state is not ready
+        }
+        if (!gameObjects.ContainsKey(id))
+        {
+            var gameObj = Instantiate(prefabs[tag], transform);
+            var sync = gameObj.AddComponent<ObjectSync>();
+            sync.ObjectTag = tag;
+            sync.IsOriginal = (obj.OriginalNodeId == Node.NodeId);
+            sync.NetManager = this.gameObject;
+            gameObjects[id] = gameObj;
+            gameObjects[id].GetComponent<ObjectSync>().SyncObject = obj;
+            Logger.Debug("SyncBehaviour", "Created GameObject " + gameObj.ToString() + " for ObjectId=" + id);
+            // TODO: consider better design
+            sync.ForceApplyState(); // Set initial state of Unity GameObject based on SyncObject
         }
     }
 
