@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
-using Cysharp.Threading.Tasks;
 
 public class SyncBehaviour : MonoBehaviour
 {
@@ -14,10 +13,6 @@ public class SyncBehaviour : MonoBehaviour
 
     Dictionary<uint, GameObject> gameObjects = new Dictionary<uint, GameObject>();
 
-    Dictionary<int, GameObject> prefabs = new Dictionary<int, GameObject>();
-
-    public PrefabEntry[] PrefabsForClones = new PrefabEntry[0];
-
     // For adding objects not defined in YAML (e.g. player avatar)
     public GameObject[] OriginalObjects = new GameObject[0];
 
@@ -28,21 +23,11 @@ public class SyncBehaviour : MonoBehaviour
     int count = 0;
     const int countPeriod = 5000;
 
-    [System.Serializable]
-    public struct PrefabEntry
-    {
-        public int Tag;
-        public GameObject Prefab;
-    }
+    public GameObject PlayerPrefab, StagePrefab, PhysicsBallPrefab;
 
     // Start is called before the first frame update
     async void Start()
     {
-        foreach (PrefabEntry entry in PrefabsForClones)
-        {
-            prefabs[entry.Tag] = entry.Prefab;
-        }
-
         if (IsServer)
         {
             Node = new SyncServer(signalerUri);
@@ -99,28 +84,61 @@ public class SyncBehaviour : MonoBehaviour
     }
 
     // Prepare Unity GameObject for new SyncObject
-    async void OnObjectCreated(uint id)
+    void OnObjectCreated(uint id)
     {
         SyncObject obj = Node.Objects[id];
+        obj.TagAdded += OnTagAdded;
+    }
 
-        int tag;
-        while (!(obj.HasField("tag") && obj.GetField("tag") is Primitive<int> tagPrimitive && (tag = tagPrimitive.Value) != 0))
+    void OnTagAdded(SyncObject obj, string tag)
+    {
+        // TODO: more generic, composable tags
+
+        if ((tag == "desktopAvatar" || tag == "stage" || tag == "physicsBall"))
         {
-            Logger.Log("SyncBehaviour", "ObjectId=" + id + " is not ready");
-            await UniTask.WaitForFixedUpdate();   // state is not ready
+            // Because these tags creates an Unity GameObject,
+            // these can be added only once per one SyncObject.
+            // This also happens for GameObjects in OriginalObjects that have the above tags in initialTags.
+            if (gameObjects.ContainsKey(obj.Id))
+            {
+                Logger.Log("SyncBehaviour", $"Tag {tag} is ignored because GameObject is already created for object {obj.Id}");
+                return;
+            }
+
+            if (tag == "desktopAvatar")
+            {
+                var gameObj = Instantiate(PlayerPrefab, transform);
+                SetUpObjectSync(gameObj, obj);
+            }
+            else if (tag == "stage")
+            {
+                var gameObj = Instantiate(StagePrefab, transform);
+                SetUpObjectSync(gameObj, obj);
+            }
+            else if (tag == "physicsBall")
+            {
+                var gameObj = Instantiate(PhysicsBallPrefab, transform);
+                SetUpObjectSync(gameObj, obj);
+            }
         }
+        else
+        {
+            Logger.Log("SyncBehaviour", "Unknown tag " + tag);
+        }
+    }
+
+    void SetUpObjectSync(GameObject gameObj, SyncObject obj)
+    {
+        var id = obj.Id;
+
         if (!gameObjects.ContainsKey(id))
         {
-            var gameObj = Instantiate(prefabs[tag], transform);
             var sync = gameObj.AddComponent<ObjectSync>();
-            sync.ObjectTag = tag;
             sync.IsOriginal = (obj.OriginalNodeId == Node.NodeId);
             sync.NetManager = this.gameObject;
             gameObjects[id] = gameObj;
             gameObjects[id].GetComponent<ObjectSync>().SyncObject = obj;
             Logger.Debug("SyncBehaviour", "Created GameObject " + gameObj.ToString() + " for ObjectId=" + id);
-            // TODO: consider better design
-            sync.ForceApplyState(); // Set initial state of Unity GameObject based on SyncObject
         }
     }
 

@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &8249629066708955419
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8249629066708955421}
+  - component: {fileID: 8249629066708955420}
+  m_Layer: 0
+  m_Name: SyncController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8249629066708955421
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8249629066708955419}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8249629066708955420
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8249629066708955419}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d872ee0a4e12a694fb40ede51852cafd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  IsServer: 0
+  signalerUri: wss://devel.luftmensch.info:15902/abcde/
+  Ready: 0
+  OriginalObjects: []
+  SceneYamlPath: scene.yml
+  PlayerPrefab: {fileID: 7750428759976842894, guid: 92acc6079fd763f4783d1ecdf56001f0,
+    type: 3}
+  StagePrefab: {fileID: 3306593312451113530, guid: 384136553599544419de75f6aabee293,
+    type: 3}
+  PhysicsBallPrefab: {fileID: 4930204262595455770, guid: b7e91c87f7392e746afb87db2c73f542,
+    type: 3}

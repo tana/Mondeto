@@ -1,10 +1,12 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class ObjectSync : MonoBehaviour
 {
-    public int ObjectTag;
+    public string InitialTags = "";
+
     public GameObject NetManager;
 
     public bool IsOriginal;
@@ -38,6 +40,13 @@ public class ObjectSync : MonoBehaviour
             SyncObject.BeforeSync += OnBeforeSync;
             SyncObject.AfterSync += OnAfterSync;
 
+            SyncObject.SetField("tags", new Sequence { 
+                Elements = InitialTags.Split(' ').Select(tag => (IValue)(new Primitive<string> { Value = tag })).ToList()
+            });
+
+            // TODO: consider better design
+            ForceApplyState(); // Set initial state of Unity GameObject based on SyncObject
+
             SendMessage("OnSyncReady", options: SendMessageOptions.DontRequireReceiver);
             return;
         }
@@ -53,7 +62,6 @@ public class ObjectSync : MonoBehaviour
 
     void OnBeforeSync(SyncObject obj)
     {
-        obj.SetField("tag", new Primitive<int> { Value = this.ObjectTag });
         obj.SetField("position", UnityUtil.ToVec(transform.position - posOffset));
         obj.SetField("rotation", UnityUtil.ToQuat(transform.rotation));
     }
