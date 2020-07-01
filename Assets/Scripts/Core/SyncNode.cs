@@ -164,11 +164,15 @@ public abstract class SyncNode : IDisposable
             // fields
             foreach (var field in update.Fields)
             {
-                //Logger.Log("Node", $"Field {field.Name} = {field.Value}");
+                //Logger.Log("Node", $"object {id} Field {field.Name} = {field.Value}");
                 /*
-                if (field.Name == "position" && field.Value is Vec vec)
+                if (field.Name == "tags" && field.Value is Sequence seq)
                 {
-                    Logger.Debug("Node", $"{connNodeId} {id} ({vec.X}, {vec.Y}, {vec.Z})");
+                    foreach (var elem in seq.Elements)
+                    {
+                        if (elem is Primitive<string> tag)
+                            Logger.Debug("Node", $"{connNodeId} {id} {tag.Value}");
+                    }
                 }
                 */
                 //Objects[id].Fields[field.Name] = field.Value;

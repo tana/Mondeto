@@ -199,6 +199,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   InitialTags: desktopAvatar
+  SetInitialTags: 1
   NetManager: {fileID: 2059910112}
   IsOriginal: 1
 --- !u!114 &196204996

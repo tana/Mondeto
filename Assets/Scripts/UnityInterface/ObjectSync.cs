@@ -7,6 +7,9 @@ public class ObjectSync : MonoBehaviour
 {
     public string InitialTags = "";
 
+    // If ObjectSync is created programatically, this flag prevents overwriting already specified tags
+    public bool SetInitialTags = false; 
+
     public GameObject NetManager;
 
     public bool IsOriginal;
@@ -40,9 +43,12 @@ public class ObjectSync : MonoBehaviour
             SyncObject.BeforeSync += OnBeforeSync;
             SyncObject.AfterSync += OnAfterSync;
 
-            SyncObject.SetField("tags", new Sequence { 
-                Elements = InitialTags.Split(' ').Select(tag => (IValue)(new Primitive<string> { Value = tag })).ToList()
-            });
+            if (IsOriginal && SetInitialTags)
+            {
+                SyncObject.SetField("tags", new Sequence { 
+                    Elements = InitialTags.Split(' ').Where(str => str.Length > 0).Select(tag => (IValue)(new Primitive<string> { Value = tag })).ToList()
+                });
+            }
 
             // TODO: consider better design
             ForceApplyState(); // Set initial state of Unity GameObject based on SyncObject

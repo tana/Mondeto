@@ -94,7 +94,7 @@ public class SyncBehaviour : MonoBehaviour
     {
         // TODO: more generic, composable tags
 
-        if ((tag == "desktopAvatar" || tag == "stage" || tag == "physicsBall"))
+        if (tag == "desktopAvatar" || tag == "stage" || tag == "physicsBall")
         {
             // Because these tags creates an Unity GameObject,
             // these can be added only once per one SyncObject.
