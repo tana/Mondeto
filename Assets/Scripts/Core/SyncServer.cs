@@ -26,6 +26,8 @@ public class SyncServer : SyncNode
 
     Runner<uint> runner = new Runner<uint>();
 
+    CancellationTokenSource cancelSource = new CancellationTokenSource();
+
     public SyncServer(string signalerUri)
     {
         signaler = new Signaler(signalerUri, true);
@@ -33,12 +35,12 @@ public class SyncServer : SyncNode
 
     public override async Task Initialize()
     {
-        await signaler.ConnectAsync();
+        await signaler.ConnectAsync(cancelSource.Token);
         Logger.Log("Server", "Connected to signaling server");
         signaler.ClientConnected += async (string sigClientId) => {
             Logger.Log("Server", $"Accepting client {sigClientId}");
             var conn = new Connection();
-            await conn.SetupAsync(signaler, true, sigClientId);
+            await conn.SetupAsync(signaler, true, sigClientId, cancel: cancelSource.Token);
             await InitClient(conn);
         };
     }
@@ -53,7 +55,7 @@ public class SyncServer : SyncNode
         }
 
         // NodeIdMessage have to be sent after client become ready to receive it.
-        await Task.Delay(1000); // FIXME
+        await Task.Delay(1000, cancelSource.Token); // FIXME
 
         // Connection procedures
         conn.SendMessage<ITcpMessage>(Connection.ChannelType.Control, new NodeIdMessage { NodeId = clientId });
@@ -67,9 +69,9 @@ public class SyncServer : SyncNode
             conn.SendMessage<ITcpMessage>(Connection.ChannelType.Control, msg);
         }
 
-        var cancelSource = new CancellationTokenSource();
-        conn.OnDisconnect += () => cancelSource.Cancel();
-        var _ = ProcessBlobMessagesAsync(clientId, conn, cancelSource.Token);
+        var clientCancelSource = new CancellationTokenSource();
+        conn.OnDisconnect += () => clientCancelSource.Cancel();
+        var _ = ProcessBlobMessagesAsync(clientId, conn, clientCancelSource.Token);
         //_ = ProcessAudioMessagesAsync(clientId, conn, cancelSource.Token);
     }
 
@@ -233,6 +235,9 @@ public class SyncServer : SyncNode
         {
             conn.Dispose();
         }
+
+        cancelSource.Cancel();
+        cancelSource.Dispose();
 
         signaler.Dispose();
     }

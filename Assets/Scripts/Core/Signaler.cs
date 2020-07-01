@@ -34,30 +34,30 @@ public class Signaler : IDisposable
         this.isServer = isServer;
     }
 
-    public async Task ConnectAsync()
+    public async Task ConnectAsync(CancellationToken cancel = default)
     {
-        await ws.ConnectAsync(new Uri(uri), CancellationToken.None);
+        await ws.ConnectAsync(new Uri(uri), cancel);
 
         processTask = Task.Run(async () => {
             try
             {
-                await ProcessAsync();
+                await ProcessAsync(cancel);
             }
             catch (Exception e)
             {
                 Logger.Error("Signaler", (isServer ? "Server: " : "Client: ") + e.ToString());
             }
-        });
+        }, cancel);
 
         await helloTcs.Task;
     }
 
-    public async Task ProcessAsync()
+    public async Task ProcessAsync(CancellationToken cancel = default)
     {
         var buf = new byte[8192];
         while (ws.State == WebSocketState.Open)
         {
-            var res = await ws.ReceiveAsync(new ArraySegment<byte>(buf), CancellationToken.None);
+            var res = await ws.ReceiveAsync(new ArraySegment<byte>(buf), cancel);
             JsonData msg;
             try
             {
@@ -99,7 +99,7 @@ public class Signaler : IDisposable
         }
     }
 
-    public Task NotifyReadyAsync(string clientId)
+    public Task NotifyReadyAsync(string clientId, CancellationToken cancel = default)
     {
         var msg = new Dictionary<string, object> {
             { "type", "ready" },
@@ -108,7 +108,7 @@ public class Signaler : IDisposable
         // Third arg (endOfMessage) must be true. Otherwise nothing will be sent.
         return ws.SendAsync(
             new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonMapper.ToJson(msg))),
-            WebSocketMessageType.Text, true, CancellationToken.None);
+            WebSocketMessageType.Text, true, cancel);
     }
     
     public Task WaitReadyAsync()
@@ -116,7 +116,7 @@ public class Signaler : IDisposable
         return readyTcs.Task;
     }
 
-    public Task SendSdpAsync(bool isOffer, string sdp, string clientId = "")
+    public Task SendSdpAsync(bool isOffer, string sdp, string clientId = "", CancellationToken cancel = default)
     {
         var msg = new Dictionary<string, object> {
             { "type", isOffer ? "sdpOffer" : "sdpAnswer" },
@@ -127,10 +127,10 @@ public class Signaler : IDisposable
         // Third arg (endOfMessage) must be true. Otherwise nothing will be sent.
         return ws.SendAsync(
             new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonMapper.ToJson(msg))),
-            WebSocketMessageType.Text, true, CancellationToken.None);
+            WebSocketMessageType.Text, true, cancel);
     }
 
-    public Task SendIceAsync(string sdpMid, int sdpMLineIndex, string candidate, string clientId = "")
+    public Task SendIceAsync(string sdpMid, int sdpMLineIndex, string candidate, string clientId = "", CancellationToken cancel = default)
     {
         var msg = new Dictionary<string, object> {
             { "type", "ice" },
@@ -143,7 +143,7 @@ public class Signaler : IDisposable
         // Third arg (endOfMessage) must be true. Otherwise nothing will be sent.
         return ws.SendAsync(
             new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonMapper.ToJson(msg))),
-            WebSocketMessageType.Text, true, CancellationToken.None);
+            WebSocketMessageType.Text, true, cancel);
     }
 
     public void Dispose()

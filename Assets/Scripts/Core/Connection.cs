@@ -38,20 +38,20 @@ public class Connection : IDisposable
         }
     }
 
-    public async Task SetupAsync(Signaler signaler, bool isServer, string clientId = "")
+    public async Task SetupAsync(Signaler signaler, bool isServer, string clientId = "", CancellationToken cancel = default)
     {
         await pc.InitializeAsync(new PeerConnectionConfiguration {
             IceServers = new List<IceServer> {
                 new IceServer { Urls = { "stun:stun.l.google.com:19302" } }
             }
-        });
+        }, cancel);
 
         pc.LocalSdpReadytoSend += (string type, string sdp) => {
             // ここはawaitではなくWaitにしないとSocketが切れる．スレッドセーフ関係?
-            signaler.SendSdpAsync(type == "offer", sdp, clientId).Wait();
+            signaler.SendSdpAsync(type == "offer", sdp, clientId, cancel).Wait();
         };
         pc.IceCandidateReadytoSend += (string candidate, int sdpMLineIndex, string sdpMid) => {
-            signaler.SendIceAsync(sdpMid, sdpMLineIndex, candidate, clientId).Wait();
+            signaler.SendIceAsync(sdpMid, sdpMLineIndex, candidate, clientId, cancel).Wait();
         };
 
         pc.IceStateChanged += (IceConnectionState state) => {
@@ -189,10 +189,14 @@ public class Connection : IDisposable
             T msg;
             while (!TryReceiveMessage<T>(type, out msg))
             {
+                cancel.ThrowIfCancellationRequested();
                 // FIXME
             }
             return msg;
         }, cancel);
+        // Note: The above "cancel" argument is not meaningless.
+        //  https://stackoverflow.com/questions/3712939/cancellation-token-in-task-constructor-why
+        //  https://www.ricka.co.jp/cs-how-use-task-cancellationtoken
     }
 
     public void Dispose()

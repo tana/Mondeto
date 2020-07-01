@@ -16,6 +16,8 @@ public class SyncClient : SyncNode
 
     CompletionNotifier<string, uint> symbolNotifier = new CompletionNotifier<string, uint>();
 
+    CancellationTokenSource cancelSource = new CancellationTokenSource();
+
     public SyncClient(string signalerUri)
     {
         conn = new Connection();
@@ -26,13 +28,13 @@ public class SyncClient : SyncNode
     public override async Task Initialize()
     {
         await Task.Delay(1000);
-        await signaler.ConnectAsync();
+        await signaler.ConnectAsync(cancelSource.Token);
         Logger.Log("Client", "Connected to signaling server");
         await Task.Delay(1000);
-        await conn.SetupAsync(signaler, false);
+        await conn.SetupAsync(signaler, false, cancel: cancelSource.Token);
         Logger.Log("Client", "Connected to server");
 
-        if (await conn.ReceiveMessageAsync<ITcpMessage>(Connection.ChannelType.Control) is NodeIdMessage nodeIdMsg)
+        if (await conn.ReceiveMessageAsync<ITcpMessage>(Connection.ChannelType.Control, cancelSource.Token) is NodeIdMessage nodeIdMsg)
         {
             NodeId = nodeIdMsg.NodeId;
             Logger.Debug("Client", $"Received NodeId={NodeId}");
@@ -42,8 +44,6 @@ public class SyncClient : SyncNode
             throw new ProtocolException(nameof(NodeIdMessage) + " expected");
         }
 
-        var cancelSource = new CancellationTokenSource();
-        conn.OnDisconnect += () => cancelSource.Cancel();
         var _ = ProcessBlobMessagesAsync(ServerNodeId, conn, cancelSource.Token);
     }
 
@@ -164,6 +164,8 @@ public class SyncClient : SyncNode
 
     public override void Dispose()
     {
+        cancelSource.Cancel();
+        cancelSource.Dispose();
         conn.Dispose();
         signaler.Dispose();
     }
