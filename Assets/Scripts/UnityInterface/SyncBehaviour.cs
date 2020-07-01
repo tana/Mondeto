@@ -13,10 +13,6 @@ public class SyncBehaviour : MonoBehaviour
 
     Dictionary<uint, GameObject> gameObjects = new Dictionary<uint, GameObject>();
 
-    Dictionary<int, GameObject> prefabs = new Dictionary<int, GameObject>();
-
-    public PrefabEntry[] PrefabsForClones = new PrefabEntry[0];
-
     // For adding objects not defined in YAML (e.g. player avatar)
     public GameObject[] OriginalObjects = new GameObject[0];
 
@@ -27,21 +23,11 @@ public class SyncBehaviour : MonoBehaviour
     int count = 0;
     const int countPeriod = 5000;
 
-    [System.Serializable]
-    public struct PrefabEntry
-    {
-        public int Tag;
-        public GameObject Prefab;
-    }
+    public GameObject PlayerPrefab, StagePrefab, PhysicsBallPrefab;
 
     // Start is called before the first frame update
     async void Start()
     {
-        foreach (PrefabEntry entry in PrefabsForClones)
-        {
-            prefabs[entry.Tag] = entry.Prefab;
-        }
-
         if (IsServer)
         {
             Node = new SyncServer(signalerUri);
@@ -51,6 +37,7 @@ public class SyncBehaviour : MonoBehaviour
             Node = new SyncClient(signalerUri);
         }
 
+        Node.ObjectCreated += OnObjectCreated;
         Node.ObjectDeleted += OnObjectDeleted;
 
         await Node.Initialize();
@@ -70,6 +57,7 @@ public class SyncBehaviour : MonoBehaviour
             // With SynchronizationContext of Unity, the line below will run in main thread.
             // https://qiita.com/toRisouP/items/a2c1bb1b0c4f73366bc6
             gameObjects[id] = obj;
+            obj.GetComponent<ObjectSync>().SyncObject = Node.Objects[id];
         }
     }
 
@@ -92,46 +80,65 @@ public class SyncBehaviour : MonoBehaviour
 
         //if (Time.frameCount % 6 != 0) return;
 
-        foreach (var pair in Node.Objects)
-        {
-            var id = pair.Key;
-            var obj = pair.Value;
+        Node.SyncFrame();
+    }
 
-            if (obj.OriginalNodeId == Node.NodeId)
+    // Prepare Unity GameObject for new SyncObject
+    void OnObjectCreated(uint id)
+    {
+        SyncObject obj = Node.Objects[id];
+        obj.TagAdded += OnTagAdded;
+    }
+
+    void OnTagAdded(SyncObject obj, string tag)
+    {
+        // TODO: more generic, composable tags
+
+        if (tag == "desktopAvatar" || tag == "stage" || tag == "physicsBall")
+        {
+            // Because these tags creates an Unity GameObject,
+            // these can be added only once per one SyncObject.
+            // This also happens for GameObjects in OriginalObjects that have the above tags in initialTags.
+            if (gameObjects.ContainsKey(obj.Id))
             {
-                if (!gameObjects.ContainsKey(id) || gameObjects[id] == null)
-                    continue;
-                gameObjects[id].GetComponent<ObjectSync>().SyncObject = obj;
+                Logger.Log("SyncBehaviour", $"Tag {tag} is ignored because GameObject is already created for object {obj.Id}");
+                return;
+            }
+
+            if (tag == "desktopAvatar")
+            {
+                var gameObj = Instantiate(PlayerPrefab, transform);
+                SetUpObjectSync(gameObj, obj);
+            }
+            else if (tag == "stage")
+            {
+                var gameObj = Instantiate(StagePrefab, transform);
+                SetUpObjectSync(gameObj, obj);
+            }
+            else if (tag == "physicsBall")
+            {
+                var gameObj = Instantiate(PhysicsBallPrefab, transform);
+                SetUpObjectSync(gameObj, obj);
             }
         }
-
-        Node.SyncFrame();
-
-        foreach (var pair in Node.Objects)
+        else
         {
-            var id = pair.Key;
-            var obj = pair.Value;
+            Logger.Log("SyncBehaviour", "Unknown tag " + tag);
+        }
+    }
 
-            // Prepare Unity GameObject for new SyncObject
-            var tag = ((Primitive<int>)obj.GetField("tag")).Value;
-            if (tag == 0)
-            {
-                Logger.Log("SyncBehaviour", "ObjectId=" + id + " is not ready");
-                continue;   // state is not ready
-            }
-            if (!gameObjects.ContainsKey(id))
-            {
-                var gameObj = Instantiate(prefabs[tag], transform);
-                var sync = gameObj.AddComponent<ObjectSync>();
-                sync.ObjectTag = tag;
-                sync.IsOriginal = (obj.OriginalNodeId == Node.NodeId);
-                sync.NetManager = this.gameObject;
-                gameObjects[id] = gameObj;
-                gameObjects[id].GetComponent<ObjectSync>().SyncObject = obj;
-                Logger.Debug("SyncBehaviour", "Created GameObject " + gameObj.ToString() + " for ObjectId=" + id);
-                // TODO: consider better design
-                sync.ForceApplyState(); // Set initial state of Unity GameObject based on SyncObject
-            }
+    void SetUpObjectSync(GameObject gameObj, SyncObject obj)
+    {
+        var id = obj.Id;
+
+        if (!gameObjects.ContainsKey(id))
+        {
+            var sync = gameObj.AddComponent<ObjectSync>();
+            sync.IsOriginal = (obj.OriginalNodeId == Node.NodeId);
+            sync.NetManager = this.gameObject;
+            gameObjects[id] = gameObj;
+            gameObjects[id].GetComponent<ObjectSync>().SyncObject = obj;
+            Logger.Debug("SyncBehaviour", "Created GameObject " + gameObj.ToString() + " for ObjectId=" + id);
         }
     }
 

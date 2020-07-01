@@ -20,6 +20,11 @@ public class SyncObject
     public event BeforeAfterSyncDelegate BeforeSync;
     public event BeforeAfterSyncDelegate AfterSync;
 
+    public delegate void TagAddedDelegate(SyncObject sender, string tag);
+    public event TagAddedDelegate TagAdded;
+
+    HashSet<string> tags = new HashSet<string>();
+
     public SyncObject(SyncNode node, uint id, uint originalNodeId)
     {
         Node = node;
@@ -33,7 +38,10 @@ public class SyncObject
         SetField("velocity", new Vec());
         SetField("angularVelocity", new Vec());
 
-        SetField("tag", new Primitive<int> { Value = 0 });
+        SetField("tags", new Sequence { 
+            Elements = new List<IValue> {
+            }
+        });
     }
 
     // Update field value and refresh last updated time.
@@ -65,14 +73,32 @@ public class SyncObject
         AudioReceived?.Invoke(data);
     }
 
-    internal void InvokeBeforeSync()
+    internal void ProcessBeforeSync()
     {
         BeforeSync?.Invoke(this);
     }
 
-    internal void InvokeAfterSync()
+    internal void ProcessAfterSync()
     {
         AfterSync?.Invoke(this);
+
+        // Set behavior based on tags
+        if (GetField("tags") is Sequence tagsSeq)
+        {
+            foreach (var elem in tagsSeq.Elements)
+            {
+                if (!(elem is Primitive<string>)) continue;
+                string tag = ((Primitive<string>)elem).Value;
+                
+                if (!tags.Contains(tag))
+                {
+                    TagAdded?.Invoke(this, tag);
+                    tags.Add(tag);
+                    Logger.Debug("Object", $"Tag {tag} is added to object {Id}");
+                }
+                // TODO: handle deleted tags?
+            }
+        }
     }
 
     public struct Field

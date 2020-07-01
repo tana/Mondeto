@@ -1,10 +1,15 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class ObjectSync : MonoBehaviour
 {
-    public int ObjectTag;
+    public string InitialTags = "";
+
+    // If ObjectSync is created programatically, this flag prevents overwriting already specified tags
+    public bool SetInitialTags = false; 
+
     public GameObject NetManager;
 
     public bool IsOriginal;
@@ -38,6 +43,16 @@ public class ObjectSync : MonoBehaviour
             SyncObject.BeforeSync += OnBeforeSync;
             SyncObject.AfterSync += OnAfterSync;
 
+            if (IsOriginal && SetInitialTags)
+            {
+                SyncObject.SetField("tags", new Sequence { 
+                    Elements = InitialTags.Split(' ').Where(str => str.Length > 0).Select(tag => (IValue)(new Primitive<string> { Value = tag })).ToList()
+                });
+            }
+
+            // TODO: consider better design
+            ForceApplyState(); // Set initial state of Unity GameObject based on SyncObject
+
             SendMessage("OnSyncReady", options: SendMessageOptions.DontRequireReceiver);
             return;
         }
@@ -53,7 +68,6 @@ public class ObjectSync : MonoBehaviour
 
     void OnBeforeSync(SyncObject obj)
     {
-        obj.SetField("tag", new Primitive<int> { Value = this.ObjectTag });
         obj.SetField("position", UnityUtil.ToVec(transform.position - posOffset));
         obj.SetField("rotation", UnityUtil.ToQuat(transform.rotation));
     }

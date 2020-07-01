@@ -50,7 +50,7 @@ public abstract class SyncNode : IDisposable
     {
         foreach (var obj in Objects.Values)
         {
-            obj.InvokeBeforeSync();
+            obj.ProcessBeforeSync();
         }
 
         ProcessControlMessages();
@@ -87,8 +87,9 @@ public abstract class SyncNode : IDisposable
         {
             uint connNodeId = connPair.Key;
             Connection conn = connPair.Value;
-            uint ackedTick = LastTickAcknowledged.ContainsKey(connNodeId)
-                                ? LastTickAcknowledged[connNodeId] : 0;
+            // If no ACK has came from the connection yet (e.g. new connection), send all fields (any uint is larger than -1)
+            long ackedTick = LastTickAcknowledged.ContainsKey(connNodeId)
+                                ? (long)LastTickAcknowledged[connNodeId] : -1;
 
             // Collect object updates
             var updates = new List<ObjectUpdate>();
@@ -130,7 +131,7 @@ public abstract class SyncNode : IDisposable
 
         foreach (var obj in Objects.Values)
         {
-            obj.InvokeAfterSync();
+            obj.ProcessAfterSync();
         }
     }
 
@@ -163,11 +164,15 @@ public abstract class SyncNode : IDisposable
             // fields
             foreach (var field in update.Fields)
             {
-                //Logger.Log("Node", $"Field {field.Name} = {field.Value}");
+                //Logger.Log("Node", $"object {id} Field {field.Name} = {field.Value}");
                 /*
-                if (field.Name == "position" && field.Value is Vec vec)
+                if (field.Name == "tags" && field.Value is Sequence seq)
                 {
-                    Logger.Debug("Node", $"{connNodeId} {id} ({vec.X}, {vec.Y}, {vec.Z})");
+                    foreach (var elem in seq.Elements)
+                    {
+                        if (elem is Primitive<string> tag)
+                            Logger.Debug("Node", $"{connNodeId} {id} {tag.Value}");
+                    }
                 }
                 */
                 //Objects[id].Fields[field.Name] = field.Value;

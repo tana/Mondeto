@@ -83,7 +83,7 @@ public class BlobHandle : IValue
         int hash = 0;
         for (int i = 0; i < 4; i++)
         {
-            hash ^= (Guid[i] << 24 | Guid[i + 1] << 16 | Guid[i + 2] << 8 | Guid[i + 3]);
+            hash ^= (Guid[4 * i] << 24 | Guid[4 * i + 1] << 16 | Guid[4 * i + 2] << 8 | Guid[4 * i + 3]);
         }
         return hash;
     }
@@ -105,6 +105,19 @@ public class Sequence : IValue
 {
     [Key(0)]
     public List<IValue> Elements;
+
+    public override bool Equals(object obj)
+    {
+        if (obj is Sequence other)
+            return Elements.SequenceEqual(other.Elements);
+        else
+            return false;
+    }
+
+    public override int GetHashCode()
+    {
+        return Elements.Aggregate(0, (accum, elem) => accum ^ elem.GetHashCode());
+    }
 }
 
 // State of an object
