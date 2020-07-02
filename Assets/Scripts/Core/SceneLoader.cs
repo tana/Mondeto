@@ -66,6 +66,12 @@ public class SceneLoader
                 W = components[0], X = components[1], Y = components[2], Z = components[3]
             };
         }
+        else if (yaml.Tag == "!euler")  // Euler angle is converted to a quaternion
+        {
+            float[] xyz = YamlToFloatArray(yaml, 3);
+            xyz = xyz.Select(deg => (float)(deg * Math.PI / 180.0)).ToArray();   // deg to rad
+            return Quat.FromEuler(xyz[0], xyz[1], xyz[2]);
+        }
         else if (yaml is YamlScalarNode scalar)
         {
             // Currently, type for YAML scalar is determined using TryParse.

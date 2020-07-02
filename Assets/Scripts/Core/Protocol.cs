@@ -48,6 +48,31 @@ public class Vec : IValue
     public float Y = 0.0f;
     [Key(2)]
     public float Z = 0.0f;
+
+    public Vec() { }
+
+    public Vec(float x, float y, float z) {
+        X = x; Y = y; Z = z;
+    }
+
+    public static Vec operator*(float k, Vec v)
+    {
+        return new Vec { X = k * v.X, Y = k * v.Y, Z = k * v.Z };
+    }
+
+    public static Vec operator*(Vec v, float k)
+    {
+        return k * v;
+    }
+
+    public float MagnitudeSquare() => X * X + Y * Y + Z * Z;
+    public float Magnitude() => (float)Math.Sqrt(MagnitudeSquare());
+
+    public Vec Normalize()
+    {
+        float mag = Magnitude();
+        return new Vec(X / mag, Y / mag, Z / mag);
+    }
 }
 
 // Quaternion
@@ -62,6 +87,54 @@ public class Quat : IValue
     public float Y = 0.0f;
     [Key(3)]
     public float Z = 0.0f;
+
+    public Quat() { }
+    public Quat(float w, float x, float y, float z)
+    {
+        W = w; X = x; Y = y; Z = z;
+    }
+
+    // Quaternion operations
+    //   https://mathworld.wolfram.com/Quaternion.html
+
+    public static Quat operator*(Quat a, Quat b)
+    {
+        return new Quat {
+            W = a.W * b.W - a.X * b.X - a.Y * b.Y - a.Z * b.Z,
+            X = a.W * b.X + a.X * b.W + a.Y * b.Z - a.Z * b.Y,
+            Y = a.W * b.Y + a.Y * b.W + a.Z * b.X - a.X * b.Z,
+            Z = a.W * b.Z + a.Z * b.W + a.X * b.Y - a.Y * b.X
+        };
+    }
+
+    // angle is in radians
+    public static Quat FromAngleAxis(float angle, Vec axis)
+    {
+        Vec normalized = axis.Normalize();
+        double s = Math.Sin(angle / 2.0);
+        return new Quat {
+            W = (float)Math.Cos(angle / 2.0),
+            X = (float)(normalized.X * s),
+            Y = (float)(normalized.Y * s),
+            Z = (float)(normalized.Z * s)
+        };
+    }
+
+    // The order of rotation is same as Unity (first z, second x, finally y)
+    //  https://docs.unity3d.com/2019.3/Documentation/ScriptReference/Quaternion.Euler.html
+    // x,y,z are in radians
+    public static Quat FromEuler(float x, float y, float z)
+    {
+        Quat zRot = Quat.FromAngleAxis(z, new Vec(0, 0, 1));
+        Quat xRot = Quat.FromAngleAxis(x, new Vec(1, 0, 0));
+        Quat yRot = Quat.FromAngleAxis(y, new Vec(0, 1, 0));
+        // TODO: Clarify about rotation order
+        // In Unity, q1*q2 means "first rotate using q1, then rotate using q2".
+        //  https://docs.unity3d.com/2019.3/Documentation/ScriptReference/Quaternion-operator_multiply.html
+        // However, with zRot*xRot*yRot, result does not match with Unity's Quaternion.Euler function.
+        // The yRot*xRot*zRot (below) works, however, I am very confused...
+        return yRot * xRot * zRot;
+    }
 }
 
 [MessagePackObject]

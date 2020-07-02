@@ -63,6 +63,11 @@ public class SyncObject
         return Fields.ContainsKey(key);
     }
 
+    public bool HasTag(string tag)
+    {
+        return tags.Contains(tag);
+    }
+
     public void SendAudio(byte[] data)
     {
         Node.SendAudioData(Id, data);
