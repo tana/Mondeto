@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -23,11 +24,51 @@ public class SyncBehaviour : MonoBehaviour
     int count = 0;
     const int countPeriod = 5000;
 
+    // Object Tag (Tags that create a new GameObject)
+    Dictionary<string, Func<SyncObject, GameObject>> ObjectTagInitializers = new Dictionary<string, Func<SyncObject, GameObject>>();
+
+    // Component Tag (Tags that need a GameObject)
+    Dictionary<string, Action<SyncObject, GameObject>> ComponentTagInitializers = new Dictionary<string, Action<SyncObject, GameObject>>();
+
     public GameObject PlayerPrefab, StagePrefab;
 
     // Start is called before the first frame update
     async void Start()
     {
+        // Tags that create new GameObject
+        RegisterObjectTag("desktopAvatar", obj =>  Instantiate(PlayerPrefab));
+        RegisterObjectTag("stage", obj =>  Instantiate(StagePrefab, transform));
+        RegisterObjectTag("cube", obj => {
+            var gameObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Destroy(gameObj.GetComponent<Collider>());
+            return gameObj;
+        });
+        RegisterObjectTag("sphere", obj => {
+            var gameObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            Destroy(gameObj.GetComponent<Collider>());
+            return gameObj;
+        });
+        // Tags that uses already existing GameObject
+        RegisterComponentTag("physics", (obj, gameObj) => {
+            var rb = gameObj.AddComponent<Rigidbody>();
+            gameObj.AddComponent<RigidbodySync>();
+            gameObj.GetComponent<ObjectSync>().ForceApplyState();   // TODO: consider better design
+        });
+        RegisterComponentTag("collider", (obj, gameObj) => {
+            if (obj.HasTag("cube"))
+            {
+                gameObj.AddComponent<BoxCollider>();
+            }
+            else if (obj.HasTag("sphere"))
+            {
+                gameObj.AddComponent<SphereCollider>();
+            }
+            else    // FIXME:
+            {
+                gameObj.AddComponent<MeshCollider>();
+            }
+        });
+
         if (IsServer)
         {
             Node = new SyncServer(signalerUri);
@@ -92,9 +133,7 @@ public class SyncBehaviour : MonoBehaviour
 
     void OnTagAdded(SyncObject obj, string tag)
     {
-        // TODO: more generic, composable tags
-
-        if (tag == "desktopAvatar" || tag == "stage" || tag == "physicsBall" || tag == "cube" || tag == "sphere")
+        if (ObjectTagInitializers.ContainsKey(tag))
         {
             // Because these tags creates an Unity GameObject,
             // these can be added only once per one SyncObject.
@@ -105,30 +144,11 @@ public class SyncBehaviour : MonoBehaviour
                 return;
             }
 
-            if (tag == "desktopAvatar")
-            {
-                var gameObj = Instantiate(PlayerPrefab, transform);
-                SetUpObjectSync(gameObj, obj);
-            }
-            else if (tag == "stage")
-            {
-                var gameObj = Instantiate(StagePrefab, transform);
-                SetUpObjectSync(gameObj, obj);
-            }
-            else if (tag == "cube")
-            {
-                var gameObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                Destroy(gameObj.GetComponent<Collider>());
-                SetUpObjectSync(gameObj, obj);
-            }
-            else if (tag == "sphere")
-            {
-                var gameObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                Destroy(gameObj.GetComponent<Collider>());
-                SetUpObjectSync(gameObj, obj);
-            }
+            var gameObj = ObjectTagInitializers[tag](obj);
+            gameObj.transform.SetParent(this.transform);
+            SetUpObjectSync(gameObj, obj);
         }
-        else if (tag == "physics" || tag == "collider")
+        else if (ComponentTagInitializers.ContainsKey(tag))
         {
             // These tag require GameObject
             if (!gameObjects.ContainsKey(obj.Id))
@@ -138,32 +158,22 @@ public class SyncBehaviour : MonoBehaviour
             }
 
             var gameObj = gameObjects[obj.Id];
-            if (tag == "physics")
-            {
-                var rb = gameObj.AddComponent<Rigidbody>();
-                gameObj.AddComponent<RigidbodySync>();
-                gameObj.GetComponent<ObjectSync>().ForceApplyState();   // TODO: consider better design
-            }
-            else if (tag == "collider")
-            {
-                if (obj.HasTag("cube"))
-                {
-                    gameObj.AddComponent<BoxCollider>();
-                }
-                else if (obj.HasTag("sphere"))
-                {
-                    gameObj.AddComponent<SphereCollider>();
-                }
-                else    // FIXME:
-                {
-                    gameObj.AddComponent<MeshCollider>();
-                }
-            }
+            ComponentTagInitializers[tag](obj, gameObj);
         }
         else
         {
             Logger.Log("SyncBehaviour", "Unknown tag " + tag);
         }
+    }
+
+    public void RegisterObjectTag(string tagName, Func<SyncObject, GameObject> initializer)
+    {
+        ObjectTagInitializers[tagName] = initializer;
+    }
+
+    public void RegisterComponentTag(string tagName, Action<SyncObject, GameObject> initializer)
+    {
+        ComponentTagInitializers[tagName] = initializer;
     }
 
     void SetUpObjectSync(GameObject gameObj, SyncObject obj)
