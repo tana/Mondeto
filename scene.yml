@@ -4,4 +4,7 @@ objects:
     tags: [stage]
   - position: !vec [8, 30, 10]
     rotation: !quat [1, 0, 0, 0]
-    tags: [physicsBall]
+    tags: [sphere, collider, physics]
+  - position: !vec [3, 2, 5]
+    rotaiton: !quat [1, 0, 0, 0]
+    tags: [cube, collider, physics]

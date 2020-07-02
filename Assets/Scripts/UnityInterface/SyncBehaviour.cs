@@ -23,7 +23,7 @@ public class SyncBehaviour : MonoBehaviour
     int count = 0;
     const int countPeriod = 5000;
 
-    public GameObject PlayerPrefab, StagePrefab, PhysicsBallPrefab;
+    public GameObject PlayerPrefab, StagePrefab;
 
     // Start is called before the first frame update
     async void Start()
@@ -94,7 +94,7 @@ public class SyncBehaviour : MonoBehaviour
     {
         // TODO: more generic, composable tags
 
-        if (tag == "desktopAvatar" || tag == "stage" || tag == "physicsBall")
+        if (tag == "desktopAvatar" || tag == "stage" || tag == "physicsBall" || tag == "cube" || tag == "sphere")
         {
             // Because these tags creates an Unity GameObject,
             // these can be added only once per one SyncObject.
@@ -115,10 +115,49 @@ public class SyncBehaviour : MonoBehaviour
                 var gameObj = Instantiate(StagePrefab, transform);
                 SetUpObjectSync(gameObj, obj);
             }
-            else if (tag == "physicsBall")
+            else if (tag == "cube")
             {
-                var gameObj = Instantiate(PhysicsBallPrefab, transform);
+                var gameObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                Destroy(gameObj.GetComponent<Collider>());
                 SetUpObjectSync(gameObj, obj);
+            }
+            else if (tag == "sphere")
+            {
+                var gameObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                Destroy(gameObj.GetComponent<Collider>());
+                SetUpObjectSync(gameObj, obj);
+            }
+        }
+        else if (tag == "physics" || tag == "collider")
+        {
+            // These tag require GameObject
+            if (!gameObjects.ContainsKey(obj.Id))
+            {
+                Logger.Log("SyncBehaviour", $"Tag {tag} is ignored because there is no GameObject corresponds to  object {obj.Id}");
+                return;
+            }
+
+            var gameObj = gameObjects[obj.Id];
+            if (tag == "physics")
+            {
+                var rb = gameObj.AddComponent<Rigidbody>();
+                gameObj.AddComponent<RigidbodySync>();
+                gameObj.GetComponent<ObjectSync>().ForceApplyState();   // TODO: consider better design
+            }
+            else if (tag == "collider")
+            {
+                if (obj.HasTag("cube"))
+                {
+                    gameObj.AddComponent<BoxCollider>();
+                }
+                else if (obj.HasTag("sphere"))
+                {
+                    gameObj.AddComponent<SphereCollider>();
+                }
+                else    // FIXME:
+                {
+                    gameObj.AddComponent<MeshCollider>();
+                }
             }
         }
         else
