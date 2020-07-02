@@ -38,16 +38,21 @@ public class SyncBehaviour : MonoBehaviour
         // Tags that create new GameObject
         RegisterObjectTag("desktopAvatar", obj =>  Instantiate(PlayerPrefab));
         RegisterObjectTag("stage", obj =>  Instantiate(StagePrefab, transform));
-        RegisterObjectTag("cube", obj => {
-            var gameObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            Destroy(gameObj.GetComponent<Collider>());
-            return gameObj;
-        });
-        RegisterObjectTag("sphere", obj => {
-            var gameObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            Destroy(gameObj.GetComponent<Collider>());
-            return gameObj;
-        });
+        // primitives
+        var primitives = new (string, PrimitiveType)[] {
+            ("cube", PrimitiveType.Cube),
+            ("sphere", PrimitiveType.Sphere),
+            ("plane", PrimitiveType.Plane),
+            ("cylinder", PrimitiveType.Cylinder),
+        };
+        foreach (var (name, primitiveType) in primitives)
+        {
+            RegisterObjectTag(name, obj => {
+                var gameObj = GameObject.CreatePrimitive(primitiveType);
+                Destroy(gameObj.GetComponent<Collider>());
+                return gameObj;
+            });
+        }
         // Tags that uses already existing GameObject
         RegisterComponentTag("physics", (obj, gameObj) => {
             var rb = gameObj.AddComponent<Rigidbody>();
