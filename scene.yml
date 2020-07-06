@@ -6,9 +6,8 @@ objects:
     rotation: !quat [1, 0, 0, 0]
     mass: 10.0  # ".0" is necessary to indicate it is float
     tags: [sphere, collider, physics]
-  - position: !vec [3, 2, 5]
-    rotation: !euler [45, 45, 45]
-    tags: [cube, collider, physics]
-  - position: !vec [5, 2, 5]
-    rotation: !euler [0, 0, 45]
-    tags: [cylinder]
+  # Table
+  - position: !vec [3, 1.05, 2]
+    rotation: !euler [90, 0, 0]
+    scale: !vec [1, 2, 0.1]
+    tags: [cube, collider]

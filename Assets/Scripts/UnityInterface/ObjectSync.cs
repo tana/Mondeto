@@ -83,5 +83,7 @@ public class ObjectSync : MonoBehaviour
             transform.position = UnityUtil.FromVec(position) + posOffset;
         if (SyncObject.HasField("rotation") && SyncObject.GetField("rotation") is Quat rotation)
             transform.rotation = UnityUtil.FromQuat(rotation);
+        if (SyncObject.HasField("scale") && SyncObject.GetField("scale") is Vec scale)
+            transform.localScale = UnityUtil.FromVec(scale);
     }
 }
