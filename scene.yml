@@ -4,6 +4,7 @@ objects:
     tags: [stage]
   - position: !vec [8, 30, 10]
     rotation: !quat [1, 0, 0, 0]
+    mass: 10.0  # ".0" is necessary to indicate it is float
     tags: [sphere, collider, physics]
   - position: !vec [3, 2, 5]
     rotation: !euler [45, 45, 45]

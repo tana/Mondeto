@@ -18,44 +18,43 @@ public class ObjectSync : MonoBehaviour
 
     Vector3 posOffset;
 
-    SyncBehaviour syncBehaviour;
+    SyncBehaviour syncBehaviour
+    {
+        get
+        {
+            if (syncBehaviourCache == null) syncBehaviourCache = NetManager.GetComponent<SyncBehaviour>();
+            return syncBehaviourCache;
+        }
+    }
+    SyncBehaviour syncBehaviourCache;
     
-    bool added = false;
-    bool ready = false;
-
     public SyncNode Node { get => syncBehaviour.Node; }
 
     // Start is called before the first frame update
     void Start()
     {
-        syncBehaviour = NetManager.GetComponent<SyncBehaviour>();
         posOffset = NetManager.transform.position;
     }
 
-    void FixedUpdate()
+    public void Initialize(SyncObject obj)
     {
-        if (!syncBehaviour.Ready) return;
-        if (SyncObject == null) return;
-        if (!ready)
+        SyncObject = obj;
+
+        SyncObject.BeforeSync += OnBeforeSync;
+        SyncObject.AfterSync += OnAfterSync;
+
+        if (IsOriginal && SetInitialTags)
         {
-            ready = true;
-
-            SyncObject.BeforeSync += OnBeforeSync;
-            SyncObject.AfterSync += OnAfterSync;
-
-            if (IsOriginal && SetInitialTags)
-            {
-                SyncObject.SetField("tags", new Sequence { 
-                    Elements = InitialTags.Split(' ').Where(str => str.Length > 0).Select(tag => (IValue)(new Primitive<string> { Value = tag })).ToList()
-                });
-            }
-
-            // TODO: consider better design
-            ForceApplyState(); // Set initial state of Unity GameObject based on SyncObject
-
-            SendMessage("OnSyncReady", options: SendMessageOptions.DontRequireReceiver);
-            return;
+            SyncObject.SetField("tags", new Sequence { 
+                Elements = InitialTags.Split(' ').Where(str => str.Length > 0).Select(tag => (IValue)(new Primitive<string> { Value = tag })).ToList()
+            });
         }
+
+        // TODO: consider better design
+        ApplyState(); // Set initial state of Unity GameObject based on SyncObject
+
+        SendMessage("OnSyncReady", options: SendMessageOptions.DontRequireReceiver);
+        return;
     }
 
     void OnDestroy()
@@ -75,10 +74,10 @@ public class ObjectSync : MonoBehaviour
     void OnAfterSync(SyncObject obj)
     {
         if (IsOriginal) return;
-        ForceApplyState();
+        ApplyState();
     }
 
-    public void ForceApplyState()   // TODO: move
+    public void ApplyState()   // TODO: move
     {
         if (SyncObject.HasField("position") && SyncObject.GetField("position") is Vec position)
             transform.position = UnityUtil.FromVec(position) + posOffset;
