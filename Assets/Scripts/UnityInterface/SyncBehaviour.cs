@@ -58,18 +58,7 @@ public class SyncBehaviour : MonoBehaviour
             gameObj.AddComponent<RigidbodySync>().Initialize(obj);
         });
         RegisterComponentTag("collider", (obj, gameObj) => {
-            if (obj.HasTag("cube"))
-            {
-                gameObj.AddComponent<BoxCollider>();
-            }
-            else if (obj.HasTag("sphere"))
-            {
-                gameObj.AddComponent<SphereCollider>();
-            }
-            else    // FIXME:
-            {
-                gameObj.AddComponent<MeshCollider>();
-            }
+            gameObj.AddComponent<ColliderSync>().Initialize(obj);
         });
 
         if (IsServer)

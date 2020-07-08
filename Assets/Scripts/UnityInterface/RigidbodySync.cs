@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody))]
 public class RigidbodySync : MonoBehaviour
 {
     public void Initialize(SyncObject obj)
