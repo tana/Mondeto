@@ -60,6 +60,10 @@ public class SyncBehaviour : MonoBehaviour
         RegisterComponentTag("collider", (obj, gameObj) => {
             gameObj.AddComponent<ColliderSync>().Initialize(obj);
         });
+        // TODO: think more appropriate name for this tag
+        RegisterComponentTag("material", (obj, gameObj) => {
+            gameObj.AddComponent<MaterialSync>().Initialize(obj);
+        });
 
         if (IsServer)
         {
