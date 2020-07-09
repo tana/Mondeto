@@ -12,7 +12,6 @@ objects:
     scale: !vec [1, 2, 0.1]
     restitution: 0.5
     tags: [cube, collider]
-    name: "table"
   # Ball
   - position: !vec [3, 5, 2]
     rotation: !euler [0, 0, 0]
@@ -20,4 +19,3 @@ objects:
     restitution: 0.5
     mass: 0.01
     tags: [sphere, collider, physics]
-    name: "ball"

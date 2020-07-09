@@ -4,21 +4,21 @@ public class ColliderSync : MonoBehaviour
 {
     // Because parameter setting did not work correctly with GetComponent<Collider> in ApplyState,
     // the collider is stored right after creating with AddComponent<XxxCollider> .
-    Collider collider;
+    Collider addedCollider;
 
     public void Initialize(SyncObject obj)
     {
         if (obj.HasTag("cube"))
         {
-            collider = gameObject.AddComponent<BoxCollider>();
+            addedCollider = gameObject.AddComponent<BoxCollider>();
         }
         else if (obj.HasTag("sphere"))
         {
-            collider = gameObject.AddComponent<SphereCollider>();
+            addedCollider = gameObject.AddComponent<SphereCollider>();
         }
         else    // FIXME:
         {
-            collider = gameObject.AddComponent<MeshCollider>();
+            addedCollider = gameObject.AddComponent<MeshCollider>();
         }
 
         obj.BeforeSync += OnBeforeSync;
@@ -43,44 +43,22 @@ public class ColliderSync : MonoBehaviour
         //  https://docs.unity3d.com/2019.3/Documentation/ScriptReference/PhysicMaterialCombine.html
         // (Therefore, it is needed to set restitution of two objects larger than zero to make them actually bounce)
 
-        Debug.Log(obj.Id);
-        Debug.Log(obj.HasField("name") ? (obj.GetField("name") as Primitive<string>)?.Value : null);
-
-        if (obj.HasField("name") && obj.GetField("name") is Primitive<string> name)
-        {
-            if (name.Value == "ball")
-            {
-                Debug.Log("BALL!!!!!");
-                Debug.Log(collider);
-            }
-        }
-
         if (obj.HasField("friction") && obj.GetField("friction") is Primitive<float> friction)
         {
-            Debug.Log("friction setting");
-            collider.material.staticFriction = friction.Value;
-            collider.material.dynamicFriction = friction.Value;
-            Debug.Log("friction set");
+            addedCollider.material.staticFriction = friction.Value;
+            addedCollider.material.dynamicFriction = friction.Value;
         }
-
-        Debug.Log("middle");
 
         if (obj.HasField("restitution") && obj.GetField("restitution") is Primitive<float> restitution)
         {
-            Debug.Log("restitution setting ");
-            collider.material.bounciness = restitution.Value;
-            Debug.Log("restitution set");
+            addedCollider.material.bounciness = restitution.Value;
         }
-
-        Debug.Log($"{collider.material.staticFriction} {collider.material.dynamicFriction} {collider.material.bounciness}");
     }
 
     void OnBeforeSync(SyncObject obj)
     {
-        var collider = GetComponent<Collider>();
-
-        obj.SetField("friction", new Primitive<float>(collider.material.dynamicFriction));
-        obj.SetField("restitution", new Primitive<float>(collider.material.bounciness));
+        obj.SetField("friction", new Primitive<float>(addedCollider.material.dynamicFriction));
+        obj.SetField("restitution", new Primitive<float>(addedCollider.material.bounciness));
     }
 
     void OnAfterSync(SyncObject obj)
