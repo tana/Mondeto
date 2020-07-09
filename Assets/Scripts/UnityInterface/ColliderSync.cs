@@ -2,19 +2,23 @@ using UnityEngine;
 
 public class ColliderSync : MonoBehaviour
 {
+    // Because parameter setting did not work correctly with GetComponent<Collider> in ApplyState,
+    // the collider is stored right after creating with AddComponent<XxxCollider> .
+    Collider collider;
+
     public void Initialize(SyncObject obj)
     {
         if (obj.HasTag("cube"))
         {
-            gameObject.AddComponent<BoxCollider>();
+            collider = gameObject.AddComponent<BoxCollider>();
         }
         else if (obj.HasTag("sphere"))
         {
-            gameObject.AddComponent<SphereCollider>();
+            collider = gameObject.AddComponent<SphereCollider>();
         }
         else    // FIXME:
         {
-            gameObject.AddComponent<MeshCollider>();
+            collider = gameObject.AddComponent<MeshCollider>();
         }
 
         obj.BeforeSync += OnBeforeSync;
@@ -25,10 +29,6 @@ public class ColliderSync : MonoBehaviour
 
     void ApplyState(SyncObject obj)
     {
-        var collider = GetComponent<Collider>();
-        
-        collider.material = new PhysicMaterial();
-
         // Uses same value for both static and dynamic friction coefficients.
         // This is for compatibility with engines other than Unity.
         // (It seems Unreal and Bullet does not support separate static/dynamic friction)
@@ -72,7 +72,7 @@ public class ColliderSync : MonoBehaviour
             Debug.Log("restitution set");
         }
 
-        Debug.Log(collider.material.bounciness);
+        Debug.Log($"{collider.material.staticFriction} {collider.material.dynamicFriction} {collider.material.bounciness}");
     }
 
     void OnBeforeSync(SyncObject obj)
