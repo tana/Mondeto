@@ -4,10 +4,21 @@ objects:
     tags: [stage]
   - position: !vec [8, 30, 10]
     rotation: !quat [1, 0, 0, 0]
-    tags: [sphere, collider, physics]
-  - position: !vec [3, 2, 5]
-    rotation: !euler [45, 45, 45]
-    tags: [cube, collider, physics]
-  - position: !vec [5, 2, 5]
-    rotation: !euler [0, 0, 45]
-    tags: [cylinder]
+    color: !vec [1, 0, 0]
+    mass: 10.0  # ".0" is necessary to indicate it is float
+    tags: [sphere, material, collider, physics]
+  # Table
+  - position: !vec [3, 1.05, 2]
+    rotation: !euler [90, 0, 0]
+    scale: !vec [1, 2, 0.1]
+    color: !vec [0, 0, 1]
+    restitution: 0.5
+    tags: [cube, material, collider]
+  # Ball
+  - position: !vec [3, 5, 2]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.3, 0.3, 0.3]
+    color: !vec [1, 1, 0]
+    restitution: 0.5
+    mass: 0.01
+    tags: [sphere, material, collider, physics]

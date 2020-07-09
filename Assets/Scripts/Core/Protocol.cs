@@ -28,6 +28,13 @@ public class Primitive<T> : IValue
     [Key(0)]
     public T Value;
 
+    public Primitive() { }
+
+    public Primitive(T value)
+    {
+        Value = value;
+    }
+
     public override bool Equals(object obj)
     {
         return (obj is Primitive<T> other) && (other != null) && (Value.Equals(other.Value));

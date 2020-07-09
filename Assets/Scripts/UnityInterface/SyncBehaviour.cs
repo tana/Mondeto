@@ -55,23 +55,14 @@ public class SyncBehaviour : MonoBehaviour
         }
         // Tags that uses already existing GameObject
         RegisterComponentTag("physics", (obj, gameObj) => {
-            var rb = gameObj.AddComponent<Rigidbody>();
-            gameObj.AddComponent<RigidbodySync>();
-            gameObj.GetComponent<ObjectSync>().ForceApplyState();   // TODO: consider better design
+            gameObj.AddComponent<RigidbodySync>().Initialize(obj);
         });
         RegisterComponentTag("collider", (obj, gameObj) => {
-            if (obj.HasTag("cube"))
-            {
-                gameObj.AddComponent<BoxCollider>();
-            }
-            else if (obj.HasTag("sphere"))
-            {
-                gameObj.AddComponent<SphereCollider>();
-            }
-            else    // FIXME:
-            {
-                gameObj.AddComponent<MeshCollider>();
-            }
+            gameObj.AddComponent<ColliderSync>().Initialize(obj);
+        });
+        // TODO: think more appropriate name for this tag
+        RegisterComponentTag("material", (obj, gameObj) => {
+            gameObj.AddComponent<MaterialSync>().Initialize(obj);
         });
 
         if (IsServer)
@@ -102,8 +93,7 @@ public class SyncBehaviour : MonoBehaviour
             var id = await Node.CreateObject();
             // With SynchronizationContext of Unity, the line below will run in main thread.
             // https://qiita.com/toRisouP/items/a2c1bb1b0c4f73366bc6
-            gameObjects[id] = obj;
-            obj.GetComponent<ObjectSync>().SyncObject = Node.Objects[id];
+            SetupObjectSync(obj, Node.Objects[id]);
         }
     }
 
@@ -151,7 +141,7 @@ public class SyncBehaviour : MonoBehaviour
 
             var gameObj = ObjectTagInitializers[tag](obj);
             gameObj.transform.SetParent(this.transform);
-            SetUpObjectSync(gameObj, obj);
+            SetupObjectSync(gameObj, obj);
         }
         else if (ComponentTagInitializers.ContainsKey(tag))
         {
@@ -181,17 +171,18 @@ public class SyncBehaviour : MonoBehaviour
         ComponentTagInitializers[tagName] = initializer;
     }
 
-    void SetUpObjectSync(GameObject gameObj, SyncObject obj)
+    void SetupObjectSync(GameObject gameObj, SyncObject obj)
     {
         var id = obj.Id;
 
         if (!gameObjects.ContainsKey(id))
         {
-            var sync = gameObj.AddComponent<ObjectSync>();
+            ObjectSync sync = gameObj.GetComponent<ObjectSync>();
+            if (sync == null) sync = gameObj.AddComponent<ObjectSync>();
             sync.IsOriginal = (obj.OriginalNodeId == Node.NodeId);
             sync.NetManager = this.gameObject;
             gameObjects[id] = gameObj;
-            gameObjects[id].GetComponent<ObjectSync>().SyncObject = obj;
+            sync.Initialize(obj);
             Logger.Debug("SyncBehaviour", "Created GameObject " + gameObj.ToString() + " for ObjectId=" + id);
         }
     }
