@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using NUnit.Framework;
 
 [TestFixture]
@@ -23,6 +24,17 @@ class SceneLoaderTests
             rotation: !euler [0, 0, 0]
             tags: [cube]
     ";
+
+    const string blobYaml = @"
+    objects:
+        -
+            position: !vec [0, 1, 2]
+            rotation: !euler [0, 0, 0]
+            tags: [plane]
+            blobtest: !load_file 'Assets/Editor/test.txt' # Single quotation is used because this is inside C# double-quoted string
+    ";
+
+    const string loadedFile = "Assets/Editor/test.txt";
 
     [Test]
     public void SimpleLoadTest()
@@ -52,5 +64,22 @@ class SceneLoaderTests
 
         SyncObject obj = node.Objects[0];
         TestUtils.AssertQuat(obj.GetField("rotation"), 1, 0, 0, 0);
+    }
+
+    [Test]
+    public void BlobTest()
+    {
+        var node = new DummyNode();
+        var loader = new SceneLoader(node);
+        loader.Load(new StringReader(blobYaml)).Wait();
+
+        SyncObject obj = node.Objects[0];
+        var task = node.ReadBlob((BlobHandle)obj.GetField("blobtest"));
+        task.Wait();
+        Blob blob = task.Result;
+
+        byte[] data = File.ReadAllBytes(loadedFile);
+
+        Assert.That(blob.Data.SequenceEqual(data));
     }
 }
