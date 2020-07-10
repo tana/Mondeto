@@ -36,8 +36,8 @@ public class SyncBehaviour : MonoBehaviour
     async void Start()
     {
         // Tags that create new GameObject
-        RegisterObjectTag("desktopAvatar", obj =>  Instantiate(PlayerPrefab));
-        RegisterObjectTag("stage", obj =>  Instantiate(StagePrefab, transform));
+        RegisterObjectTag("desktopAvatar", obj => Instantiate(PlayerPrefab));
+        RegisterObjectTag("stage", obj => Instantiate(StagePrefab, transform));
         // primitives
         var primitives = new (string, PrimitiveType)[] {
             ("cube", PrimitiveType.Cube),
