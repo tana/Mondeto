@@ -85,6 +85,15 @@ public class SyncBehaviour : MonoBehaviour
                 // TODO: release ctx
 
                 Logger.Debug("Model", "Model load completed");
+
+                var collider = gameObj.GetComponent<MeshCollider>();
+                if (collider != null)
+                {
+                    // refresh MeshCollider
+                    //  https://docs.unity3d.com/2019.4/Documentation/ScriptReference/MeshCollider-sharedMesh.html
+                    // FIXME: currently only one mesh is supported
+                    collider.sharedMesh = gameObj.GetComponentInChildren<MeshFilter>().mesh;
+                }
             };
             loading();
 
