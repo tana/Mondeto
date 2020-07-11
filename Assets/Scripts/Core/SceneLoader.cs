@@ -72,6 +72,10 @@ public class SceneLoader
             xyz = xyz.Select(deg => (float)(deg * Math.PI / 180.0)).ToArray();   // deg to rad
             return Quat.FromEuler(xyz[0], xyz[1], xyz[2]);
         }
+        else if (yaml.Tag == "!load_file")  // load local file and become a Blob handle
+        {
+            return YamlHandleLoadFile(yaml);
+        }
         else if (yaml is YamlScalarNode scalar)
         {
             // Currently, type for YAML scalar is determined using TryParse.
@@ -113,6 +117,23 @@ public class SceneLoader
                 ThrowError(elem, "Invalid number");
             return val;
         }).ToArray();;
+    }
+
+    private BlobHandle YamlHandleLoadFile(YamlNode yaml)
+    {
+        // TODO: explicit mime type i.e. !load_file ["foo.jpg", "image/jpeg"]
+        // TODO: guess mime type from extension
+        string path = YamlExpect<YamlScalarNode>(yaml).Value;
+        byte[] data = File.ReadAllBytes(path);
+
+        // Currently, we use "application/octet-stream" as a sign of unknown type.
+        //  https://www.iana.org/assignments/media-types/application/octet-stream
+        //  https://wiki.developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types$revision/1589213
+        Blob blob = new Blob { Data = data, MimeType = "application/octet-stream" };
+        BlobHandle handle = node.GenerateBlobHandle();
+        node.WriteBlob(handle, blob);
+        
+        return handle;
     }
 
     private T YamlExpect<T>(YamlNode yaml) where T : YamlNode

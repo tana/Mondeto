@@ -36,8 +36,8 @@ public class SyncBehaviour : MonoBehaviour
     async void Start()
     {
         // Tags that create new GameObject
-        RegisterObjectTag("desktopAvatar", obj =>  Instantiate(PlayerPrefab));
-        RegisterObjectTag("stage", obj =>  Instantiate(StagePrefab, transform));
+        RegisterObjectTag("desktopAvatar", obj => Instantiate(PlayerPrefab));
+        RegisterObjectTag("stage", obj => Instantiate(StagePrefab, transform));
         // primitives
         var primitives = new (string, PrimitiveType)[] {
             ("cube", PrimitiveType.Cube),
@@ -53,6 +53,53 @@ public class SyncBehaviour : MonoBehaviour
                 return gameObj;
             });
         }
+        RegisterObjectTag("model", obj => {
+            var gameObj = new GameObject();
+
+            if (!obj.HasField("model") || !(obj.GetField("model") is BlobHandle))
+            {
+                // FIXME:
+                Logger.Error("Model", $"Object {obj.Id} has no model field or not a blob handle. Empty GameObject was created");
+                return gameObj;
+            }
+
+            BlobHandle handle = (BlobHandle)obj.GetField("model");
+
+            Action loading = async () => {
+                Blob blob = await Node.ReadBlob(handle);
+                Logger.Debug("Model", $"Blob {handle} loaded");
+
+                // Because UniGLTF.ImporterContext is the parent class of VRMImporterContext,
+                //  ( https://github.com/vrm-c/UniVRM/blob/3b68eb7f99bfe78ea9c83ea75511282ef1782f1a/Assets/VRM/UniVRM/Scripts/Format/VRMImporterContext.cs#L11 )
+                // loading procedure is probably almost same (See DesktopAvatar.cs for VRM loading).
+                //  https://github.com/vrm-c/UniVRM/blob/3b68eb7f99bfe78ea9c83ea75511282ef1782f1a/Assets/VRM/UniGLTF/Editor/Tests/UniGLTFTests.cs#L46
+                var ctx = new UniGLTF.ImporterContext();
+                // ParseGlb parses GLB file.
+                //  https://github.com/vrm-c/UniVRM/blob/3b68eb7f99bfe78ea9c83ea75511282ef1782f1a/Assets/VRM/UniGLTF/Scripts/IO/ImporterContext.cs#L239
+                // Currently, only GLB (glTF binary format) is supported because it is self-contained
+                ctx.ParseGlb(blob.Data);
+                ctx.Root = gameObj;
+                await ctx.LoadAsyncTask();
+                // UniGLTF also has ShowMeshes https://github.com/ousttrue/UniGLTF/wiki/Rutime-API#import
+                ctx.ShowMeshes();
+                // TODO: release ctx
+
+                Logger.Debug("Model", "Model load completed");
+
+                var collider = gameObj.GetComponent<MeshCollider>();
+                if (collider != null)
+                {
+                    // refresh MeshCollider
+                    //  https://docs.unity3d.com/2019.4/Documentation/ScriptReference/MeshCollider-sharedMesh.html
+                    // FIXME: currently only one mesh is supported
+                    collider.sharedMesh = gameObj.GetComponentInChildren<MeshFilter>().mesh;
+                }
+            };
+            loading();
+
+            return gameObj;
+        });
+
         // Tags that uses already existing GameObject
         RegisterComponentTag("physics", (obj, gameObj) => {
             gameObj.AddComponent<RigidbodySync>().Initialize(obj);

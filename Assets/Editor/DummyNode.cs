@@ -30,9 +30,13 @@ class DummyNode : SyncNode
 
     protected override Task<uint> InternSymbol(string symbol) => throw new NotImplementedException();
 
-    protected override void RequestBlob(BlobHandle handle) => throw new NotImplementedException();
+    protected override void RequestBlob(BlobHandle handle)
+    {
+    }
 
-    protected override void OnNewBlob(BlobHandle handle, Blob blob) => throw new NotImplementedException();
+    protected override void OnNewBlob(BlobHandle handle, Blob blob)
+    {
+    }
 
     public override void Dispose() {}
 }

@@ -1,0 +1,4 @@
+- `PUSHILIN_Plane.glb`
+    - [Airplane](https://poly.google.com/view/8VysVKMXN2J)
+    - Author is [Poly by Google](https://poly.google.com/user/4aEd8rQgKu2) and licensed under [CC-BY](https://creativecommons.org/licenses/by/3.0/legalcode).
+    - Downloaded in OBJ format then converted into GLB using Blender.
