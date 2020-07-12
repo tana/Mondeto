@@ -18,8 +18,6 @@ public class SyncServer : SyncNode
 
     public override uint NodeId { get; protected set; } = ServerNodeId; // Node ID for server is always 0
 
-    IdRegistry clientIdRegistry = new IdRegistry(1);    // Node ID for clients start from 1
-
     IdRegistry objectIdRegistry = new IdRegistry(0);
 
     IdRegistry symbolIdRegistry = new IdRegistry(0);
@@ -35,17 +33,17 @@ public class SyncServer : SyncNode
     {
         await signaler.ConnectAsync();
         Logger.Log("Server", "Connected to signaling server");
-        signaler.ClientConnected += async (string sigClientId) => {
-            Logger.Log("Server", $"Accepting client {sigClientId}");
+        signaler.ClientConnected += async (uint clientNodeId) => {
+            Logger.Log("Server", $"Accepting client {clientNodeId}");
             var conn = new Connection();
-            await conn.SetupAsync(signaler, true, sigClientId);
-            await InitClient(conn);
+            await conn.SetupAsync(signaler, true, clientNodeId);
+            // Node ID is assigned by signaling server
+            await InitClient(conn, clientNodeId);
         };
     }
 
-    async Task InitClient(Connection conn)
+    async Task InitClient(Connection conn, uint clientId)
     {
-        var clientId = clientIdRegistry.Create();
         lock (clients)
         {
             clients[clientId] = conn;
@@ -56,6 +54,7 @@ public class SyncServer : SyncNode
         await Task.Delay(1000); // FIXME
 
         // Connection procedures
+        // FIXME: this message has not meaningful but seems working as a kind of "ready"
         conn.SendMessage<ITcpMessage>(Connection.ChannelType.Control, new NodeIdMessage { NodeId = clientId });
 
         // Send existing objects
