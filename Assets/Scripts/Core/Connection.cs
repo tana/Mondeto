@@ -38,20 +38,20 @@ public class Connection : IDisposable
         }
     }
 
-    public async Task SetupAsync(Signaler signaler, bool isServer, string clientId = "")
+    public async Task SetupAsync(Signaler signaler, bool isServer, uint clientNodeId = 0)
     {
         await pc.InitializeAsync(new PeerConnectionConfiguration {
             IceServers = new List<IceServer> {
-                new IceServer { Urls = { "stun:stun.l.google.com:19302" } }
+                new IceServer { Urls = { "stun:stun.l.google.com:19302" } } // TODO:
             }
         });
 
         pc.LocalSdpReadytoSend += (string type, string sdp) => {
             // ここはawaitではなくWaitにしないとSocketが切れる．スレッドセーフ関係?
-            signaler.SendSdpAsync(type == "offer", sdp, clientId).Wait();
+            signaler.SendSdpAsync(type == "offer", sdp, clientNodeId).Wait();
         };
         pc.IceCandidateReadytoSend += (string candidate, int sdpMLineIndex, string sdpMid) => {
-            signaler.SendIceAsync(sdpMid, sdpMLineIndex, candidate, clientId).Wait();
+            signaler.SendIceAsync(sdpMid, sdpMLineIndex, candidate, clientNodeId).Wait();
         };
 
         pc.IceStateChanged += (IceConnectionState state) => {
@@ -67,8 +67,8 @@ public class Connection : IDisposable
             }
         };
 
-        signaler.SdpReceived += (bool isOffer, string sdp, string cid) => {
-            if (isServer && cid != clientId)
+        signaler.SdpReceived += (bool isOffer, string sdp, uint cid) => {
+            if (isServer && cid != clientNodeId)
             {
                 // ignore messages for other clients
                 return;
@@ -80,8 +80,8 @@ public class Connection : IDisposable
                 pc.CreateAnswer();
             }
         };
-        signaler.IceReceived += (string sdpMid, int sdpMLineIndex, string candidate, string cid) => {
-            if (isServer && cid != clientId)
+        signaler.IceReceived += (string sdpMid, int sdpMLineIndex, string candidate, uint cid) => {
+            if (isServer && cid != clientNodeId)
             {
                 // ignore messages for other clients
                 return;
@@ -106,7 +106,7 @@ public class Connection : IDisposable
             };
 
             Logger.Debug("Connection", "Server is ready for signaling");
-            await signaler.NotifyReadyAsync(clientId);
+            await signaler.NotifyReadyAsync(clientNodeId);
 
             Logger.Debug("Connection", "Server: Waiting for DC");
             foreach (var type in channelTypes)

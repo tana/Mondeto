@@ -583,6 +583,11 @@ PrefabInstance:
       propertyPath: OriginalObjects.Array.data[0]
       value: 
       objectReference: {fileID: 196204994}
+    - target: {fileID: 8249629066708955420, guid: caaf89da43782cd44a88d0c716af3e09,
+        type: 3}
+      propertyPath: signalerUri
+      value: wss://devel.luftmensch.info:15902/client
+      objectReference: {fileID: 0}
     - target: {fileID: 8249629066708955421, guid: caaf89da43782cd44a88d0c716af3e09,
         type: 3}
       propertyPath: m_LocalPosition.x

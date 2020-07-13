@@ -8,15 +8,15 @@ using LitJson;
 
 public class Signaler : IDisposable
 {
-    public delegate void ClientConnectedHandler(string clientId);
-    public delegate void SdpHandler(bool isOffer, string sdp, string clientId);
-    public delegate void IceHandler(string sdpMid, int sdpMLineIndex, string candidate, string clientId);
+    public delegate void ClientConnectedHandler(uint clientNodeID);
+    public delegate void SdpHandler(bool isOffer, string sdp, uint clientNodeId);
+    public delegate void IceHandler(string sdpMid, int sdpMLineIndex, string candidate, uint clientNodeId);
 
     public event ClientConnectedHandler ClientConnected;
     public event SdpHandler SdpReceived;
     public event IceHandler IceReceived;
 
-    public string LocalClientId { get; private set; }
+    public uint LocalNodeId { get; private set; }
 
     ClientWebSocket ws;
     string uri;
@@ -24,7 +24,7 @@ public class Signaler : IDisposable
 
     Task processTask;
 
-    TaskCompletionSource<string> helloTcs = new TaskCompletionSource<string>();
+    TaskCompletionSource<uint> helloTcs = new TaskCompletionSource<uint>();
     TaskCompletionSource<bool> readyTcs = new TaskCompletionSource<bool>();
 
     public Signaler(string uri, bool isServer)
@@ -34,7 +34,7 @@ public class Signaler : IDisposable
         this.isServer = isServer;
     }
 
-    public async Task ConnectAsync()
+    public async Task<uint> ConnectAsync()
     {
         await ws.ConnectAsync(new Uri(uri), CancellationToken.None);
 
@@ -49,7 +49,7 @@ public class Signaler : IDisposable
             }
         });
 
-        await helloTcs.Task;
+        return await helloTcs.Task;
     }
 
     public async Task ProcessAsync()
@@ -69,16 +69,19 @@ public class Signaler : IDisposable
                 Logger.Error("Signaler", Encoding.UTF8.GetString(buf, 0, res.Count));
                 continue;
             }
+
             var type = (string)msg["type"];
-            var clientId = isServer ? (string)msg["clientID"] : "";
+            // node ID of the message sender
+            var nodeId = isServer ? (uint)(int)msg["nodeID"] : 0;
+
             if ((string)msg["type"] == "hello")
             {
-                LocalClientId = (string)msg["clientID"];
-                if (isServer && LocalClientId != "server")
+                LocalNodeId = (uint)(int)msg["nodeID"];
+                if (isServer && LocalNodeId != 0)
                 {
                     throw new Exception("Cannot register as the server");
                 }
-                helloTcs.SetResult(LocalClientId);
+                helloTcs.SetResult(LocalNodeId);
             }
             else if (type == "ready")
             {
@@ -86,24 +89,24 @@ public class Signaler : IDisposable
             }
             else if (type == "clientConnected" && isServer)
             {
-                ClientConnected?.Invoke(clientId);
+                ClientConnected?.Invoke(nodeId);
             }
             else if (type == "sdpOffer" || type == "sdpAnswer")
             {
-                SdpReceived?.Invoke(type == "sdpOffer", (string)msg["sdp"], clientId);
+                SdpReceived?.Invoke(type == "sdpOffer", (string)msg["sdp"], nodeId);
             }
             else if (type == "ice")
             {
-                IceReceived?.Invoke((string)msg["sdpMid"], (int)msg["sdpMLineIndex"], (string)msg["candidate"], clientId);
+                IceReceived?.Invoke((string)msg["sdpMid"], (int)msg["sdpMLineIndex"], (string)msg["candidate"], nodeId);
             }
         }
     }
 
-    public Task NotifyReadyAsync(string clientId)
+    public Task NotifyReadyAsync(uint nodeId)
     {
         var msg = new Dictionary<string, object> {
             { "type", "ready" },
-            { "clientID", clientId }
+            { "nodeID", nodeId }
         };
         // Third arg (endOfMessage) must be true. Otherwise nothing will be sent.
         return ws.SendAsync(
@@ -116,13 +119,13 @@ public class Signaler : IDisposable
         return readyTcs.Task;
     }
 
-    public Task SendSdpAsync(bool isOffer, string sdp, string clientId = "")
+    public Task SendSdpAsync(bool isOffer, string sdp, uint clientNodeId = 0)
     {
         var msg = new Dictionary<string, object> {
             { "type", isOffer ? "sdpOffer" : "sdpAnswer" },
             { "sdp", sdp }
         };
-        if (isServer) msg["clientID"] = clientId;
+        if (isServer) msg["nodeID"] = clientNodeId;
 
         // Third arg (endOfMessage) must be true. Otherwise nothing will be sent.
         return ws.SendAsync(
@@ -130,7 +133,7 @@ public class Signaler : IDisposable
             WebSocketMessageType.Text, true, CancellationToken.None);
     }
 
-    public Task SendIceAsync(string sdpMid, int sdpMLineIndex, string candidate, string clientId = "")
+    public Task SendIceAsync(string sdpMid, int sdpMLineIndex, string candidate, uint clientNodeId = 0)
     {
         var msg = new Dictionary<string, object> {
             { "type", "ice" },
@@ -138,7 +141,7 @@ public class Signaler : IDisposable
             { "sdpMLineIndex", sdpMLineIndex },
             { "sdpMid", sdpMid }
         };
-        if (isServer) msg["clientID"] = clientId;
+        if (isServer) msg["nodeID"] = clientNodeId;
 
         // Third arg (endOfMessage) must be true. Otherwise nothing will be sent.
         return ws.SendAsync(

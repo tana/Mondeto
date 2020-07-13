@@ -26,16 +26,17 @@ public class SyncClient : SyncNode
     public override async Task Initialize()
     {
         await Task.Delay(1000);
-        await signaler.ConnectAsync();
+        NodeId = await signaler.ConnectAsync();
         Logger.Log("Client", "Connected to signaling server");
+        Logger.Debug("Client", $"My NodeId is {NodeId}");
         await Task.Delay(1000);
         await conn.SetupAsync(signaler, false);
         Logger.Log("Client", "Connected to server");
 
+        // FIXME: this message has not meaningful but seems working as a kind of "ready"
         if (await conn.ReceiveMessageAsync<ITcpMessage>(Connection.ChannelType.Control) is NodeIdMessage nodeIdMsg)
         {
-            NodeId = nodeIdMsg.NodeId;
-            Logger.Debug("Client", $"Received NodeId={NodeId}");
+            Logger.Debug("Client", $"Received NodeId={nodeIdMsg.NodeId}");
         }
         else
         {

@@ -138,6 +138,11 @@ PrefabInstance:
       propertyPath: IsServer
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 8249629066708955420, guid: caaf89da43782cd44a88d0c716af3e09,
+        type: 3}
+      propertyPath: signalerUri
+      value: wss://devel.luftmensch.info:15902/server
+      objectReference: {fileID: 0}
     - target: {fileID: 8249629066708955421, guid: caaf89da43782cd44a88d0c716af3e09,
         type: 3}
       propertyPath: m_LocalPosition.x
