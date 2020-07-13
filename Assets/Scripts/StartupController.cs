@@ -11,9 +11,6 @@ public class StartupController : MonoBehaviour
     public Toggle ClientToggle;
     public InputField ClientUrlInput;
 
-    const string DefaultServerUrl = "wss://devel.luftmensch.info:15902/server";
-    const string DefaultClientUrl = "wss://devel.luftmensch.info:15902/client";
-
     public void Start()
     {
         // If batch mode, log is only written into stdout (Console.WriteLine).
@@ -27,15 +24,25 @@ public class StartupController : MonoBehaviour
 
         if (Application.isBatchMode)
         {
+            ChangeSettings();
             Logger.Log("StartupController", "Running as batch mode. Starting dedicated server scene");
-            Settings.Instance.SignalingServerUrl = DefaultServerUrl;
             SceneManager.LoadScene("WalkServer");
         }
 
-        ServerUrlInput.text = DefaultServerUrl;
-        ClientUrlInput.text = DefaultClientUrl;
-
+        LoadSettings();
         OnToggleChanged();
+    }
+
+    void LoadSettings()
+    {
+        ServerUrlInput.text = Settings.Instance.SignalerUrlForServer;
+        ClientUrlInput.text = Settings.Instance.SignalerUrlForClient;
+    }
+
+    void ChangeSettings()
+    {
+        Settings.Instance.SignalerUrlForServer = ServerUrlInput.text;
+        Settings.Instance.SignalerUrlForClient = ClientUrlInput.text;
     }
 
     public void OnToggleChanged()
@@ -46,14 +53,14 @@ public class StartupController : MonoBehaviour
 
     public void OnStartClicked()
     {
+        ChangeSettings();
+
         if (ServerToggle.isOn)
         {
-            Settings.Instance.SignalingServerUrl = ServerUrlInput.text;
             SceneManager.LoadScene("WalkServerHybrid");
         }
         else if (ClientToggle.isOn)
         {
-            Settings.Instance.SignalingServerUrl = ClientUrlInput.text;
             SceneManager.LoadScene("WalkClient");
         }
     }

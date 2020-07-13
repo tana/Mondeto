@@ -113,11 +113,11 @@ public class SyncBehaviour : MonoBehaviour
 
         if (IsServer)
         {
-            Node = new SyncServer(Settings.Instance.SignalingServerUrl);
+            Node = new SyncServer(Settings.Instance.SignalerUrlForServer);
         }
         else
         {
-            Node = new SyncClient(Settings.Instance.SignalingServerUrl);
+            Node = new SyncClient(Settings.Instance.SignalerUrlForClient);
         }
 
         Node.ObjectCreated += OnObjectCreated;
