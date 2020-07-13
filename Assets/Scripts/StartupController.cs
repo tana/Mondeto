@@ -10,6 +10,7 @@ public class StartupController : MonoBehaviour
     public InputField ServerUrlInput;
     public Toggle ClientToggle;
     public InputField ClientUrlInput;
+    public InputField AvatarInput;
 
     public void Start()
     {
@@ -37,12 +38,14 @@ public class StartupController : MonoBehaviour
     {
         ServerUrlInput.text = Settings.Instance.SignalerUrlForServer;
         ClientUrlInput.text = Settings.Instance.SignalerUrlForClient;
+        AvatarInput.text = Settings.Instance.AvatarPath;
     }
 
     void ChangeSettings()
     {
         Settings.Instance.SignalerUrlForServer = ServerUrlInput.text;
         Settings.Instance.SignalerUrlForClient = ClientUrlInput.text;
+        Settings.Instance.AvatarPath = AvatarInput.text;
     }
 
     public void OnToggleChanged()

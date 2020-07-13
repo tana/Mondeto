@@ -10,8 +10,6 @@ using Cysharp.Threading.Tasks;
 [RequireComponent(typeof(WalkAnimation))]
 public class DesktopAvatar : MonoBehaviour
 {
-    public string VrmPath = "avatar.vrm";
-
     // Locomotion-related settings
     public float SpeedCoeff = 1.0f;
     public float AngularSpeedCoeff = 60.0f;
@@ -192,7 +190,7 @@ public class DesktopAvatar : MonoBehaviour
         if (GetComponent<ObjectSync>().IsOriginal)
         {
             BlobHandle vrmHandle = node.GenerateBlobHandle();
-            byte[] vrmData = File.ReadAllBytes(VrmPath);
+            byte[] vrmData = File.ReadAllBytes(Settings.Instance.AvatarPath);
             // Use MIME type for GLTF binary https://www.iana.org/assignments/media-types/model/gltf-binary
             vrmBlob = new Blob { MimeType = "model/gltf-binary", Data = vrmData };
             node.WriteBlob(vrmHandle, vrmBlob);

@@ -7,6 +7,8 @@ public class Settings
     public string SignalerUrlForServer = "wss://devel.luftmensch.info:15902/server";
     public string SignalerUrlForClient = "wss://devel.luftmensch.info:15902/client";
 
+    public string AvatarPath = "avatar.vrm";
+
     private Settings()
     {
     }
