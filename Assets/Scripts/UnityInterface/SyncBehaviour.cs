@@ -7,7 +7,6 @@ using UnityEngine;
 public class SyncBehaviour : MonoBehaviour
 {
     public bool IsServer = false;
-    public string signalerUri;
 
     public SyncNode Node { get; private set; }
     public bool Ready = false;
@@ -114,11 +113,11 @@ public class SyncBehaviour : MonoBehaviour
 
         if (IsServer)
         {
-            Node = new SyncServer(signalerUri);
+            Node = new SyncServer(Settings.Instance.SignalingServerUrl);
         }
         else
         {
-            Node = new SyncClient(signalerUri);
+            Node = new SyncClient(Settings.Instance.SignalingServerUrl);
         }
 
         Node.ObjectCreated += OnObjectCreated;
