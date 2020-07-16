@@ -7,7 +7,8 @@ An open, flexible, and secure online virtual reality system.
 Mondeto currently uses [Unity Engine](https://unity.com/) (version 2019.4.2f1 LTS).
 
 ## License
-Mondeto itself is licensed under [MIT License](LICENSE). However, it uses some third-party programs and data that is licensed under various licenses.
+Mondeto itself is licensed under [MIT License](LICENSE). However, it uses some third-party programs and data that is licensed under various licenses (see [docs/Credits.md](docs/Credits.md)).
+
 In addition, this repository contains some of those third-party program or data that are licensed under redistributable licenses.
 
 ## Acknowledgements
