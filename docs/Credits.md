@@ -40,6 +40,7 @@ the Unity [Asset Store Terms of Use and EULA](https://unity3d.com/jp/legal/as_te
 However, the source code repository of Mondeto contains (redistributes) entire data of Unity-Chan, licensed
 under [Unity-Chan License Terms](ThirdPartyLicenses/UCL2.0/English/01Unity-Chan%20License%20Terms%20and%20Condition_EN_UCL2.0.pdf).
 The license files (in English and Japanese, full and summarized versions) are inside [docs/ThirdPartyLicenses/UCL2.0](ThirdPartyLicenses/UCL2.0) directory.
+
 ![Unity-Chan license logo](ThirdPartyLicenses/UCL2.0/License%20Logo/Others/png/Light_Frame.png)
 
 ### Airplane (glb model)
