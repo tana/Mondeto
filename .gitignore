@@ -73,11 +73,10 @@ crashlytics-build.properties
 # VS Code files
 .vscode/
 # Exclude external libraries and Assets
-MixedReality-WebRTC/
-Assets/VRM/
-Assets/Scripts/MessagePack/
-Assets/UnityChan
+#Assets/VRM/
+#Assets/Scripts/MessagePack/
+#Assets/UnityChan
 # Exclude plugin files
-Assets/Plugins/
+#Assets/Plugins/
 
-avatar.vrm
+avatar*.vrm
