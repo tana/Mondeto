@@ -225,7 +225,7 @@ public class DesktopAvatar : MonoBehaviour
         Logger.Log("DesktopAvatar", $"Loading VRM {meta.Title} created by {meta.Author} ({meta.ContactInformation})");
         Logger.Log("DesktopAvatar", $"AllowedUser={meta.AllowedUser}, ViolentUsage={meta.ViolentUssage}");
         Logger.Log("DesktopAvatar", $"SexualUsage={meta.SexualUssage}, CommercialUsage={meta.CommercialUssage}");
-        Logger.Log("DesktopAvatar", $"OtherPermissionUrl={meta.OtherLicenseUrl}");
+        Logger.Log("DesktopAvatar", $"OtherPermissionUrl={meta.OtherPermissionUrl}");
         Logger.Log("DesktopAvatar", $"LicenseType={meta.LicenseType}");
         Logger.Log("DesktopAvatar", $"OtherLicenseUrl={meta.OtherLicenseUrl}");
 
