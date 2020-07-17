@@ -24,6 +24,8 @@ public class DesktopAvatar : MonoBehaviour
     // State values for walking animation
     private float forward = 0.0f, sideways = 0.0f, turn = 0.0f;
 
+    private Vector3 lookAt = Vector3.forward; // looking position (in local coord)
+
     private Vector3 velocity = Vector3.zero, angularVelocity = Vector3.zero;
 
     // For calculation of velocity and angular velocity
@@ -116,6 +118,12 @@ public class DesktopAvatar : MonoBehaviour
             var angularVelocity = new Vector3(0, turn, 0);
             transform.rotation *= Quaternion.Euler(angularVelocity * Time.deltaTime);
             characterController.SimpleMove(transform.rotation * velocity);
+
+            // Head rotation
+            if (FirstPersonCamera != null)
+                lookAt = transform.worldToLocalMatrix * FirstPersonCamera.transform.TransformPoint(Vector3.forward);
+            else
+                lookAt = Vector3.forward;
         }
 
         // Walking animation
@@ -147,6 +155,8 @@ public class DesktopAvatar : MonoBehaviour
         obj.SetField("sideways", new Primitive<float> { Value = sideways });
         obj.SetField("turn", new Primitive<float> { Value = turn });
 
+        obj.SetField("lookAt", UnityUtil.ToVec(lookAt));
+
         obj.SetField("velocity", UnityUtil.ToVec(velocity));
         obj.SetField("angularVelocity", UnityUtil.ToVec(angularVelocity));
     }
@@ -160,6 +170,11 @@ public class DesktopAvatar : MonoBehaviour
             forward = (obj.GetField("forward") as Primitive<float>)?.Value ?? 0.0f;
             sideways = (obj.GetField("sideways") as Primitive<float>)?.Value ?? 0.0f;
             turn = (obj.GetField("turn") as Primitive<float>)?.Value ?? 0.0f;
+        }
+
+        if (obj.HasField("lookAt") && obj.GetField("lookAt") is Vec lookAtVec)
+        {
+            lookAt = UnityUtil.FromVec(lookAtVec);
         }
 
         if (obj.HasField("velocity") && obj.GetField("velocity") is Vec velocityVec)
@@ -263,18 +278,12 @@ public class DesktopAvatar : MonoBehaviour
 
     // Control avatar through IK
     // https://docs.unity3d.com/2019.3/Documentation/Manual/InverseKinematics.html
-    // TODO: enable IK, sync looking direction
-    /*
     void OnAnimatorIK()
     {
         var anim = GetComponent<Animator>();
-        if (FirstPersonCamera != null)
-        {
-            anim.SetLookAtWeight(1.0f);
-            anim.SetLookAtPosition(FirstPersonCamera.transform.TransformPoint(Vector3.forward));
-        }
+        anim.SetLookAtWeight(1.0f);
+        anim.SetLookAtPosition(transform.localToWorldMatrix * lookAt);
     }
-    */
 
     void OnDestroy()
     {
