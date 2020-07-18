@@ -1141,6 +1141,16 @@ PrefabInstance:
       propertyPath: XRRig
       value: 
       objectReference: {fileID: 1337553580}
+    - target: {fileID: 1252498136356511351, guid: 92acc6079fd763f4783d1ecdf56001f0,
+        type: 3}
+      propertyPath: LeftHand
+      value: 
+      objectReference: {fileID: 673454956}
+    - target: {fileID: 1252498136356511351, guid: 92acc6079fd763f4783d1ecdf56001f0,
+        type: 3}
+      propertyPath: RightHand
+      value: 
+      objectReference: {fileID: 49289511}
     - target: {fileID: 7750428759976842891, guid: 92acc6079fd763f4783d1ecdf56001f0,
         type: 3}
       propertyPath: m_RootOrder

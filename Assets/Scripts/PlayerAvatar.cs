@@ -16,6 +16,9 @@ public class PlayerAvatar : MonoBehaviour
     public float AngularSpeedCoeff = 60.0f;
 
     public GameObject XRRig;
+    public Transform LeftHand;
+    public Transform RightHand;
+
     public Camera ThirdPersonCamera;
 
     private bool firstPerson = true;
@@ -26,6 +29,9 @@ public class PlayerAvatar : MonoBehaviour
     private float forward = 0.0f, sideways = 0.0f, turn = 0.0f;
 
     private Vector3 lookAt = Vector3.forward; // looking position (in local coord)
+
+    private Vector3 leftHandPosition, rightHandPosition;
+    private Quaternion leftHandRotation, rightHandRotation;
 
     private Vector3 velocity = Vector3.zero, angularVelocity = Vector3.zero;
 
@@ -148,6 +154,23 @@ public class PlayerAvatar : MonoBehaviour
             else
             {
                 lookAt = Vector3.forward;
+            }
+
+            // Left hand
+            // If device is not present, GetDeviceAtXRNode returns an "invalid" InputDevice.
+            //   https://docs.unity3d.com/ja/2019.4/ScriptReference/XR.InputDevices.GetDeviceAtXRNode.html
+            if (InputDevices.GetDeviceAtXRNode(XRNode.LeftHand).isValid)
+            {
+                // If left hand device is present
+                leftHandPosition = transform.worldToLocalMatrix * LeftHand.position;
+                leftHandRotation = Quaternion.Inverse(transform.rotation) * LeftHand.rotation;
+            }
+            // Right hand
+            if (InputDevices.GetDeviceAtXRNode(XRNode.RightHand).isValid)
+            {
+                // If left hand device is present
+                rightHandPosition = transform.worldToLocalMatrix * RightHand.position;
+                rightHandRotation = Quaternion.Inverse(transform.rotation) * RightHand.rotation;
             }
         }
 
@@ -308,6 +331,16 @@ public class PlayerAvatar : MonoBehaviour
         var anim = GetComponent<Animator>();
         anim.SetLookAtWeight(1.0f);
         anim.SetLookAtPosition(transform.localToWorldMatrix * lookAt);
+
+        anim.SetIKPositionWeight(AvatarIKGoal.LeftHand, 1.0f);
+        anim.SetIKRotationWeight(AvatarIKGoal.LeftHand, 1.0f);
+        anim.SetIKPosition(AvatarIKGoal.LeftHand, transform.localToWorldMatrix * leftHandPosition);
+        anim.SetIKRotation(AvatarIKGoal.LeftHand, transform.rotation * leftHandRotation);
+
+        anim.SetIKPositionWeight(AvatarIKGoal.RightHand, 1.0f);
+        anim.SetIKRotationWeight(AvatarIKGoal.RightHand, 1.0f);
+        anim.SetIKPosition(AvatarIKGoal.RightHand, transform.localToWorldMatrix * rightHandPosition);
+        anim.SetIKRotation(AvatarIKGoal.RightHand, transform.rotation * rightHandRotation);
     }
 
     void OnDestroy()
