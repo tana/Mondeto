@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.XR;
 
 public class Teleporter : MonoBehaviour
 {
@@ -15,18 +16,20 @@ public class Teleporter : MonoBehaviour
 
     public Transform Controller;
 
-    public string ButtonName = "Fire1";
-
-    public LineRenderer parabolaRenderer;
+    public LineRenderer ParabolaRenderer;
 
     enum TeleportState
     {
         Idle, Aiming, Moving
     }
 
-    TeleportState state;
+    TeleportState state = TeleportState.Idle;
     bool teleportable = false;
     Vector3 target;
+
+    InputDevice? inputDevice = null;
+
+    bool lastButtonValue = false;
 
     // Start is called before the first frame update
     void Start()
@@ -36,8 +39,26 @@ public class Teleporter : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetButtonDown(ButtonName)) ButtonDown();
-        if (Input.GetButtonUp(ButtonName)) ButtonUp();
+        if (!inputDevice.HasValue)
+        {
+            // FIXME: currently, cannot find controller during Start().
+            // Search left controller
+            //  See https://docs.unity3d.com/ja/2019.4/Manual/xr_input.html
+            var devices = new List<InputDevice>();
+            InputDevices.GetDevicesWithCharacteristics(
+                InputDeviceCharacteristics.Left | InputDeviceCharacteristics.Controller,
+                devices
+            );
+            if (devices.Count != 0)
+                inputDevice = devices[0];
+        }
+
+        if (inputDevice.HasValue && inputDevice.Value.TryGetFeatureValue(CommonUsages.primaryButton, out bool buttonValue))
+        {
+            if (!lastButtonValue && buttonValue) ButtonDown();
+            else if (lastButtonValue && !buttonValue) ButtonUp();
+            lastButtonValue = buttonValue;
+        }
 
         if (state == TeleportState.Aiming)
         {
@@ -58,7 +79,7 @@ public class Teleporter : MonoBehaviour
     {
         if (state != TeleportState.Idle) return;
         state = TeleportState.Aiming;
-        parabolaRenderer.enabled = true;
+        ParabolaRenderer.enabled = true;
     }
 
     void ButtonUp()
@@ -72,17 +93,17 @@ public class Teleporter : MonoBehaviour
         {
             state = TeleportState.Idle;
         }
-        parabolaRenderer.enabled = false;
+        ParabolaRenderer.enabled = false;
     }
 
     void CastParabola(Vector3 launchDir) // launchDir has to be normalized
     {
         Vector3 localDir = Quaternion.Inverse(transform.rotation) * launchDir;
-        //float elevation = Mathf.Asin(localDir.y);
+        Vector2 localDir2D = (new Vector2(localDir.z, localDir.y)).normalized;
 
         // x = vx*t, y = vy*t - g*t^2
-        float vx = InitialVelocity * Mathf.Sqrt(1 - localDir.y * localDir.y);//Mathf.Cos(elevation);
-        float vy = InitialVelocity * localDir.y;//Mathf.Sin(elevation);
+        float vx = InitialVelocity * localDir2D.x;
+        float vy = InitialVelocity * localDir2D.y;
         float dt = Step / vx;
         // vy*t-g*t^2 = y
         // -g*t^2 + vy*t - y = 0
@@ -114,7 +135,7 @@ public class Teleporter : MonoBehaviour
             }
         }
 
-        parabolaRenderer.positionCount = count;
-        parabolaRenderer.SetPositions(points);
+        ParabolaRenderer.positionCount = count;
+        ParabolaRenderer.SetPositions(points);
     }
 }
