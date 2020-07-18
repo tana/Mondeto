@@ -1241,7 +1241,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3adb0779835a2d54a9942f2ce245bc49, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  InitialTags: desktopAvatar
+  InitialTags: player
   SetInitialTags: 1
   NetManager: {fileID: 1904763787}
   IsOriginal: 1

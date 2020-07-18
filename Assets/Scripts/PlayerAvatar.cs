@@ -9,7 +9,7 @@ using Cysharp.Threading.Tasks;
 
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(WalkAnimation))]
-public class DesktopAvatar : MonoBehaviour
+public class PlayerAvatar : MonoBehaviour
 {
     // Locomotion-related settings
     public float SpeedCoeff = 1.0f;
@@ -67,7 +67,7 @@ public class DesktopAvatar : MonoBehaviour
             {
                 // TODO: better way for microphone control
                 micCap.enabled = !micCap.enabled;
-                Logger.Debug("DesktopAvatar", "microphone " + (micCap.enabled ? "on" : "off"));
+                Logger.Debug("PlayerAvatar", "microphone " + (micCap.enabled ? "on" : "off"));
             }
         }
 
@@ -77,7 +77,7 @@ public class DesktopAvatar : MonoBehaviour
             firstPerson = !firstPerson;
             xrCamera.enabled = firstPerson;
             ThirdPersonCamera.enabled = !firstPerson;
-            Logger.Debug("DesktopAvatar", (firstPerson ? "first" : "third") + "person camera");
+            Logger.Debug("PlayerAvatar", (firstPerson ? "first" : "third") + "person camera");
         }
 
         if (isOriginal)
@@ -240,7 +240,7 @@ public class DesktopAvatar : MonoBehaviour
         {
             while (!obj.HasField("vrm") || !(obj.GetField("vrm") is BlobHandle))
             {
-                Logger.Debug("DesktopAvatar", "Field vrm not ready");
+                Logger.Debug("PlayerAvatar", "Field vrm not ready");
                 await UniTask.WaitForFixedUpdate();
             }
             BlobHandle blobHandle = (BlobHandle)obj.GetField("vrm");
@@ -262,12 +262,12 @@ public class DesktopAvatar : MonoBehaviour
         ctx.ParseGlb(vrmBlob.Data);
 
         var meta = ctx.ReadMeta();
-        Logger.Log("DesktopAvatar", $"Loading VRM {meta.Title} created by {meta.Author} ({meta.ContactInformation})");
-        Logger.Log("DesktopAvatar", $"AllowedUser={meta.AllowedUser}, ViolentUsage={meta.ViolentUssage}");
-        Logger.Log("DesktopAvatar", $"SexualUsage={meta.SexualUssage}, CommercialUsage={meta.CommercialUssage}");
-        Logger.Log("DesktopAvatar", $"OtherPermissionUrl={meta.OtherPermissionUrl}");
-        Logger.Log("DesktopAvatar", $"LicenseType={meta.LicenseType}");
-        Logger.Log("DesktopAvatar", $"OtherLicenseUrl={meta.OtherLicenseUrl}");
+        Logger.Log("PlayerAvatar", $"Loading VRM {meta.Title} created by {meta.Author} ({meta.ContactInformation})");
+        Logger.Log("PlayerAvatar", $"AllowedUser={meta.AllowedUser}, ViolentUsage={meta.ViolentUssage}");
+        Logger.Log("PlayerAvatar", $"SexualUsage={meta.SexualUssage}, CommercialUsage={meta.CommercialUssage}");
+        Logger.Log("PlayerAvatar", $"OtherPermissionUrl={meta.OtherPermissionUrl}");
+        Logger.Log("PlayerAvatar", $"LicenseType={meta.LicenseType}");
+        Logger.Log("PlayerAvatar", $"OtherLicenseUrl={meta.OtherLicenseUrl}");
 
         await ctx.LoadAsyncTask();
 
@@ -277,7 +277,7 @@ public class DesktopAvatar : MonoBehaviour
         // Enable collision (and character controller) again (see the disabling line above)
         GetComponent<CharacterController>().enabled = true;
         
-        Logger.Log("DesktopAvatar", $"VRM loaded");
+        Logger.Log("PlayerAvatar", $"VRM loaded");
 
         if (GetComponent<ObjectSync>().IsOriginal)
         {

@@ -35,7 +35,7 @@ public class SyncBehaviour : MonoBehaviour
     async void Start()
     {
         // Tags that create new GameObject
-        RegisterObjectTag("desktopAvatar", obj => Instantiate(PlayerPrefab));
+        RegisterObjectTag("player", obj => Instantiate(PlayerPrefab));
         RegisterObjectTag("stage", obj => Instantiate(StagePrefab, transform));
         // primitives
         var primitives = new (string, PrimitiveType)[] {
@@ -70,7 +70,7 @@ public class SyncBehaviour : MonoBehaviour
 
                 // Because UniGLTF.ImporterContext is the parent class of VRMImporterContext,
                 //  ( https://github.com/vrm-c/UniVRM/blob/3b68eb7f99bfe78ea9c83ea75511282ef1782f1a/Assets/VRM/UniVRM/Scripts/Format/VRMImporterContext.cs#L11 )
-                // loading procedure is probably almost same (See DesktopAvatar.cs for VRM loading).
+                // loading procedure is probably almost same (See PlyayerAvatar.cs for VRM loading).
                 //  https://github.com/vrm-c/UniVRM/blob/3b68eb7f99bfe78ea9c83ea75511282ef1782f1a/Assets/VRM/UniGLTF/Editor/Tests/UniGLTFTests.cs#L46
                 var ctx = new UniGLTF.ImporterContext();
                 // ParseGlb parses GLB file.
