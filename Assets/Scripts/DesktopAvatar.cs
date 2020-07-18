@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.XR;
 using VRM;
 using Cysharp.Threading.Tasks;
 
@@ -14,10 +15,10 @@ public class DesktopAvatar : MonoBehaviour
     public float SpeedCoeff = 1.0f;
     public float AngularSpeedCoeff = 60.0f;
 
-    public Camera FirstPersonCamera;
+    public GameObject XRRig;
     public Camera ThirdPersonCamera;
 
-    private bool firstPerson = false;
+    private bool firstPerson = true;
 
     private VRMImporterContext ctx;
 
@@ -35,12 +36,11 @@ public class DesktopAvatar : MonoBehaviour
     private Vector3 lastMousePosition;
     private Quaternion camRotBeforeDrag;
 
+    private Camera xrCamera;
+
     void Start()
     {
-        if (FirstPersonCamera != null)
-            FirstPersonCamera.enabled = firstPerson;
-        if (ThirdPersonCamera != null)
-            ThirdPersonCamera.enabled = !firstPerson;
+        xrCamera = XRRig.GetComponentInChildren<Camera>();
     }
 
     void Update()
@@ -75,7 +75,7 @@ public class DesktopAvatar : MonoBehaviour
         if (isOriginal && Input.GetKeyDown(KeyCode.F))
         {
             firstPerson = !firstPerson;
-            FirstPersonCamera.enabled = firstPerson;
+            xrCamera.enabled = firstPerson;
             ThirdPersonCamera.enabled = !firstPerson;
             Logger.Debug("DesktopAvatar", (firstPerson ? "first" : "third") + "person camera");
         }
@@ -84,28 +84,38 @@ public class DesktopAvatar : MonoBehaviour
         {
             // Orientation and camera control
             turn = 0.0f;
-            Camera cam = firstPerson ? FirstPersonCamera : ThirdPersonCamera;
-            // Use mouse movement during drag (similar to Mozilla Hubs?)
-            // because Unity's cursor lock feature seemed somewhat strange especially in Editor.
-            if (Input.GetKeyDown(KeyCode.Mouse0))
+
+            if (ThirdPersonCamera != null)
             {
-                lastMousePosition = Input.mousePosition;
-                camRotBeforeDrag = cam.transform.localRotation;
+                // Third person mode (non-VR)
+                Camera cam = ThirdPersonCamera;
+                // Use mouse movement during drag (similar to Mozilla Hubs?)
+                // because Unity's cursor lock feature seemed somewhat strange especially in Editor.
+                if (Input.GetKeyDown(KeyCode.Mouse0))
+                {
+                    lastMousePosition = Input.mousePosition;
+                    camRotBeforeDrag = cam.transform.localRotation;
+                }
+                if (Input.GetKey(KeyCode.Mouse0))
+                {
+                    Vector3 mouseDiff = Input.mousePosition - lastMousePosition;
+                    lastMousePosition = Input.mousePosition;
+                    turn = -AngularSpeedCoeff * mouseDiff.x;
+                    float elevation = AngularSpeedCoeff * mouseDiff.y;
+                    if (cam != null)
+                        cam.transform.localRotation *= Quaternion.Euler(elevation * Time.deltaTime, 0.0f, 0.0f);
+                }
+                if (Input.GetKeyUp(KeyCode.Mouse0))
+                {
+                    // Reset camera elevation when mouse button is released
+                    if (cam != null)
+                        cam.transform.localRotation = camRotBeforeDrag;
+                }
             }
-            if (Input.GetKey(KeyCode.Mouse0))
+            else
             {
-                Vector3 mouseDiff = Input.mousePosition - lastMousePosition;
-                lastMousePosition = Input.mousePosition;
-                turn = -AngularSpeedCoeff * mouseDiff.x;
-                float elevation = AngularSpeedCoeff * mouseDiff.y;
-                if (cam != null)
-                    cam.transform.localRotation *= Quaternion.Euler(elevation * Time.deltaTime, 0.0f, 0.0f);
-            }
-            if (Input.GetKeyUp(KeyCode.Mouse0))
-            {
-                // Reset camera elevation when mouse button is released
-                if (cam != null)
-                    cam.transform.localRotation = camRotBeforeDrag;
+                // VR (HMD) turn control
+                turn = AngularSpeedCoeff * Input.GetAxis("");
             }
 
             // Walking control
@@ -120,10 +130,14 @@ public class DesktopAvatar : MonoBehaviour
             characterController.SimpleMove(transform.rotation * velocity);
 
             // Head rotation
-            if (FirstPersonCamera != null)
-                lookAt = transform.worldToLocalMatrix * FirstPersonCamera.transform.TransformPoint(Vector3.forward);
+            if (xrCamera != null)
+            {
+                lookAt = transform.worldToLocalMatrix * xrCamera.transform.TransformPoint(Vector3.forward);
+            }
             else
+            {
                 lookAt = Vector3.forward;
+            }
         }
 
         // Walking animation
@@ -261,12 +275,12 @@ public class DesktopAvatar : MonoBehaviour
             //  https://vrm.dev/en/dev/univrm-0.xx/programming/univrm_use_firstperson/
             var fp = GetComponent<VRMFirstPerson>();
             fp.Setup();
-            if (FirstPersonCamera != null)
+            if (XRRig != null)
             {
-                FirstPersonCamera.transform.position = fp.FirstPersonBone.position + fp.FirstPersonBone.rotation * fp.FirstPersonOffset;
-                FirstPersonCamera.transform.rotation = transform.rotation;  // face forward
+                XRRig.transform.position = fp.FirstPersonBone.position + fp.FirstPersonBone.rotation * fp.FirstPersonOffset;
+                XRRig.transform.rotation = transform.rotation;  // face forward
                 // Do not render layer "VRMThirdPersonOnly" on first person camera
-                FirstPersonCamera.cullingMask &= ~LayerMask.GetMask("VRMThirdPersonOnly");
+                xrCamera.cullingMask &= ~LayerMask.GetMask("VRMThirdPersonOnly");
             }
             if (ThirdPersonCamera != null)
             {
