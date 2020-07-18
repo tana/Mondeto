@@ -197,16 +197,16 @@ public class PlayerAvatar : MonoBehaviour
             turn = (obj.GetField("turn") as Primitive<float>)?.Value ?? 0.0f;
         }
 
-        if (obj.HasField("lookAt") && obj.GetField("lookAt") is Vec lookAtVec)
+        if (obj.TryGetField("lookAt", out Vec lookAtVec))
         {
             lookAt = UnityUtil.FromVec(lookAtVec);
         }
 
-        if (obj.HasField("velocity") && obj.GetField("velocity") is Vec velocityVec)
+        if (obj.TryGetField("velocity", out Vec velocityVec))
         {
             velocity = UnityUtil.FromVec(velocityVec);
         }
-        if (obj.HasField("angularVelocity") && obj.GetField("angularVelocity") is Vec angularVelocityVec)
+        if (obj.TryGetField("angularVelocity", out Vec angularVelocityVec))
         {
             angularVelocity = UnityUtil.FromVec(angularVelocityVec);
         }

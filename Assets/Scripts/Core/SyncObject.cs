@@ -63,6 +63,35 @@ public class SyncObject
         return Fields.ContainsKey(key);
     }
 
+    public bool TryGetField<T>(string key, out T value)
+    {
+        if (HasField(key) && (GetField(key) is T val))
+        {
+            value = val;
+            return true;
+        }
+        else
+        {
+            value = default;
+            return false;
+        }
+    }
+
+    public bool TryGetFieldPrimitive<T>(string key, out T value)
+    {
+        Primitive<T> primitive;
+        if (TryGetField<Primitive<T>>(key, out primitive))
+        {
+            value = primitive.Value;
+            return true;
+        }
+        else
+        {
+            value = default;
+            return false;
+        }
+    }
+
     public bool HasTag(string tag)
     {
         return tags.Contains(tag);
