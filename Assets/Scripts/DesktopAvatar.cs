@@ -85,7 +85,7 @@ public class DesktopAvatar : MonoBehaviour
             // Orientation and camera control
             turn = 0.0f;
 
-            if (ThirdPersonCamera != null)
+            if (!firstPerson)
             {
                 // Third person mode (non-VR)
                 Camera cam = ThirdPersonCamera;
@@ -115,7 +115,18 @@ public class DesktopAvatar : MonoBehaviour
             else
             {
                 // VR (HMD) turn control
-                turn = AngularSpeedCoeff * Input.GetAxis("");
+                // Search right hand controller
+                // https://docs.unity3d.com/ja/2019.4/Manual/xr_input.html
+                var devices = new List<InputDevice>();
+                InputDevices.GetDevicesWithCharacteristics(
+                    InputDeviceCharacteristics.Controller | InputDeviceCharacteristics.Right,
+                    devices
+                );
+                Vector2 stick;
+                if (devices.Count != 0 && devices[0].TryGetFeatureValue(CommonUsages.primary2DAxis, out stick))
+                {
+                    turn = AngularSpeedCoeff * stick.x;
+                }
             }
 
             // Walking control
