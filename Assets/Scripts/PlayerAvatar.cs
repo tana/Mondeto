@@ -311,7 +311,7 @@ public class PlayerAvatar : MonoBehaviour
         // https://github.com/vrm-c/UniVRM/wiki/Runtime-import
         // https://qiita.com/sh_akira/items/8155e4b69107c2a7ede6
         ctx = new VRMImporterContext();
-        ctx.Root = this.gameObject;
+        ctx.Root = new GameObject();    // VRM is loaded as a separate object
         ctx.ParseGlb(vrmBlob.Data);
 
         var meta = ctx.ReadMeta();
@@ -329,6 +329,13 @@ public class PlayerAvatar : MonoBehaviour
 
         // Enable collision (and character controller) again (see the disabling line above)
         GetComponent<CharacterController>().enabled = true;
+
+        // Move VRM avatar inside this gameObject
+        ctx.Root.transform.SetParent(transform);
+        ctx.Root.transform.localPosition = Vector3.zero;
+        ctx.Root.transform.localRotation = Quaternion.identity;
+
+        GetComponent<Animator>().avatar = ctx.Root.GetComponent<Animator>().avatar;
         
         Logger.Log("PlayerAvatar", $"VRM loaded");
 
@@ -337,7 +344,7 @@ public class PlayerAvatar : MonoBehaviour
             // Set up first person view (do not display avatar of the player)
             //  https://vrm.dev/en/univrm/components/univrm_firstperson/
             //  https://vrm.dev/en/dev/univrm-0.xx/programming/univrm_use_firstperson/
-            var fp = GetComponent<VRMFirstPerson>();
+            var fp = GetComponentInChildren<VRMFirstPerson>();
             fp.Setup();
             if (XRRig != null)
             {
