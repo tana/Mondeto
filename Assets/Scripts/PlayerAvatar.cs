@@ -30,6 +30,8 @@ public class PlayerAvatar : MonoBehaviour
 
     private Vector3 lookAt = Vector3.forward; // looking position (in local coord)
 
+    private bool leftHandTracked = false, rightHandTracked = false;
+
     private Vector3 leftHandPosition, rightHandPosition;
     private Quaternion leftHandRotation, rightHandRotation;
 
@@ -46,7 +48,8 @@ public class PlayerAvatar : MonoBehaviour
 
     void Start()
     {
-        xrCamera = XRRig.GetComponentInChildren<Camera>();
+        if (XRRig != null)
+            xrCamera = XRRig.GetComponentInChildren<Camera>();
     }
 
     void Update()
@@ -81,8 +84,10 @@ public class PlayerAvatar : MonoBehaviour
         if (isOriginal && Input.GetKeyDown(KeyCode.F))
         {
             firstPerson = !firstPerson;
-            xrCamera.enabled = firstPerson;
-            ThirdPersonCamera.enabled = !firstPerson;
+            if (xrCamera != null)
+                xrCamera.enabled = firstPerson;
+            if (ThirdPersonCamera != null)
+                ThirdPersonCamera.enabled = !firstPerson;
             Logger.Debug("PlayerAvatar", (firstPerson ? "first" : "third") + "person camera");
         }
 
@@ -164,6 +169,7 @@ public class PlayerAvatar : MonoBehaviour
                 // If left hand device is present
                 leftHandPosition = transform.worldToLocalMatrix * LeftHand.position;
                 leftHandRotation = Quaternion.Inverse(transform.rotation) * Quaternion.AngleAxis(90, LeftHand.transform.forward) * LeftHand.rotation;
+                leftHandTracked = true;
             }
             // Right hand
             if (InputDevices.GetDeviceAtXRNode(XRNode.RightHand).isValid)
@@ -171,6 +177,7 @@ public class PlayerAvatar : MonoBehaviour
                 // If right hand device is present
                 rightHandPosition = transform.worldToLocalMatrix * RightHand.position;
                 rightHandRotation = Quaternion.Inverse(transform.rotation) * Quaternion.AngleAxis(-90, RightHand.transform.forward) * RightHand.rotation;
+                rightHandTracked = true;
             }
         }
 
@@ -205,6 +212,14 @@ public class PlayerAvatar : MonoBehaviour
 
         obj.SetField("lookAt", UnityUtil.ToVec(lookAt));
 
+        obj.SetField("leftHandTracked", new Primitive<bool>(leftHandTracked));
+        obj.SetField("leftHandPosition", UnityUtil.ToVec(leftHandPosition));
+        obj.SetField("leftHandRotation", UnityUtil.ToQuat(leftHandRotation));
+
+        obj.SetField("rightHandTracked", new Primitive<bool>(rightHandTracked));
+        obj.SetField("rightHandPosition", UnityUtil.ToVec(rightHandPosition));
+        obj.SetField("rightHandRotation", UnityUtil.ToQuat(rightHandRotation));
+
         obj.SetField("velocity", UnityUtil.ToVec(velocity));
         obj.SetField("angularVelocity", UnityUtil.ToVec(angularVelocity));
     }
@@ -223,6 +238,21 @@ public class PlayerAvatar : MonoBehaviour
         if (obj.TryGetField("lookAt", out Vec lookAtVec))
         {
             lookAt = UnityUtil.FromVec(lookAtVec);
+        }
+
+        if (obj.TryGetFieldPrimitive("leftHandTracked", out leftHandTracked) && leftHandTracked)
+        {
+            if (obj.TryGetField("leftHandPosition", out Vec leftHandPositionVec))
+                leftHandPosition = UnityUtil.FromVec(leftHandPositionVec);
+            if (obj.TryGetField("leftHandRotation", out Quat leftHandRotationQuat))
+                leftHandRotation = UnityUtil.FromQuat(leftHandRotationQuat);
+        }
+        if (obj.TryGetFieldPrimitive("rightHandTracked", out rightHandTracked) && rightHandTracked)
+        {
+            if (obj.TryGetField("rightHandPosition", out Vec rightHandPositionVec))
+                rightHandPosition = UnityUtil.FromVec(rightHandPositionVec);
+            if (obj.TryGetField("rightHandRotation", out Quat rightHandRotationQuat))
+                rightHandRotation = UnityUtil.FromQuat(rightHandRotationQuat);
         }
 
         if (obj.TryGetField("velocity", out Vec velocityVec))
@@ -332,15 +362,21 @@ public class PlayerAvatar : MonoBehaviour
         anim.SetLookAtWeight(1.0f);
         anim.SetLookAtPosition(transform.localToWorldMatrix * lookAt);
 
-        anim.SetIKPositionWeight(AvatarIKGoal.LeftHand, 1.0f);
-        anim.SetIKRotationWeight(AvatarIKGoal.LeftHand, 1.0f);
-        anim.SetIKPosition(AvatarIKGoal.LeftHand, transform.localToWorldMatrix * leftHandPosition);
-        anim.SetIKRotation(AvatarIKGoal.LeftHand, transform.rotation * leftHandRotation);
+        if (leftHandTracked)
+        {
+            anim.SetIKPositionWeight(AvatarIKGoal.LeftHand, 1.0f);
+            anim.SetIKRotationWeight(AvatarIKGoal.LeftHand, 1.0f);
+            anim.SetIKPosition(AvatarIKGoal.LeftHand, transform.localToWorldMatrix * leftHandPosition);
+            anim.SetIKRotation(AvatarIKGoal.LeftHand, transform.rotation * leftHandRotation);
+        }
 
-        anim.SetIKPositionWeight(AvatarIKGoal.RightHand, 1.0f);
-        anim.SetIKRotationWeight(AvatarIKGoal.RightHand, 1.0f);
-        anim.SetIKPosition(AvatarIKGoal.RightHand, transform.localToWorldMatrix * rightHandPosition);
-        anim.SetIKRotation(AvatarIKGoal.RightHand, transform.rotation * rightHandRotation);
+        if (rightHandTracked)
+        {
+            anim.SetIKPositionWeight(AvatarIKGoal.RightHand, 1.0f);
+            anim.SetIKRotationWeight(AvatarIKGoal.RightHand, 1.0f);
+            anim.SetIKPosition(AvatarIKGoal.RightHand, transform.localToWorldMatrix * rightHandPosition);
+            anim.SetIKRotation(AvatarIKGoal.RightHand, transform.rotation * rightHandRotation);
+        }
     }
 
     void OnDestroy()
