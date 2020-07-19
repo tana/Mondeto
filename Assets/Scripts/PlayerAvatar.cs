@@ -163,14 +163,14 @@ public class PlayerAvatar : MonoBehaviour
             {
                 // If left hand device is present
                 leftHandPosition = transform.worldToLocalMatrix * LeftHand.position;
-                leftHandRotation = Quaternion.Inverse(transform.rotation) * LeftHand.rotation;
+                leftHandRotation = Quaternion.Inverse(transform.rotation) * Quaternion.AngleAxis(90, LeftHand.transform.forward) * LeftHand.rotation;
             }
             // Right hand
             if (InputDevices.GetDeviceAtXRNode(XRNode.RightHand).isValid)
             {
-                // If left hand device is present
+                // If right hand device is present
                 rightHandPosition = transform.worldToLocalMatrix * RightHand.position;
-                rightHandRotation = Quaternion.Inverse(transform.rotation) * RightHand.rotation;
+                rightHandRotation = Quaternion.Inverse(transform.rotation) * Quaternion.AngleAxis(-90, RightHand.transform.forward) * RightHand.rotation;
             }
         }
 
