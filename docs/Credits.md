@@ -33,6 +33,10 @@ The following are credits for these third-party works.
 - [LICENSE.txt](ThirdPartyLicenses/YamlDotNet/LICENSE.txt)
 - [LICENSE-libyaml](ThirdPartyLicenses/YamlDotNet/LICENSE-libyaml)
 
+### OpenVR Unity XR Plugin
+- [LICENSE](ThirdPartyLicenses/OpenVR/LICENSE)
+- [LICENSE.md](ThirdPartyLicenses/OpenVR/LICENSE.md) (Unity Companion License)
+
 ### Unity-Chan
 Mondeto uses animation data of [Unity-Chan](https://unity-chan.com/).
 Because Mondeto uses part of data for characters other than Unity-Chan,

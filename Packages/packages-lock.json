@@ -178,6 +178,17 @@
       },
       "url": "https://packages.unity.com"
     },
+    "com.valvesoftware.unity.openvr": {
+      "version": "1.0.0-preview.6",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.xr.management": "3.0.1",
+        "com.unity.ugui": "1.0.0",
+        "com.unity.xr.legacyinputhelpers": "1.0.0"
+      },
+      "url": "https://registry.npmjs.org"
+    },
     "com.vrmc.univrm": {
       "version": "https://github.com/vrm-c/UniVRM.git?path=/Assets/VRM#v0.56.3",
       "depth": 0,
