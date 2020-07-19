@@ -45,6 +45,8 @@ public class PlayerAvatar : MonoBehaviour
     private Quaternion camRotBeforeDrag;
 
     private Camera xrCamera;
+    
+    private List<GameObject> headForShadow = new List<GameObject>();
 
     void Start()
     {
@@ -88,6 +90,7 @@ public class PlayerAvatar : MonoBehaviour
                 xrCamera.enabled = firstPerson;
             if (ThirdPersonCamera != null)
                 ThirdPersonCamera.enabled = !firstPerson;
+            SetHeadShadow();
             Logger.Debug("PlayerAvatar", (firstPerson ? "first" : "third") + "person camera");
         }
 
@@ -356,6 +359,7 @@ public class PlayerAvatar : MonoBehaviour
                 XRRig.transform.rotation = transform.rotation;  // face forward
                 // Do not render layer "VRMThirdPersonOnly" on first person camera
                 xrCamera.cullingMask &= ~LayerMask.GetMask("VRMThirdPersonOnly");
+                SetHeadShadow();
             }
             if (ThirdPersonCamera != null)
             {
@@ -387,6 +391,38 @@ public class PlayerAvatar : MonoBehaviour
             anim.SetIKRotationWeight(AvatarIKGoal.RightHand, 1.0f);
             anim.SetIKPosition(AvatarIKGoal.RightHand, transform.localToWorldMatrix * rightHandPosition);
             anim.SetIKRotation(AvatarIKGoal.RightHand, transform.rotation * rightHandRotation);
+        }
+    }
+
+    void SetHeadShadow()
+    {
+        if (!firstPerson)
+        {
+            foreach (var obj in headForShadow)
+            {
+                Destroy(obj);
+            }
+            headForShadow.Clear();
+            return;
+        }
+
+        // Seemingly, if some objects are excluded from rendering using layer, those objects cannot cast shadow.
+        // To show shadow of avatar's head (hidden from first-person camera), clone hidden objects.
+        // This solution is based on @Sesleria's article https://qiita.com/Sesleria/items/875566585e8cb1888256
+        // Note: This operation is somewhat costly because requires iterating on renderers.
+        int thirdPersonOnlyLayer = LayerMask.NameToLayer("VRMThirdPersonOnly");
+        int firstPersonOnlyLayer = LayerMask.NameToLayer("VRMFirstPersonOnly");
+        headForShadow.Clear();
+        foreach (var renderer in GetComponentsInChildren<Renderer>())
+        {
+            if (renderer.gameObject.layer == thirdPersonOnlyLayer)
+            {
+                GameObject obj = Instantiate(renderer.gameObject);
+                obj.transform.SetParent(transform, worldPositionStays: true);
+                obj.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly;
+                obj.layer = firstPersonOnlyLayer;
+                headForShadow.Add(obj);
+            }
         }
     }
 
