@@ -212,11 +212,11 @@ public class PlayerAvatar : MonoBehaviour
 
         obj.SetField("lookAt", UnityUtil.ToVec(lookAt));
 
-        obj.SetField("leftHandTracked", new Primitive<bool>(leftHandTracked));
+        obj.SetField("leftHandTracked", new Primitive<int>(leftHandTracked ? 1 : 0));
         obj.SetField("leftHandPosition", UnityUtil.ToVec(leftHandPosition));
         obj.SetField("leftHandRotation", UnityUtil.ToQuat(leftHandRotation));
 
-        obj.SetField("rightHandTracked", new Primitive<bool>(rightHandTracked));
+        obj.SetField("rightHandTracked", new Primitive<int>(rightHandTracked ? 1 : 0));
         obj.SetField("rightHandPosition", UnityUtil.ToVec(rightHandPosition));
         obj.SetField("rightHandRotation", UnityUtil.ToQuat(rightHandRotation));
 
@@ -239,15 +239,19 @@ public class PlayerAvatar : MonoBehaviour
         {
             lookAt = UnityUtil.FromVec(lookAtVec);
         }
-
-        if (obj.TryGetFieldPrimitive("leftHandTracked", out leftHandTracked) && leftHandTracked)
+        
+        if (obj.TryGetFieldPrimitive("leftHandTracked", out int leftHandTrackedInt))
+            leftHandTracked = leftHandTrackedInt != 0;
+        if (obj.TryGetFieldPrimitive("rightHandTracked", out int rightHandTrackedInt))
+            rightHandTracked = rightHandTrackedInt != 0;
+        if (leftHandTracked)
         {
             if (obj.TryGetField("leftHandPosition", out Vec leftHandPositionVec))
                 leftHandPosition = UnityUtil.FromVec(leftHandPositionVec);
             if (obj.TryGetField("leftHandRotation", out Quat leftHandRotationQuat))
                 leftHandRotation = UnityUtil.FromQuat(leftHandRotationQuat);
         }
-        if (obj.TryGetFieldPrimitive("rightHandTracked", out rightHandTracked) && rightHandTracked)
+        if (rightHandTracked)
         {
             if (obj.TryGetField("rightHandPosition", out Vec rightHandPositionVec))
                 rightHandPosition = UnityUtil.FromVec(rightHandPositionVec);
