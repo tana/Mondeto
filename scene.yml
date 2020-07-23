@@ -18,6 +18,11 @@ objects:
     rotation: !euler [0, 90, 0]
     tags: [model, collider]
     model: !load_file "scene_data/slope-and-stage.glb"
+  # Half-pipe
+  - position: !vec [5.5, 0, 10.5]
+    rotation: !euler [0, 90, 0]
+    tags: [model, collider]
+    model: !load_file "scene_data/halfpipe.glb"
   # Red ball
   - position: !vec [8, 30, 10]
     rotation: !quat [1, 0, 0, 0]

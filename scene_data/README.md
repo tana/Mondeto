@@ -4,3 +4,5 @@
     - Downloaded in OBJ format then converted into GLB using Blender.
 - `slope-and-stage.glb`
     - Self-made using Blender (`slope-and-stage.blend`).
+- `halfpipe.glb`
+    - Self-made using Blender (`halfpipe.blend`).

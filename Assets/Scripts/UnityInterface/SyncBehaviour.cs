@@ -29,14 +29,13 @@ public class SyncBehaviour : MonoBehaviour
     // Component Tag (Tags that need a GameObject)
     Dictionary<string, Action<SyncObject, GameObject>> ComponentTagInitializers = new Dictionary<string, Action<SyncObject, GameObject>>();
 
-    public GameObject PlayerPrefab, StagePrefab;
+    public GameObject PlayerPrefab;
 
     // Start is called before the first frame update
     async void Start()
     {
         // Tags that create new GameObject
         RegisterObjectTag("player", obj => Instantiate(PlayerPrefab));
-        RegisterObjectTag("stage", obj => Instantiate(StagePrefab, transform));
         // primitives
         var primitives = new (string, PrimitiveType)[] {
             ("cube", PrimitiveType.Cube),
