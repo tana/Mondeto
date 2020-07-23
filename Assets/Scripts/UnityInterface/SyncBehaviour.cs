@@ -98,6 +98,35 @@ public class SyncBehaviour : MonoBehaviour
 
             return gameObj;
         });
+        RegisterObjectTag("light", obj => {
+            var gameObj = new GameObject();
+            // https://docs.unity3d.com/ja/2019.4/Manual/Lighting.html
+            var light = gameObj.AddComponent<Light>();
+
+            light.shadows = LightShadows.Soft;  // TODO:
+
+            // TODO: real-time sync
+            if (obj.TryGetField("color", out Vec colorVec))
+            {
+                light.color = new Color(colorVec.X, colorVec.Y, colorVec.Z);
+            }
+            // https://docs.unity3d.com/ja/2019.4/Manual/Lighting.html
+            if (obj.TryGetFieldPrimitive("lightType", out string lightType))
+            {
+                switch (lightType)
+                {
+                    case "directional":
+                        light.type = LightType.Directional;
+                        break;
+                    case "point":
+                        light.type = LightType.Point;
+                        break;
+                    // TODO
+                }
+            }
+
+            return gameObj;
+        });
 
         // Tags that uses already existing GameObject
         RegisterComponentTag("physics", (obj, gameObj) => {
