@@ -57,13 +57,10 @@ public class MicrophoneCapture : MonoBehaviour
 
         // Convert to byte array (TODO encoding)
         len = Math.Min(len, 1024);  // FIXME
-        var data = new byte[len];
-        for (int i = 0; i < len; i++)
-        {
-            data[i] = (byte)(127 * buf[i] + 127);
-        }
+        var buf2 = new float[len];
+        Array.Copy(buf, buf2, len);
 
-        sync.SyncObject.SendAudio(data);
+        sync.SyncObject.SendAudio(buf2);
     }
 
     void OnSyncReady()
@@ -92,11 +89,10 @@ public class MicrophoneCapture : MonoBehaviour
         ready = true;
     }
 
-    void OnAudioReceived(byte[] data)
+    void OnAudioReceived(float[] data)
     {
         if (data.Length == 0) return;   // When array has no element, SetData raises an exception
-        float[] buf = data.Select(b => 2 * (float)b / 256 - 1).ToArray();
-        outClip.SetData(buf, outPos);
+        outClip.SetData(data, outPos);
         outPos = (outPos + data.Length) % outClip.samples;
     }
     
