@@ -1,7 +1,29 @@
 objects:
+  # Light
+  # Use an angled directional light as the sun
+  #   https://docs.unity3d.com/ja/2019.4/Manual/UsingLights.html
+  - position: !vec [10, 10, 10]
+    rotation: !euler [20, 0, 0]
+    color: !vec [1, 1, 1]
+    lightType: directional
+    tags: [light]
+  # Ground
   - position: !vec [0, 0, 0]
-    rotation: !quat [1, 0, 0, 0]
-    tags: [stage]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [20, 1, 20]
+    color: !vec [0, 0.4, 0]
+    tags: [plane, material, collider]
+  # Slope and stage
+  - position: !vec [0, 0, 7]
+    rotation: !euler [0, 90, 0]
+    tags: [model, collider]
+    model: !load_file "scene_data/slope-and-stage.glb"
+  # Half-pipe
+  - position: !vec [5.5, 0, 10.5]
+    rotation: !euler [0, 90, 0]
+    tags: [model, collider]
+    model: !load_file "scene_data/halfpipe.glb"
+  # Red ball
   - position: !vec [8, 30, 10]
     rotation: !quat [1, 0, 0, 0]
     color: !vec [1, 0, 0]
