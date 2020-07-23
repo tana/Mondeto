@@ -160,9 +160,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 16b5b8e85a6b62f439e8d6029cf44a30, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  VrmPath: avatar.vrm
-  MaxSpeed: 2
-  MaxAngularSpeed: 60
+  SpeedCoeff: 1
+  AngularSpeedCoeff: 60
+  FirstPersonCamera: {fileID: 0}
+  ThirdPersonCamera: {fileID: 0}
 --- !u!82 &8490544229981949920
 AudioSource:
   m_ObjectHideFlags: 0
@@ -296,7 +297,7 @@ Animator:
   m_GameObject: {fileID: 7750428759976842894}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 8d5a0e0d58f4e4176a844a1a03976c19, type: 2}
+  m_Controller: {fileID: 9100000, guid: 889281f1af2d98f4593a4356ce5bd403, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
