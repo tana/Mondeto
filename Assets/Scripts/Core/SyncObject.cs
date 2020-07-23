@@ -12,7 +12,7 @@ public class SyncObject
 
     public readonly Dictionary<string, Field> Fields = new Dictionary<string, Field>();
 
-    public delegate void AudioReceivedDelegate(byte[] data);
+    public delegate void AudioReceivedDelegate(float[] data);
     // Called when the original used SendAudio
     public event AudioReceivedDelegate AudioReceived;
 
@@ -97,12 +97,12 @@ public class SyncObject
         return tags.Contains(tag);
     }
 
-    public void SendAudio(byte[] data)
+    public void SendAudio(float[] data)
     {
         Node.SendAudioData(Id, data);
     }
 
-    internal void HandleAudio(byte[] data)
+    internal void HandleAudio(float[] data)
     {
         AudioReceived?.Invoke(data);
     }

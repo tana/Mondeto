@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -7,6 +8,8 @@ using UnityEngine;
 public class MicrophoneCapture : MonoBehaviour
 {
     public string DeviceName = "";
+
+    public bool MicrophoneEnabled { get; set; } = true;
 
     const int SamplingRate = 8000;
     const int ClipLength = 1;
@@ -21,16 +24,14 @@ public class MicrophoneCapture : MonoBehaviour
     AudioClip outClip;
     int outPos;
 
-    void Start()
-    {
-    }
+    float[] overflow;
 
     void Update()
     {
         if (!ready) return;
 
         ObjectSync sync = GetComponent<ObjectSync>();
-        if (sync.IsOriginal)
+        if (sync.IsOriginal && MicrophoneEnabled)
         {
             CaptureAndSend();
         }
@@ -59,13 +60,10 @@ public class MicrophoneCapture : MonoBehaviour
 
         // Convert to byte array (TODO encoding)
         len = Math.Min(len, 1024);  // FIXME
-        var data = new byte[len];
-        for (int i = 0; i < len; i++)
-        {
-            data[i] = (byte)(127 * buf[i] + 127);
-        }
+        var buf2 = new float[len];
+        Array.Copy(buf, buf2, len);
 
-        sync.SyncObject.SendAudio(data);
+        sync.SyncObject.SendAudio(buf2);
     }
 
     void OnSyncReady()
@@ -84,9 +82,8 @@ public class MicrophoneCapture : MonoBehaviour
             source.Stop();
 
             outClip = AudioClip.Create("", SamplingRate, 1, SamplingRate, false);
-            source.loop = true;
+            source.loop = false;
             source.clip = outClip;
-            source.Play();
 
             sync.SyncObject.AudioReceived += OnAudioReceived;
         }
@@ -94,12 +91,49 @@ public class MicrophoneCapture : MonoBehaviour
         ready = true;
     }
 
-    void OnAudioReceived(byte[] data)
+    void OnAudioReceived(float[] data)
     {
         if (data.Length == 0) return;   // When array has no element, SetData raises an exception
-        float[] buf = data.Select(b => 2 * (float)b / 256 - 1).ToArray();
-        outClip.SetData(buf, outPos);
-        outPos = (outPos + data.Length) % outClip.samples;
+
+        var source = GetComponent<AudioSource>();
+
+        try
+        {
+            if (overflow != null)
+            {
+                outClip.SetData(overflow, outPos);
+                outPos += overflow.Length;
+            }
+            outClip.SetData(data, outPos);
+            outPos += data.Length;
+        }
+        catch (ArgumentException e)
+        {
+            Debug.Log(e);
+        }
+        if (outPos > outClip.samples)
+        {
+            // When outClip overflowed
+            overflow = new float[outPos - outClip.samples];
+            Array.Copy(data, data.Length - overflow.Length, overflow, 0, overflow.Length);
+            outPos = 0;
+            Logger.Debug("MicrophoneCapture", $"Overflow {overflow.Length} samples");
+        }
+        else if (outPos == outClip.samples)
+        {
+            // It expects the playback of current clip ends before new audio data arrives.
+            // If not, some glitch may occur.
+            outPos = 0;
+        }
+        else
+        {
+            overflow = null;
+        }
+
+        if (!source.isPlaying)
+        {
+            source.Play();
+        }
     }
     
     void OnDestroy()
