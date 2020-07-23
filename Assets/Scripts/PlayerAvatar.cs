@@ -76,8 +76,7 @@ public class PlayerAvatar : MonoBehaviour
             var micCap = GetComponent<MicrophoneCapture>();
             if (micCap != null)
             {
-                // TODO: better way for microphone control
-                micCap.enabled = !micCap.enabled;
+                micCap.MicrophoneEnabled = !micCap.MicrophoneEnabled;
                 Logger.Debug("PlayerAvatar", "microphone " + (micCap.enabled ? "on" : "off"));
             }
         }

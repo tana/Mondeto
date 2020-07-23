@@ -8,6 +8,8 @@ public class MicrophoneCapture : MonoBehaviour
 {
     public string DeviceName = "";
 
+    public bool MicrophoneEnabled { get; set; } = true;
+
     const int SamplingRate = 8000;
     const int ClipLength = 1;
 
@@ -21,16 +23,12 @@ public class MicrophoneCapture : MonoBehaviour
     AudioClip outClip;
     int outPos;
 
-    void Start()
-    {
-    }
-
     void Update()
     {
         if (!ready) return;
 
         ObjectSync sync = GetComponent<ObjectSync>();
-        if (sync.IsOriginal)
+        if (sync.IsOriginal && MicrophoneEnabled)
         {
             CaptureAndSend();
         }
