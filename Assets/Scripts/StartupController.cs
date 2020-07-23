@@ -31,7 +31,6 @@ public class StartupController : MonoBehaviour
 
         if (Application.isBatchMode)
         {
-            ChangeSettings();
             Logger.Log("StartupController", "Running as batch mode. Starting dedicated server scene");
             SceneManager.LoadScene("WalkServer");
         }
