@@ -13,6 +13,11 @@ objects:
     scale: !vec [20, 1, 20]
     color: !vec [0, 0.4, 0]
     tags: [plane, material, collider]
+  # Slope and stage
+  - position: !vec [0, 0, 7]
+    rotation: !euler [0, 90, 0]
+    tags: [model, collider]
+    model: !load_file "scene_data/slope-and-stage.glb"
   # Red ball
   - position: !vec [8, 30, 10]
     rotation: !quat [1, 0, 0, 0]
