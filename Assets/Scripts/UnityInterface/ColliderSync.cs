@@ -25,9 +25,15 @@ public class ColliderSync : MonoBehaviour
             collider.sharedMaterial = material;
             addedColliders.Add(collider);
         }
-        else    // FIXME:
+        else if (obj.HasTag("model"))
         {
-            AddMeshColliders();
+            GetComponent<ModelSync>().LoadComplete += AddMeshCollidersForModel;
+        }
+        else
+        {
+            var collider = gameObject.AddComponent<MeshCollider>();
+            collider.sharedMaterial = material;
+            addedColliders.Add(collider);
         }
 
         obj.BeforeSync += OnBeforeSync;
@@ -37,17 +43,16 @@ public class ColliderSync : MonoBehaviour
     }
 
     // To support GLB loading (multiple meshes may be dynamically added as children)
-    // https://docs.unity3d.com/ja/2019.4/ScriptReference/MonoBehaviour.OnTransformChildrenChanged.html
-    void OnTransformChildrenChanged()
+    void AddMeshCollidersForModel(ModelSync ms)
     {
-        AddMeshColliders();
-    }
-
-    void AddMeshColliders()
-    {
-        foreach (var meshFilter in GetComponentsInChildren<MeshFilter>())
+        foreach (var go in ms.GetMeshes())
         {
-            var collider = meshFilter.gameObject.AddComponent<MeshCollider>();
+            if (go.GetComponent<Collider>() != null)
+            {
+                // Already have collider
+                continue;
+            }
+            var collider = go.AddComponent<MeshCollider>();
             collider.sharedMaterial = material;
             addedColliders.Add(collider);
         }
