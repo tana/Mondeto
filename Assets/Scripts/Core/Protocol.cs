@@ -17,6 +17,7 @@ using MessagePack;
 [MessagePack.Union(8, typeof(Quat))]
 [MessagePack.Union(9, typeof(BlobHandle))]
 [MessagePack.Union(10, typeof(Sequence))]
+[MessagePack.Union(11, typeof(ObjectRef))]
 public interface IValue
 {
 }
@@ -184,7 +185,7 @@ public class BlobHandle : IValue
 public class Sequence : IValue
 {
     [Key(0)]
-    public List<IValue> Elements;
+    public List<IValue> Elements = new List<IValue>();
 
     public override bool Equals(object obj)
     {
@@ -198,6 +199,13 @@ public class Sequence : IValue
     {
         return Elements.Aggregate(0, (accum, elem) => accum ^ elem.GetHashCode());
     }
+}
+
+[MessagePackObject]
+public class ObjectRef : IValue
+{
+    [Key(0)]
+    public uint Id;
 }
 
 // State of an object

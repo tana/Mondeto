@@ -24,7 +24,8 @@ objects:
     tags: [model, collider]
     model: !load_file "scene_data/halfpipe.glb"
   # Red ball
-  - position: !vec [8, 30, 10]
+  - $name: redBall
+    position: !vec [8, 30, 10]
     rotation: !quat [1, 0, 0, 0]
     color: !vec [1, 0, 0]
     mass: 10.0  # ".0" is necessary to indicate it is float
@@ -49,3 +50,10 @@ objects:
     rotation: !euler [0, 0, 0]
     tags: [model, collider]
     model: !load_file "scene_data/PUSHILIN_Plane.glb"
+  # Object hierarchy test (small, non-colliding ball as a child of the red ball)
+  - parent: !ref redBall
+    position: !vec [0, 1, 0]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.3, 0.3, 0.3]
+    color: !vec [1, 1, 1]
+    tags: [sphere, material]

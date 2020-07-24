@@ -129,6 +129,11 @@ public class SyncObject
         Node.SendAudioData(Id, data);
     }
 
+    public ObjectRef GetObjectRef()
+    {
+        return new ObjectRef { Id = this.Id };
+    }
+
     internal void HandleAudio(float[] data)
     {
         AudioReceived?.Invoke(data);
