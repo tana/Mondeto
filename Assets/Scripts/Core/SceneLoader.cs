@@ -9,6 +9,8 @@ public class SceneLoader
 {
     SyncNode node;
 
+    Dictionary<string, uint> namedObjects = new Dictionary<string, uint>();
+
     public SceneLoader(SyncNode node)
     {
         this.node = node;
@@ -42,6 +44,14 @@ public class SceneLoader
             {
                 var keyNode = YamlExpect<YamlScalarNode>(pair.Key);
                 if (keyNode.Value == null) ThrowError(keyNode, "Invalid field name");
+                if (keyNode.Value == "$name")
+                {
+                    // the key "$name" is special
+                    string name = YamlExpect<YamlScalarNode>(pair.Value).Value;
+                    namedObjects[name] = obj.Id;
+                    continue;
+                }
+
                 Console.WriteLine(keyNode.Value);
                 IValue val = YamlToValue(pair.Value);
 
@@ -75,6 +85,12 @@ public class SceneLoader
         else if (yaml.Tag == "!load_file")  // load local file and become a Blob handle
         {
             return YamlHandleLoadFile(yaml);
+        }
+        else if (yaml.Tag == "!ref")    // reference to a object
+        {
+            string name = YamlExpect<YamlScalarNode>(yaml).Value;
+            // TODO: Because current SceneLoader is one-pass, only reference to above-defined objects is supported.
+            return new ObjectRef { Id = namedObjects[name] };
         }
         else if (yaml is YamlScalarNode scalar)
         {

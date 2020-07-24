@@ -36,6 +36,25 @@ class SceneLoaderTests
 
     const string loadedFile = "Assets/Editor/test.txt";
 
+    const string objectRefYaml = @"
+    objects:
+        -
+            $name: theCube
+            position: !vec [0, 0, 0]
+            rotation: !euler [0, 0, 0]
+            tags: [cube]
+        -
+            position: !vec [0, 0, 0]
+            rotation: !euler [0, 0, 0]
+            reftest: !ref theCube
+            tags: [plane, abcdef]
+        -
+            $name: foofoofoo
+            position: !vec [3, 4, 5]
+            rotation: !euler [0, 0, 0]
+            tags: [sphere]
+    ";
+
     [Test]
     public void SimpleLoadTest()
     {
@@ -81,5 +100,18 @@ class SceneLoaderTests
         byte[] data = File.ReadAllBytes(loadedFile);
 
         Assert.That(blob.Data.SequenceEqual(data));
+    }
+
+    [Test]
+    public void ObjectRefTest()
+    {
+        var node = new DummyNode();
+        var loader = new SceneLoader(node);
+        loader.Load(new StringReader(objectRefYaml)).Wait();
+        
+        SyncObject theCube = node.Objects[0];
+        SyncObject secondObj = node.Objects[1];
+        
+        Assert.That(((ObjectRef)secondObj.GetField("reftest")).Id, Is.EqualTo(theCube.Id));
     }
 }
