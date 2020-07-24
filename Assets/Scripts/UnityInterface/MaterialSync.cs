@@ -8,17 +8,17 @@ public class MaterialSync : MonoBehaviour
     {
         meshRenderer = GetComponent<MeshRenderer>();
 
-        obj.BeforeSync += OnBeforeSync;
-        obj.AfterSync += OnAfterSync;
+        obj.RegisterFieldUpdateHandler("color", () => ApplyFieldValues(obj));
+        obj.RegisterFieldUpdateHandler("alpha", () => ApplyFieldValues(obj));
 
-        ApplyState(obj);
+        ApplyFieldValues(obj);
     }
 
-    void ApplyState(SyncObject obj)
+    void ApplyFieldValues(SyncObject obj)
     {
         var color = new Color(0.0f, 0.0f, 0.0f, 1.0f);
         
-        if (obj.HasField("color") && obj.GetField("color") is Vec colorVec)
+        if (obj.TryGetField("color", out Vec colorVec))
         {
             color.r = colorVec.X;
             color.g = colorVec.Y;
@@ -26,26 +26,11 @@ public class MaterialSync : MonoBehaviour
         }
 
         // TODO: currently alpha does not work
-        if (obj.HasField("alpha") && obj.GetField("alpha") is Primitive<float> alpha)
+        if (obj.TryGetFieldPrimitive("alpha", out float alpha))
         {
-            color.a = alpha.Value;
+            color.a = alpha;
         }
 
         meshRenderer.material.color = color;
-    }
-
-    public void OnBeforeSync(SyncObject obj)
-    {
-        Color color = meshRenderer.material.color;
-
-        obj.SetField("color", new Vec(color.r, color.g, color.b));
-        obj.SetField("alpha", new Primitive<float>(color.a));
-    }
-
-    public void OnAfterSync(SyncObject obj)
-    {
-        if (GetComponent<ObjectSync>().IsOriginal) return;
-
-        ApplyState(obj);
     }
 }

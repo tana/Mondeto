@@ -36,10 +36,10 @@ public class ColliderSync : MonoBehaviour
             addedColliders.Add(collider);
         }
 
-        obj.BeforeSync += OnBeforeSync;
-        obj.AfterSync += OnAfterSync;
+        obj.RegisterFieldUpdateHandler("friction", () => ApplyFieldValues(obj));
+        obj.RegisterFieldUpdateHandler("restitution", () => ApplyFieldValues(obj));
 
-        ApplyState(obj);
+        ApplyFieldValues(obj);
     }
 
     // To support GLB loading (multiple meshes may be dynamically added as children)
@@ -58,7 +58,7 @@ public class ColliderSync : MonoBehaviour
         }
     }
 
-    void ApplyState(SyncObject obj)
+    void ApplyFieldValues(SyncObject obj)
     {
         // Uses same value for both static and dynamic friction coefficients.
         // This is for compatibility with engines other than Unity.
@@ -74,28 +74,15 @@ public class ColliderSync : MonoBehaviour
         //  https://docs.unity3d.com/2019.3/Documentation/ScriptReference/PhysicMaterialCombine.html
         // (Therefore, it is needed to set restitution of two objects larger than zero to make them actually bounce)
 
-        if (obj.HasField("friction") && obj.GetField("friction") is Primitive<float> friction)
+        if (obj.TryGetFieldPrimitive("friction", out float friction))
         {
-            material.staticFriction = friction.Value;
-            material.dynamicFriction = friction.Value;
+            material.staticFriction = friction;
+            material.dynamicFriction = friction;
         }
 
-        if (obj.HasField("restitution") && obj.GetField("restitution") is Primitive<float> restitution)
+        if (obj.TryGetFieldPrimitive("restitution", out float restitution))
         {
-            material.bounciness = restitution.Value;
+            material.bounciness = restitution;
         }
-    }
-
-    void OnBeforeSync(SyncObject obj)
-    {
-        obj.SetField("friction", new Primitive<float>(material.dynamicFriction));
-        obj.SetField("restitution", new Primitive<float>(material.bounciness));
-    }
-
-    void OnAfterSync(SyncObject obj)
-    {
-        if (GetComponent<ObjectSync>().IsOriginal) return;
-
-        ApplyState(obj);
     }
 }
