@@ -9,6 +9,11 @@ public class RigidbodySync : MonoBehaviour
         var rb = gameObject.AddComponent<Rigidbody>();
         obj.BeforeSync += OnBeforeSync;
         obj.AfterSync += OnAfterSync;
+        obj.RegisterFieldUpdateHandler("mass", () => {
+            if (obj.TryGetFieldPrimitive("mass", out float mass))
+                rb.mass = mass;
+        });
+
         ApplyState(obj);
     }
 
@@ -20,8 +25,6 @@ public class RigidbodySync : MonoBehaviour
             rb.velocity = UnityUtil.FromVec(velocity);
         if (obj.HasField("angularVelocity") && obj.GetField("angularVelocity") is Vec angularVelocity)
             rb.angularVelocity = UnityUtil.FromVec(angularVelocity);
-        if (obj.HasField("mass") && obj.GetField("mass") is Primitive<float> massValue)
-            rb.mass = massValue.Value;
     }
 
     void OnBeforeSync(SyncObject obj)
