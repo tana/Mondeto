@@ -11,7 +11,7 @@ public class SyncBehaviour : MonoBehaviour
     public SyncNode Node { get; private set; }
     public bool Ready = false;
 
-    Dictionary<uint, GameObject> gameObjects = new Dictionary<uint, GameObject>();
+    public readonly Dictionary<uint, GameObject> GameObjects = new Dictionary<uint, GameObject>();
 
     // For adding objects not defined in YAML (e.g. player avatar)
     public GameObject[] OriginalObjects = new GameObject[0];
@@ -166,7 +166,7 @@ public class SyncBehaviour : MonoBehaviour
             // Because these tags creates an Unity GameObject,
             // these can be added only once per one SyncObject.
             // This also happens for GameObjects in OriginalObjects that have the above tags in initialTags.
-            if (gameObjects.ContainsKey(obj.Id))
+            if (GameObjects.ContainsKey(obj.Id))
             {
                 Logger.Log("SyncBehaviour", $"Tag {tag} is ignored because GameObject is already created for object {obj.Id}");
                 return;
@@ -179,13 +179,13 @@ public class SyncBehaviour : MonoBehaviour
         else if (ComponentTagInitializers.ContainsKey(tag))
         {
             // These tag require GameObject
-            if (!gameObjects.ContainsKey(obj.Id))
+            if (!GameObjects.ContainsKey(obj.Id))
             {
                 Logger.Log("SyncBehaviour", $"Tag {tag} is ignored because there is no GameObject corresponds to  object {obj.Id}");
                 return;
             }
 
-            var gameObj = gameObjects[obj.Id];
+            var gameObj = GameObjects[obj.Id];
             ComponentTagInitializers[tag](obj, gameObj);
         }
         else
@@ -208,13 +208,13 @@ public class SyncBehaviour : MonoBehaviour
     {
         var id = obj.Id;
 
-        if (!gameObjects.ContainsKey(id))
+        if (!GameObjects.ContainsKey(id))
         {
             ObjectSync sync = gameObj.GetComponent<ObjectSync>();
             if (sync == null) sync = gameObj.AddComponent<ObjectSync>();
             sync.IsOriginal = (obj.OriginalNodeId == Node.NodeId);
             sync.NetManager = this.gameObject;
-            gameObjects[id] = gameObj;
+            GameObjects[id] = gameObj;
             sync.Initialize(obj);
             Logger.Debug("SyncBehaviour", "Created GameObject " + gameObj.ToString() + " for ObjectId=" + id);
         }
@@ -223,24 +223,24 @@ public class SyncBehaviour : MonoBehaviour
     void OnObjectDeleted(uint id)
     {
         // destroy and remove deleted objects
-        if (gameObjects.ContainsKey(id))
+        if (GameObjects.ContainsKey(id))
         {
-            Destroy(gameObjects[id]);
-            gameObjects.Remove(id);
+            Destroy(GameObjects[id]);
+            GameObjects.Remove(id);
         }
     }
 
     public void DeleteOriginal(GameObject obj)
     {
         var ids = new HashSet<uint>();
-        foreach (var pair in gameObjects)
+        foreach (var pair in GameObjects)
         {
             if (pair.Value == obj) ids.Add(pair.Key);
         }
         foreach (var id in ids)
         {
             Node.DeleteObject(id);
-            gameObjects.Remove(id);
+            GameObjects.Remove(id);
         }
     }
 

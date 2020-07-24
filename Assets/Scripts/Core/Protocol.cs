@@ -185,7 +185,7 @@ public class BlobHandle : IValue
 public class Sequence : IValue
 {
     [Key(0)]
-    public List<IValue> Elements;
+    public List<IValue> Elements = new List<IValue>();
 
     public override bool Equals(object obj)
     {
