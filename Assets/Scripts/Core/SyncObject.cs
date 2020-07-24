@@ -12,6 +12,8 @@ public class SyncObject
 
     public readonly Dictionary<string, Field> Fields = new Dictionary<string, Field>();
 
+    public readonly Dictionary<string, HashSet<Action>> FieldUpdateHandlers = new Dictionary<string, HashSet<Action>>();
+
     public delegate void AudioReceivedDelegate(float[] data);
     // Called when the original used SendAudio
     public event AudioReceivedDelegate AudioReceived;
@@ -51,6 +53,14 @@ public class SyncObject
         field.Value = val;
         field.LastUpdatedTick = Node.Tick;
         Fields[key] = field;
+
+        if (FieldUpdateHandlers.ContainsKey(key))
+        {
+            foreach (Action handler in FieldUpdateHandlers[key])
+            {
+                handler();
+            }
+        }
     }
 
     public IValue GetField(string key)
@@ -61,6 +71,23 @@ public class SyncObject
     public bool HasField(string key)
     {
         return Fields.ContainsKey(key);
+    }
+    
+    public void RegisterFieldUpdateHandler(string key, Action handler)
+    {
+        if (!FieldUpdateHandlers.ContainsKey(key))
+        {
+            FieldUpdateHandlers[key] = new HashSet<Action>();
+        }
+
+        FieldUpdateHandlers[key].Add(handler);
+    }
+
+    public void DeleteFieldUpdateHandler(string key, Action handler)
+    {
+        if (!FieldUpdateHandlers.ContainsKey(key)) return;
+
+        FieldUpdateHandlers[key].Remove(handler);
     }
 
     public bool TryGetField<T>(string key, out T value)

@@ -12,6 +12,7 @@ public class ModelSync : MonoBehaviour
 
     public async void Initialize(SyncObject obj)
     {
+        // TODO: dynamic model change handling
         if (!obj.HasField("model") || !(obj.GetField("model") is BlobHandle))
         {
             // TODO:
