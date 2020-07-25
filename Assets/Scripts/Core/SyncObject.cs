@@ -153,9 +153,8 @@ public class SyncObject
         EventHandlers[name].Remove(handler);
     }
 
-    public void FireEvent(string name, uint caller, IValue[] args)
+    internal void HandleEvent(string name, uint caller, IValue[] args)
     {
-        // TODO: sync to other nodes
         if (EventHandlers.TryGetValue(name, out var handlers))
         {
             foreach (var handler in handlers)
@@ -167,6 +166,12 @@ public class SyncObject
         {
             Logger.Log("SyncObject", $"Object {Id}: no handler for event {name}");
         }
+    }
+
+    public void FireEvent(string name, uint caller, IValue[] args)
+    {
+        // TODO: option to prevent sync if both caller and this is on the same node
+        HandleEvent(name, caller, args);
     }
 
     public void FireEvent(string name, uint caller) => FireEvent(name, caller, new IValue[0]);

@@ -320,6 +320,31 @@ public abstract class SyncNode : IDisposable
     public abstract Task<uint> CreateObject();
     public abstract void DeleteObject(uint id);
 
+    public void FireEvent(string name, uint caller, uint receiver, IValue[] args)
+    {
+        foreach (Connection conn in Connections.Values)
+        {
+            conn.SendMessage(Connection.ChannelType.Control, new EventFiredMessage {
+                Name = name,
+                Caller = caller,
+                Receiver = receiver,
+                Args = args
+            });
+        }
+    }
+
+    protected void HandleEventFiredMessage(string name, uint caller, uint receiver, IValue[] args)
+    {
+        if (Objects.TryGetValue(receiver, out SyncObject obj))
+        {
+            obj.HandleEvent(name, caller, args);
+        }
+        else
+        {
+            Logger.Log("SyncNode", $"Event receiver (object {receiver}) not found");
+        }
+    }
+
     protected abstract Task<uint> InternSymbol(string symbol);
 
     protected abstract void OnNewBlob(BlobHandle handle, Blob blob);

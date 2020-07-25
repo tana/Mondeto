@@ -110,6 +110,14 @@ public class SyncServer : SyncNode
                 {
                     DeleteObjectAndNotify(deleteObjectMessage.ObjectId, id);
                 }
+                else if (msg is EventFiredMessage eventFiredMessage)
+                {
+                    HandleEventFiredMessage(
+                        eventFiredMessage.Name,
+                        eventFiredMessage.Caller, eventFiredMessage.Receiver,
+                        eventFiredMessage.Args
+                    );
+                }
             }
 
             // FIXME

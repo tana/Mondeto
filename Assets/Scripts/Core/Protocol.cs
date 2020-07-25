@@ -276,6 +276,7 @@ public class FieldUpdate
 [MessagePack.Union(5, typeof(ObjectDeletedMessage))]
 [MessagePack.Union(6, typeof(RegisterSymbolMessage))]
 [MessagePack.Union(7, typeof(SymbolRegisteredMessage))]
+[MessagePack.Union(8, typeof(EventFiredMessage))]
 public interface ITcpMessage
 {
 }
@@ -344,6 +345,20 @@ public class SymbolRegisteredMessage : ITcpMessage
     public string Symbol;
     [Key(1)]
     public uint SymbolId;
+}
+
+// (Both directions)
+[MessagePackObject]
+public class EventFiredMessage : ITcpMessage
+{
+    [Key(0)]
+    public string Name; // Name of the event
+    [Key(1)]
+    public uint Caller; // Object ID of the caller
+    [Key(2)]
+    public uint Receiver;   // Object ID of the receiver
+    [Key(3)]
+    public IValue[] Args;
 }
 
 [MessagePack.Union(0, typeof(BlobBodyMessage))]
