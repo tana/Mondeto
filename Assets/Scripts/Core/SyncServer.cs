@@ -110,12 +110,12 @@ public class SyncServer : SyncNode
                 {
                     DeleteObjectAndNotify(deleteObjectMessage.ObjectId, id);
                 }
-                else if (msg is EventFiredMessage eventFiredMessage)
+                else if (msg is EventSentMessage eventSentMessage)
                 {
-                    HandleEventFiredMessage(
-                        eventFiredMessage.Name,
-                        eventFiredMessage.Caller, eventFiredMessage.Receiver,
-                        eventFiredMessage.Args
+                    HandleEventSentMessage(
+                        eventSentMessage.Name,
+                        eventSentMessage.Sender, eventSentMessage.Receiver,
+                        eventSentMessage.Args
                     );
                 }
             }

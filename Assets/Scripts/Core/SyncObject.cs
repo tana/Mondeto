@@ -168,15 +168,15 @@ public class SyncObject
         }
     }
 
-    public void FireEvent(string name, uint caller, IValue[] args)
+    public void SendEvent(string name, uint sender, IValue[] args)
     {
-        // TODO: option to prevent sync if both caller and this is on the same node
-        HandleEvent(name, caller, args);
+        // TODO: option to prevent sync if both sender and this is on the same node
+        HandleEvent(name, sender, args);
     }
 
-    public void FireEvent(string name, uint caller) => FireEvent(name, caller, new IValue[0]);
-    public void FireEvent(string name, IValue[] args) => FireEvent(name, SyncNode.WorldObjectId, args);
-    public void FireEvent(string name) => FireEvent(name, SyncNode.WorldObjectId);
+    public void SendEvent(string name, uint sender) => SendEvent(name, sender, new IValue[0]);
+    public void SendEvent(string name, IValue[] args) => SendEvent(name, SyncNode.WorldObjectId, args);
+    public void SendEvent(string name) => SendEvent(name, SyncNode.WorldObjectId);
 
     internal void HandleAudio(float[] data)
     {

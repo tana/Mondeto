@@ -320,24 +320,24 @@ public abstract class SyncNode : IDisposable
     public abstract Task<uint> CreateObject();
     public abstract void DeleteObject(uint id);
 
-    public void FireEvent(string name, uint caller, uint receiver, IValue[] args)
+    public void SendEvent(string name, uint sender, uint receiver, IValue[] args)
     {
         foreach (Connection conn in Connections.Values)
         {
-            conn.SendMessage(Connection.ChannelType.Control, new EventFiredMessage {
+            conn.SendMessage(Connection.ChannelType.Control, new EventSentMessage {
                 Name = name,
-                Caller = caller,
+                Sender = sender,
                 Receiver = receiver,
                 Args = args
             });
         }
     }
 
-    protected void HandleEventFiredMessage(string name, uint caller, uint receiver, IValue[] args)
+    protected void HandleEventSentMessage(string name, uint sender, uint receiver, IValue[] args)
     {
         if (Objects.TryGetValue(receiver, out SyncObject obj))
         {
-            obj.HandleEvent(name, caller, args);
+            obj.HandleEvent(name, sender, args);
         }
         else
         {

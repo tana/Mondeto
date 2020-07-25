@@ -104,12 +104,12 @@ public class SyncClient : SyncNode
                 Logger.Debug("Client", $"Received Symbol {symMsg.Symbol}->{symMsg.SymbolId}");
                 break;
             }
-            case EventFiredMessage eventFiredMessage:
+            case EventSentMessage eventSentMessage:
             {
-                HandleEventFiredMessage(
-                    eventFiredMessage.Name,
-                    eventFiredMessage.Caller, eventFiredMessage.Receiver,
-                    eventFiredMessage.Args
+                HandleEventSentMessage(
+                    eventSentMessage.Name,
+                    eventSentMessage.Sender, eventSentMessage.Receiver,
+                    eventSentMessage.Args
                 );
                 break;
             }
