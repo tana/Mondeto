@@ -63,6 +63,18 @@ public class Menu : MonoBehaviour
         micCap.MicrophoneEnabled = MicrophoneToggle.isOn;
     }
 
+    public void OnResetPosRotButtonClicked()
+    {
+        // Reset avatar position and rotation
+        // CharacterController overwrites transform.position.
+        // Therefore we have to disable before resetting position.
+        //  https://forum.unity.com/threads/does-transform-position-work-on-a-charactercontroller.36149/
+        GetComponent<CharacterController>().enabled = false;
+        transform.position = Vector3.zero;
+        transform.rotation = Quaternion.identity;
+        GetComponent<CharacterController>().enabled = true;
+    }
+
     void OnSyncReady()
     {
         var objectSync = GetComponent<ObjectSync>();
