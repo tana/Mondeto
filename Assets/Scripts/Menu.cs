@@ -7,6 +7,7 @@ public class Menu : MonoBehaviour
 {
     public Canvas MenuCanvas;
     public Text NodeIdText;
+    public Toggle MicrophoneToggle;
 
     const KeyCode DesktopKey = KeyCode.Space;
 
@@ -45,6 +46,17 @@ public class Menu : MonoBehaviour
         // For desktop (non-VR)
         if (Input.GetKeyDown(DesktopKey))
             Toggle();
+        
+        // Show microphone state
+        var micCap = GetComponent<MicrophoneCapture>();
+        MicrophoneToggle.isOn = micCap.MicrophoneEnabled;
+    }
+
+    public void OnMicrophoneToggleChanged()
+    {
+        // Set microphone state
+        var micCap = GetComponent<MicrophoneCapture>();
+        micCap.MicrophoneEnabled = MicrophoneToggle.isOn;
     }
 
     void OnSyncReady()

@@ -77,7 +77,6 @@ public class PlayerAvatar : MonoBehaviour
             if (micCap != null)
             {
                 micCap.MicrophoneEnabled = !micCap.MicrophoneEnabled;
-                Logger.Debug("PlayerAvatar", "microphone " + (micCap.enabled ? "on" : "off"));
             }
         }
 
