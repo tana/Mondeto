@@ -6,6 +6,7 @@ using UnityEngine.UI;
 public class Menu : MonoBehaviour
 {
     public Canvas MenuCanvas;
+    public Text NodeIdText;
 
     const KeyCode DesktopKey = KeyCode.Space;
 
@@ -44,6 +45,14 @@ public class Menu : MonoBehaviour
         // For desktop (non-VR)
         if (Input.GetKeyDown(DesktopKey))
             Toggle();
+    }
+
+    void OnSyncReady()
+    {
+        var objectSync = GetComponent<ObjectSync>();
+
+        // Display NodeId
+        NodeIdText.text = $"Node ID: {objectSync.Node.NodeId}";
     }
 
     // Toggle menu opened/closed
