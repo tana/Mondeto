@@ -1129,6 +1129,8 @@ MonoBehaviour:
   MenuCanvas: {fileID: 6832507946549116002}
   NodeIdText: {fileID: 4586257500943324137}
   MicrophoneToggle: {fileID: 1499879683554376650}
+  LeftLine: {fileID: 673454957}
+  RightLine: {fileID: 49289512}
 --- !u!1 &472817052160912522
 GameObject:
   m_ObjectHideFlags: 0
@@ -1292,7 +1294,7 @@ GameObject:
   m_Component:
   - component: {fileID: 122918820351444506}
   - component: {fileID: 5493020826025084774}
-  - component: {fileID: 2525640957339193788}
+  - component: {fileID: 2834838936685241242}
   m_Layer: 0
   m_Name: EventSystem
   m_TagString: Untagged
@@ -1329,7 +1331,7 @@ MonoBehaviour:
   m_FirstSelected: {fileID: 0}
   m_sendNavigationEvents: 1
   m_DragThreshold: 10
---- !u!114 &2525640957339193788
+--- !u!114 &2834838936685241242
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1338,16 +1340,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 1827155470597596084}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4f231c4fb786f3946a6b90b886c48677, type: 3}
+  m_Script: {fileID: 11500000, guid: ab68ce6587aab0146b8dabefbd806791, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_HorizontalAxis: Horizontal
-  m_VerticalAxis: Vertical
-  m_SubmitButton: Submit
-  m_CancelButton: Cancel
-  m_InputActionsPerSecond: 10
-  m_RepeatDelay: 0.5
-  m_ForceModuleActive: 0
+  clickSpeed: 0.3
+  moveDeadzone: 0.6
+  repeatDelay: 0.5
+  repeatRate: 0.1
+  trackedDeviceDragThresholdMultiplier: 2
+  m_MaxTrackedDeviceRaycastDistance: 1000
+  m_EnableXRInput: 1
+  m_EnableMouseInput: 1
+  m_EnableTouchInput: 1
 --- !u!1 &2510688755938293547
 GameObject:
   m_ObjectHideFlags: 0
@@ -1530,6 +1534,7 @@ GameObject:
   - component: {fileID: 6832507946549116002}
   - component: {fileID: 2944944283859701535}
   - component: {fileID: 8343152781555975095}
+  - component: {fileID: 7356418011166865894}
   m_Layer: 5
   m_Name: MenuCanvas
   m_TagString: Untagged
@@ -1617,6 +1622,24 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &7356418011166865894
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7798734761553543559}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7951c64acb0fa62458bf30a60089fe2d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_IgnoreReversedGraphics: 0
+  m_CheckFor2DOcclusion: 0
+  m_CheckFor3DOcclusion: 0
+  m_BlockingMask:
+    serializedVersion: 2
+    m_Bits: 2147483647
 --- !u!1 &7882217746578882019
 GameObject:
   m_ObjectHideFlags: 0
@@ -1695,6 +1718,49 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: 'Node ID: '
+--- !u!1 &8370991418672672910
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6477727868161155894}
+  - component: {fileID: 6666533330441962528}
+  m_Layer: 0
+  m_Name: XR Interaction Manager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6477727868161155894
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8370991418672672910}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 5089013582163175}
+  m_RootOrder: 6
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6666533330441962528
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8370991418672672910}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 83e4e6cca11330d4088d729ab4fc9d9f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &8670804080384498965
 GameObject:
   m_ObjectHideFlags: 0
@@ -1866,15 +1932,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 92acc6079fd763f4783d1ecdf56001f0, type: 3}
---- !u!4 &5089013582163175 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7750428759976842891, guid: 92acc6079fd763f4783d1ecdf56001f0,
-    type: 3}
-  m_PrefabInstance: {fileID: 7754382216208480876}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &5089013582163170 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 7750428759976842894, guid: 92acc6079fd763f4783d1ecdf56001f0,
+    type: 3}
+  m_PrefabInstance: {fileID: 7754382216208480876}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &5089013582163175 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7750428759976842891, guid: 92acc6079fd763f4783d1ecdf56001f0,
     type: 3}
   m_PrefabInstance: {fileID: 7754382216208480876}
   m_PrefabAsset: {fileID: 0}

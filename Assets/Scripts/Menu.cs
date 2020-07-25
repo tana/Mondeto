@@ -8,6 +8,10 @@ public class Menu : MonoBehaviour
     public Canvas MenuCanvas;
     public Text NodeIdText;
     public Toggle MicrophoneToggle;
+    
+    // To control rendering of line beam from controllers
+    // https://docs.unity3d.com/Packages/com.unity.xr.interaction.toolkit@0.9/api/UnityEngine.XR.Interaction.Toolkit.XRInteractorLineVisual.html
+    public UnityEngine.XR.Interaction.Toolkit.XRInteractorLineVisual LeftLine, RightLine;
 
     const KeyCode DesktopKey = KeyCode.Space;
 
@@ -72,5 +76,9 @@ public class Menu : MonoBehaviour
     {
         isOpen = !isOpen;
         MenuCanvas.gameObject.SetActive(isOpen);
+
+        // Display controller line only if menu is open
+        LeftLine.enabled = isOpen;
+        RightLine.enabled = isOpen;
     }
 }
