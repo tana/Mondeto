@@ -13,6 +13,8 @@ public abstract class SyncNode : IDisposable
 
     public const uint ServerNodeId = 0;
 
+    public const uint WorldObjectId = 0;    // Object ID 0 is reserved for World object (system object)
+
     //public Dictionary<IPAddress, int> UdpEpToNodeId { get; } = new Dictionary<IPAddress, int>();
 
     // Do not modify Objects outside main loop! Otherwise data corrupts (e.g. strange null)

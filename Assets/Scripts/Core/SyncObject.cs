@@ -14,6 +14,8 @@ public class SyncObject
 
     public readonly Dictionary<string, HashSet<Action>> FieldUpdateHandlers = new Dictionary<string, HashSet<Action>>();
 
+    public readonly Dictionary<string, HashSet<Action<uint, IValue[]>>> EventHandlers = new Dictionary<string, HashSet<Action<uint, IValue[]>>>();
+
     public delegate void AudioReceivedDelegate(float[] data);
     // Called when the original used SendAudio
     public event AudioReceivedDelegate AudioReceived;
@@ -133,6 +135,43 @@ public class SyncObject
     {
         return new ObjectRef { Id = this.Id };
     }
+
+    public void RegisterEventHandler(string name, Action<uint, IValue[]> handler)
+    {
+        if (!EventHandlers.ContainsKey(name))
+        {
+            EventHandlers[name] = new HashSet<Action<uint, IValue[]>>();
+        }
+
+        EventHandlers[name].Add(handler);
+    }
+
+    public void DeleteEventHandler(string name, Action<uint, IValue[]> handler)
+    {
+        if (!EventHandlers.ContainsKey(name)) return;
+
+        EventHandlers[name].Remove(handler);
+    }
+
+    public void FireEvent(string name, uint caller, IValue[] args)
+    {
+        // TODO: sync to other nodes
+        if (EventHandlers.TryGetValue(name, out var handlers))
+        {
+            foreach (var handler in handlers)
+            {
+                handler(caller, args);
+            }
+        }
+        else
+        {
+            Logger.Log("SyncObject", $"Object {Id}: no handler for event {name}");
+        }
+    }
+
+    public void FireEvent(string name, uint caller) => FireEvent(name, caller, new IValue[0]);
+    public void FireEvent(string name, IValue[] args) => FireEvent(name, SyncNode.WorldObjectId, args);
+    public void FireEvent(string name) => FireEvent(name, SyncNode.WorldObjectId);
 
     internal void HandleAudio(float[] data)
     {
