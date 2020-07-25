@@ -9,7 +9,17 @@ public class MicrophoneCapture : MonoBehaviour
 {
     public string DeviceName = "";
 
-    public bool MicrophoneEnabled { get; set; } = true;
+    private bool micEnabled = true;
+
+    public bool MicrophoneEnabled
+    {
+        get => micEnabled;
+        set
+        {
+            micEnabled = value;
+            Logger.Debug("MicrophoneCapture", "Microphone " + (micEnabled ? "on" : "off"));
+        }
+    }
 
     const int SamplingRate = 8000;
     const int ClipLength = 1;
