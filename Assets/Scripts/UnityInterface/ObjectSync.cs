@@ -54,10 +54,9 @@ public class ObjectSync : MonoBehaviour
 
     void OnDestroy()
     {
-        if (IsOriginal)
-        {
-            syncBehaviour.DeleteOriginal(gameObject);
-        }
+        SyncObject.BeforeSync -= OnBeforeSync;
+        SyncObject.AfterSync -= OnAfterSync;
+        SyncObject.DeleteFieldUpdateHandler("parent", HandleParentChange);
     }
 
     void HandleParentChange()
