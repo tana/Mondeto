@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -183,9 +184,15 @@ public class PlayerAvatar : MonoBehaviour
     {
         SyncBehaviour syncBehaviour = GetComponent<ObjectSync>().NetManager.GetComponent<SyncBehaviour>();
         if (leftHandObj != null)
+        {
             leftHandGameObj = syncBehaviour.GameObjects[leftHandObj.Id];
+            SetHandCollider(leftHandGameObj);
+        }
         if (rightHandObj != null)
+        {
             rightHandGameObj = syncBehaviour.GameObjects[rightHandObj.Id];
+            SetHandCollider(rightHandGameObj);
+        }
 
         if (GetComponent<ObjectSync>().IsOriginal)
         {
@@ -201,14 +208,40 @@ public class PlayerAvatar : MonoBehaviour
         }
     }
 
+    void SetHandCollider(GameObject handGameObj)
+    {
+        if (handGameObj.GetComponent<GrabDetector>() != null) return;
+        handGameObj.AddComponent<GrabDetector>();
+    }
+
     void GrabObject()
     {
-        // TODO:
+        if (rightHandGameObj == null) return;
+        var detector = rightHandGameObj.GetComponent<GrabDetector>();
+        foreach (var obj in detector.ObjectToGrab)
+        {
+            obj.GetComponent<ObjectSync>().SyncObject.SendEvent(
+                "grab",
+                rightHandObj.Id,
+                new IValue[0]
+            );
+        }
     }
 
     void UngrabObject()
     {
-        // TODO:
+        // FIXME: provisional implementation
+        if (rightHandObj.TryGetField("children", out Sequence children))
+        {
+            foreach (var child in children.Elements.Select(elem => elem as ObjectRef).Where(elem => elem != null))
+            {
+                rightHandObj.Node.Objects[child.Id].SendEvent(
+                    "ungrab",
+                    rightHandObj.Id,
+                    new IValue[0]
+                );
+            }
+        }
     }
 
     void OnBeforeSync(SyncObject obj)

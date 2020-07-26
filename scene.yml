@@ -64,7 +64,7 @@ objects:
     color: !vec [1, 0, 0]
     tags: [cube, material, collider, grabbable]
   - position: !vec [2.5, 1.2, 3]
-    rotaiton: !euler [20, 30, 40]
+    rotation: !euler [20, 30, 40]
     scale: !vec [0.3, 0.3, 0.3]
     color: !vec [0, 1, 0]
     tags: [cube, material, collider, grabbable]
