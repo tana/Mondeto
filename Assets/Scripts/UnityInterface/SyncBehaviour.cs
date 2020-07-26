@@ -29,6 +29,8 @@ public class SyncBehaviour : MonoBehaviour
     // Component Tag (Tags that need a GameObject)
     Dictionary<string, Action<SyncObject, GameObject>> ComponentTagInitializers = new Dictionary<string, Action<SyncObject, GameObject>>();
 
+    HashSet<uint> OriginalObjectIds = new HashSet<uint>();
+
     public GameObject PlayerPrefab;
 
     // Start is called before the first frame update
@@ -124,6 +126,13 @@ public class SyncBehaviour : MonoBehaviour
         foreach (GameObject obj in OriginalObjects)
         {
             var id = await Node.CreateObject();
+            OriginalObjectIds.Add(id);
+            if (GameObjects.ContainsKey(id))
+            {
+                // Delete provisional GameObject created in OnObjectCreated
+                Destroy(GameObjects[id]);
+                GameObjects.Remove(id);
+            }
             // With SynchronizationContext of Unity, the line below will run in main thread.
             // https://qiita.com/toRisouP/items/a2c1bb1b0c4f73366bc6
             SetupObjectSync(obj, Node.Objects[id]);
@@ -156,20 +165,26 @@ public class SyncBehaviour : MonoBehaviour
     void OnObjectCreated(uint id)
     {
         SyncObject obj = Node.Objects[id];
+        // Provisional empty GameObject for all objects
+        var gameObj = new GameObject();
+        gameObj.transform.SetParent(this.transform);
+        SetupObjectSync(gameObj, obj);
         obj.TagAdded += OnTagAdded;
     }
 
     void OnTagAdded(SyncObject obj, string tag)
     {
-        if (ObjectTagInitializers.ContainsKey(tag))
+        if (ObjectTagInitializers.ContainsKey(tag) && !OriginalObjectIds.Contains(obj.Id))
         {
-            // Because these tags creates an Unity GameObject,
+            // Because these tags creates a new Unity GameObject,
             // these can be added only once per one SyncObject.
             // This also happens for GameObjects in OriginalObjects that have the above tags in initialTags.
             if (GameObjects.ContainsKey(obj.Id))
             {
-                Logger.Log("SyncBehaviour", $"Tag {tag} is ignored because GameObject is already created for object {obj.Id}");
-                return;
+                // Replace old GameObject
+                Logger.Log("SyncBehaviour", $"Replacing GameObject because a GameObject is already created for object {obj.Id}");
+                Destroy(GameObjects[obj.Id]);
+                GameObjects.Remove(obj.Id);
             }
 
             var gameObj = ObjectTagInitializers[tag](obj);
