@@ -345,7 +345,7 @@ public class PlayerAvatar : MonoBehaviour
             // Left hand
             // If device is not present, GetDeviceAtXRNode returns an "invalid" InputDevice.
             //   https://docs.unity3d.com/ja/2019.4/ScriptReference/XR.InputDevices.GetDeviceAtXRNode.html
-            //if (InputDevices.GetDeviceAtXRNode(XRNode.LeftHand).isValid)
+            if (InputDevices.GetDeviceAtXRNode(XRNode.LeftHand).isValid)
             {
                 // If left hand device is present
                 var leftId = await node.CreateObject();
@@ -354,7 +354,7 @@ public class PlayerAvatar : MonoBehaviour
                 obj.SetField("leftHand", leftHandObj.GetObjectRef());
             }
             // Right hand
-            //if (InputDevices.GetDeviceAtXRNode(XRNode.RightHand).isValid)
+            if (InputDevices.GetDeviceAtXRNode(XRNode.RightHand).isValid)
             {
                 // If right hand device is present
                 var rightId = await node.CreateObject();
