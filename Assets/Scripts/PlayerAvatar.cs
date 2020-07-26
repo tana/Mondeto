@@ -42,7 +42,7 @@ public class PlayerAvatar : MonoBehaviour
 
     private InputDevice? rightController;
 
-    private bool lastGripButtonValue;   // for button down/up detection
+    private ButtonDetector leftButtonDetector, rightButtonDetector;
     
     private List<GameObject> headForShadow = new List<GameObject>();
 
@@ -194,18 +194,9 @@ public class PlayerAvatar : MonoBehaviour
             SetHandCollider(rightHandGameObj);
         }
 
-        if (GetComponent<ObjectSync>().IsOriginal)
-        {
-            // grabbing
-            if (rightController.HasValue &&
-                rightController.Value.TryGetFeatureValue(CommonUsages.gripButton, out bool gripButtonValue))
-            {
-                if (!lastGripButtonValue && gripButtonValue) GrabObject();
-                else if (lastGripButtonValue && !gripButtonValue) UngrabObject();
-
-                lastGripButtonValue = gripButtonValue;
-            }
-        }
+        // for grabbing
+        if (leftButtonDetector != null) leftButtonDetector.Detect();
+        if (rightButtonDetector != null) rightButtonDetector.Detect();
     }
 
     void SetHandCollider(GameObject handGameObj)
@@ -214,30 +205,33 @@ public class PlayerAvatar : MonoBehaviour
         handGameObj.AddComponent<GrabDetector>();
     }
 
-    void GrabObject()
+    void GrabObject(GameObject handGameObj)
     {
-        if (rightHandGameObj == null) return;
-        var detector = rightHandGameObj.GetComponent<GrabDetector>();
+        if (handGameObj == null) return;
+        var detector = handGameObj.GetComponent<GrabDetector>();
+        var handObj = handGameObj.GetComponent<ObjectSync>().SyncObject;
         foreach (var obj in detector.ObjectToGrab)
         {
             obj.GetComponent<ObjectSync>().SyncObject.SendEvent(
                 "grab",
-                rightHandObj.Id,
+                handObj.Id,
                 new IValue[0]
             );
         }
     }
 
-    void UngrabObject()
+    void UngrabObject(GameObject handGameObj)
     {
+        if (handGameObj == null) return;
+        var handObj = handGameObj.GetComponent<ObjectSync>().SyncObject;
         // FIXME: provisional implementation
-        if (rightHandObj.TryGetField("children", out Sequence children))
+        if (handObj.TryGetField("children", out Sequence children))
         {
             foreach (var child in children.Elements.Select(elem => elem as ObjectRef).Where(elem => elem != null))
             {
-                rightHandObj.Node.Objects[child.Id].SendEvent(
+                handObj.Node.Objects[child.Id].SendEvent(
                     "ungrab",
-                    rightHandObj.Id,
+                    handObj.Id,
                     new IValue[0]
                 );
             }
@@ -370,7 +364,8 @@ public class PlayerAvatar : MonoBehaviour
             // Left hand
             // If device is not present, GetDeviceAtXRNode returns an "invalid" InputDevice.
             //   https://docs.unity3d.com/ja/2019.4/ScriptReference/XR.InputDevices.GetDeviceAtXRNode.html
-            if (InputDevices.GetDeviceAtXRNode(XRNode.LeftHand).isValid)
+            InputDevice dev;
+            if ((dev = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand)).isValid)
             {
                 // If left hand device is present
                 var leftId = await node.CreateObject();
@@ -381,9 +376,14 @@ public class PlayerAvatar : MonoBehaviour
                     new Primitive<string>("collider")
                 }));
                 obj.SetField("leftHand", leftHandObj.GetObjectRef());
+
+                // grab-related
+                leftButtonDetector = new ButtonDetector(dev, CommonUsages.gripButton);
+                leftButtonDetector.ButtonDown += (bd) => GrabObject(leftHandGameObj);
+                leftButtonDetector.ButtonUp += (bd) => UngrabObject(leftHandGameObj);
             }
             // Right hand
-            if (InputDevices.GetDeviceAtXRNode(XRNode.RightHand).isValid)
+            if ((dev = InputDevices.GetDeviceAtXRNode(XRNode.RightHand)).isValid)
             {
                 // If right hand device is present
                 var rightId = await node.CreateObject();
@@ -394,6 +394,11 @@ public class PlayerAvatar : MonoBehaviour
                     new Primitive<string>("collider")
                 }));
                 obj.SetField("rightHand", rightHandObj.GetObjectRef());
+
+                // grab-related
+                rightButtonDetector = new ButtonDetector(dev, CommonUsages.gripButton);
+                rightButtonDetector.ButtonDown += (bd) => GrabObject(rightHandGameObj);
+                rightButtonDetector.ButtonUp += (bd) => UngrabObject(rightHandGameObj);
             }
         }
     }
