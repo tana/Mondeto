@@ -204,6 +204,10 @@ public class SyncBehaviour : MonoBehaviour
             var gameObj = GameObjects[obj.Id];
             ComponentTagInitializers[tag](obj, gameObj);
         }
+        else if (tag == "grabbable")    // TODO: move to somewhere of core, not in Unity-specific code
+        {
+            (new GrabbableTag()).Initialize(obj);
+        }
         else
         {
             Logger.Log("SyncBehaviour", "Unknown tag " + tag);

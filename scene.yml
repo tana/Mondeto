@@ -57,12 +57,14 @@ objects:
     scale: !vec [0.3, 0.3, 0.3]
     color: !vec [1, 1, 1]
     tags: [sphere, material]
-  # Test for provisional empty GameObject
-  - $name: emptyTest1
-    position: !vec [0, 0, 0]
+  # Grabbable objects
+  - position: !vec [2, 1.2, 3]
     rotaiton: !euler [0, 0, 0]
-    tags: []
-  - position: !vec [0, 0, 0]
-    rotaiton: !euler [0, 0, 0]
-    parent: !ref emptyTest1
-    tags: []
+    scale: !vec [0.3, 0.3, 0.3]
+    color: !vec [1, 0, 0]
+    tags: [cube, material, grabbable]
+  - position: !vec [2.5, 1.2, 3]
+    rotaiton: !euler [20, 30, 40]
+    scale: !vec [0.3, 0.3, 0.3]
+    color: !vec [0, 1, 0]
+    tags: [cube, material, grabbable]

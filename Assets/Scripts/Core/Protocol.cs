@@ -63,6 +63,10 @@ public class Vec : IValue
         X = x; Y = y; Z = z;
     }
 
+    public static Vec operator+(Vec a, Vec b) => new Vec(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
+
+    public static Vec operator-(Vec a, Vec b) => new Vec(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
+
     public static Vec operator*(float k, Vec v)
     {
         return new Vec { X = k * v.X, Y = k * v.Y, Z = k * v.Z };
@@ -113,6 +117,17 @@ public class Quat : IValue
             Y = a.W * b.Y + a.Y * b.W + a.Z * b.X - a.X * b.Z,
             Z = a.W * b.Z + a.Z * b.W + a.X * b.Y - a.Y * b.X
         };
+    }
+    // rotate a vector
+    public static Vec operator*(Quat q, Vec v)
+    {
+        Quat vQuat = new Quat { W = 0, X = v.X, Y = v.Y, Z = v.Z };
+        Quat after = q * vQuat * q.Conjugate();
+        return new Vec(after.X, after.Y, after.Z);
+    }
+    public Quat Conjugate()
+    {
+        return new Quat { W = W, X = -X, Y = -Y, Z = -Z };
     }
 
     // angle is in radians
