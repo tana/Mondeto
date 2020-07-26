@@ -34,12 +34,6 @@ public class PlayerAvatar : MonoBehaviour
     private SyncObject leftHandObj, rightHandObj;
     private GameObject leftHandGameObj, rightHandGameObj;
 
-    private Vector3 velocity = Vector3.zero, angularVelocity = Vector3.zero;
-
-    // For calculation of velocity and angular velocity
-    private Vector3 lastPosition = Vector3.zero;
-    private Quaternion lastRotation = Quaternion.identity;
-
     private Vector3 lastMousePosition;
     private Quaternion camRotBeforeDrag;
 
@@ -181,22 +175,6 @@ public class PlayerAvatar : MonoBehaviour
 
     public void FixedUpdate()
     {
-        SyncObject obj = GetComponent<ObjectSync>()?.SyncObject;
-        if (obj == null) return;
-
-        if (GetComponent<ObjectSync>().IsOriginal)
-        {
-            velocity = (transform.position - lastPosition) / Time.fixedDeltaTime;
-            angularVelocity = Mathf.Deg2Rad * (Quaternion.Inverse(lastRotation) * transform.rotation).eulerAngles / Time.fixedDeltaTime;
-            lastPosition = transform.position;
-            lastRotation = transform.rotation;
-        }
-        else
-        {
-            transform.position += velocity * Time.fixedDeltaTime;
-            transform.rotation *= Quaternion.Euler(Mathf.Rad2Deg * angularVelocity * Time.fixedDeltaTime);
-        }
-
         SyncBehaviour syncBehaviour = GetComponent<ObjectSync>().NetManager.GetComponent<SyncBehaviour>();
         if (leftHandObj != null)
             leftHandGameObj = syncBehaviour.GameObjects[leftHandObj.Id];
@@ -211,9 +189,6 @@ public class PlayerAvatar : MonoBehaviour
         obj.SetField("turn", new Primitive<float> { Value = turn });
 
         obj.SetField("lookAt", UnityUtil.ToVec(lookAt));
-
-        obj.SetField("velocity", UnityUtil.ToVec(velocity));
-        obj.SetField("angularVelocity", UnityUtil.ToVec(angularVelocity));
     }
 
     void OnAfterSync(SyncObject obj)
@@ -231,15 +206,6 @@ public class PlayerAvatar : MonoBehaviour
         {
             lookAt = UnityUtil.FromVec(lookAtVec);
         }
-
-        if (obj.TryGetField("velocity", out Vec velocityVec))
-        {
-            velocity = UnityUtil.FromVec(velocityVec);
-        }
-        if (obj.TryGetField("angularVelocity", out Vec angularVelocityVec))
-        {
-            angularVelocity = UnityUtil.FromVec(angularVelocityVec);
-        }
     }
 
     // Called by ObjectSync when become ready
@@ -249,9 +215,6 @@ public class PlayerAvatar : MonoBehaviour
 
         SyncObject obj = GetComponent<ObjectSync>().SyncObject;
         SyncNode node = GetComponent<ObjectSync>().Node;
-
-        lastPosition = transform.position;
-        lastRotation = transform.rotation;
 
         obj.BeforeSync += OnBeforeSync;
         obj.AfterSync += OnAfterSync;
@@ -351,6 +314,7 @@ public class PlayerAvatar : MonoBehaviour
                 var leftId = await node.CreateObject();
                 leftHandObj = node.Objects[leftId];
                 leftHandObj.SetField("parent", obj.GetObjectRef());
+                leftHandObj.SetField("tag", new Sequence(new IValue[] { new Primitive<string>("constantVelocity") }));
                 obj.SetField("leftHand", leftHandObj.GetObjectRef());
             }
             // Right hand
@@ -360,6 +324,7 @@ public class PlayerAvatar : MonoBehaviour
                 var rightId = await node.CreateObject();
                 rightHandObj = node.Objects[rightId];
                 rightHandObj.SetField("parent", obj.GetObjectRef());
+                rightHandObj.SetField("tag", new Sequence(new IValue[] { new Primitive<string>("constantVelocity") }));
                 obj.SetField("rightHand", rightHandObj.GetObjectRef());
             }
         }

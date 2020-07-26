@@ -99,6 +99,9 @@ public class SyncBehaviour : MonoBehaviour
         RegisterComponentTag("material", (obj, gameObj) => {
             gameObj.AddComponent<MaterialSync>().Initialize(obj);
         });
+        RegisterComponentTag("constantVelocity", (obj, gameObj) => {
+            gameObj.AddComponent<ConstantVelocity>().Initialize(obj);
+        });
 
         if (IsServer)
         {

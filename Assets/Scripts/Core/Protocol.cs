@@ -187,6 +187,12 @@ public class Sequence : IValue
     [Key(0)]
     public List<IValue> Elements = new List<IValue>();
 
+    public Sequence() {}
+    public Sequence(IList<IValue> elements)
+    {
+        Elements = elements.ToList();
+    }
+
     public override bool Equals(object obj)
     {
         if (obj is Sequence other)
