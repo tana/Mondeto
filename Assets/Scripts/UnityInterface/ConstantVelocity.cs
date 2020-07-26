@@ -42,20 +42,20 @@ public class ConstantVelocity : MonoBehaviour
 
     void ApplyState(SyncObject obj)
     {
-        if (obj.TryGetField("velocity", out Vec velocityVec))
+        if (obj.TryGetField("velocity", out Vec localVelocityVec))
         {
-            velocity = UnityUtil.FromVec(velocityVec);
+            velocity = transform.TransformVector(UnityUtil.FromVec(localVelocityVec));
         }
-        if (obj.TryGetField("angularVelocity", out Vec angularVelocityVec))
+        if (obj.TryGetField("angularVelocity", out Vec localAngularVelocityVec))
         {
-            angularVelocity = UnityUtil.FromVec(angularVelocityVec);
+            angularVelocity = transform.TransformVector(UnityUtil.FromVec(localAngularVelocityVec));
         }
     }
 
     void OnBeforeSync(SyncObject obj)
     {
-        obj.SetField("velocity", UnityUtil.ToVec(velocity));
-        obj.SetField("angularVelocity", UnityUtil.ToVec(angularVelocity));
+        obj.SetField("velocity", UnityUtil.ToVec(transform.InverseTransformVector(velocity)));
+        obj.SetField("angularVelocity", UnityUtil.ToVec(transform.InverseTransformVector(angularVelocity)));
     }
 
     void OnAfterSync(SyncObject obj)
