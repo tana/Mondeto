@@ -33,6 +33,7 @@ public class SyncServer : SyncNode
     {
         // Create World object
         Objects[WorldObjectId] = new SyncObject(this, WorldObjectId, ServerNodeId);
+        InvokeObjectCreated(WorldObjectId); // To invoke ObjectCreated event for World Object (ID=0)
 
         // Start communication
         await signaler.ConnectAsync();
