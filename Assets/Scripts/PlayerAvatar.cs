@@ -38,6 +38,10 @@ public class PlayerAvatar : MonoBehaviour
     private Quaternion camRotBeforeDrag;
 
     private Camera xrCamera;
+
+    private InputDevice? rightController;
+
+    private bool lastGripButtonValue;   // for button down/up detection
     
     private List<GameObject> headForShadow = new List<GameObject>();
 
@@ -127,8 +131,10 @@ public class PlayerAvatar : MonoBehaviour
                     InputDeviceCharacteristics.Controller | InputDeviceCharacteristics.Right,
                     devices
                 );
+                if (devices.Count >= 1) rightController = devices[0];
                 Vector2 stick;
-                if (devices.Count != 0 && devices[0].TryGetFeatureValue(CommonUsages.primary2DAxis, out stick))
+                if (rightController.HasValue &&
+                    rightController.Value.TryGetFeatureValue(CommonUsages.primary2DAxis, out stick))
                 {
                     turn = AngularSpeedCoeff * stick.x;
                 }
@@ -180,6 +186,29 @@ public class PlayerAvatar : MonoBehaviour
             leftHandGameObj = syncBehaviour.GameObjects[leftHandObj.Id];
         if (rightHandObj != null)
             rightHandGameObj = syncBehaviour.GameObjects[rightHandObj.Id];
+
+        if (GetComponent<ObjectSync>().IsOriginal)
+        {
+            // grabbing
+            if (rightController.HasValue &&
+                rightController.Value.TryGetFeatureValue(CommonUsages.gripButton, out bool gripButtonValue))
+            {
+                if (!lastGripButtonValue && gripButtonValue) GrabObject();
+                else if (lastGripButtonValue && !gripButtonValue) UngrabObject();
+
+                lastGripButtonValue = gripButtonValue;
+            }
+        }
+    }
+
+    void GrabObject()
+    {
+        // TODO:
+    }
+
+    void UngrabObject()
+    {
+        // TODO:
     }
 
     void OnBeforeSync(SyncObject obj)
@@ -314,7 +343,10 @@ public class PlayerAvatar : MonoBehaviour
                 var leftId = await node.CreateObject();
                 leftHandObj = node.Objects[leftId];
                 leftHandObj.SetField("parent", obj.GetObjectRef());
-                leftHandObj.SetField("tag", new Sequence(new IValue[] { new Primitive<string>("constantVelocity") }));
+                leftHandObj.SetField("tag", new Sequence(new IValue[] {
+                    new Primitive<string>("constantVelocity"),
+                    new Primitive<string>("collider")
+                }));
                 obj.SetField("leftHand", leftHandObj.GetObjectRef());
             }
             // Right hand
@@ -324,7 +356,10 @@ public class PlayerAvatar : MonoBehaviour
                 var rightId = await node.CreateObject();
                 rightHandObj = node.Objects[rightId];
                 rightHandObj.SetField("parent", obj.GetObjectRef());
-                rightHandObj.SetField("tag", new Sequence(new IValue[] { new Primitive<string>("constantVelocity") }));
+                rightHandObj.SetField("tag", new Sequence(new IValue[] {
+                    new Primitive<string>("constantVelocity"),
+                    new Primitive<string>("collider")
+                }));
                 obj.SetField("rightHand", rightHandObj.GetObjectRef());
             }
         }
