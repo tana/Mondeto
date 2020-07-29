@@ -99,6 +99,9 @@ public class SyncBehaviour : MonoBehaviour
         RegisterComponentTag("material", (obj, gameObj) => {
             gameObj.AddComponent<MaterialSync>().Initialize(obj);
         });
+        RegisterComponentTag("constantVelocity", (obj, gameObj) => {
+            gameObj.AddComponent<ConstantVelocity>().Initialize(obj);
+        });
 
         if (IsServer)
         {
@@ -130,8 +133,7 @@ public class SyncBehaviour : MonoBehaviour
             if (GameObjects.ContainsKey(id))
             {
                 // Delete provisional GameObject created in OnObjectCreated
-                Destroy(GameObjects[id]);
-                GameObjects.Remove(id);
+                ReplaceObject(Node.Objects[id], obj);
             }
             // With SynchronizationContext of Unity, the line below will run in main thread.
             // https://qiita.com/toRisouP/items/a2c1bb1b0c4f73366bc6
@@ -179,16 +181,15 @@ public class SyncBehaviour : MonoBehaviour
             // Because these tags creates a new Unity GameObject,
             // these can be added only once per one SyncObject.
             // This also happens for GameObjects in OriginalObjects that have the above tags in initialTags.
+
+            var gameObj = ObjectTagInitializers[tag](obj);
+            gameObj.transform.SetParent(this.transform);
             if (GameObjects.ContainsKey(obj.Id))
             {
                 // Replace old GameObject
                 Logger.Log("SyncBehaviour", $"Replacing GameObject because a GameObject is already created for object {obj.Id}");
-                Destroy(GameObjects[obj.Id]);
-                GameObjects.Remove(obj.Id);
+                ReplaceObject(obj, gameObj);
             }
-
-            var gameObj = ObjectTagInitializers[tag](obj);
-            gameObj.transform.SetParent(this.transform);
             SetupObjectSync(gameObj, obj);
         }
         else if (ComponentTagInitializers.ContainsKey(tag))
@@ -202,6 +203,10 @@ public class SyncBehaviour : MonoBehaviour
 
             var gameObj = GameObjects[obj.Id];
             ComponentTagInitializers[tag](obj, gameObj);
+        }
+        else if (tag == "grabbable")    // TODO: move to somewhere of core, not in Unity-specific code
+        {
+            (new GrabbableTag()).Initialize(obj);
         }
         else
         {
@@ -233,6 +238,19 @@ public class SyncBehaviour : MonoBehaviour
             sync.Initialize(obj);
             Logger.Debug("SyncBehaviour", "Created GameObject " + gameObj.ToString() + " for ObjectId=" + id);
         }
+    }
+
+    void ReplaceObject(SyncObject obj, GameObject newGameObj)
+    {
+        var oldGameObj = GameObjects[obj.Id];
+        // Move children
+        while (oldGameObj.transform.childCount > 0)
+        {
+            oldGameObj.transform.GetChild(0).SetParent(newGameObj.transform);
+        }
+        // Delete
+        Destroy(oldGameObj);
+        GameObjects.Remove(obj.Id);
     }
 
     void OnObjectDeleted(uint id)

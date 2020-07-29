@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -30,21 +31,18 @@ public class PlayerAvatar : MonoBehaviour
 
     private Vector3 lookAt = Vector3.forward; // looking position (in local coord)
 
-    private bool leftHandTracked = false, rightHandTracked = false;
-
-    private Vector3 leftHandPosition, rightHandPosition;
-    private Quaternion leftHandRotation, rightHandRotation;
-
-    private Vector3 velocity = Vector3.zero, angularVelocity = Vector3.zero;
-
-    // For calculation of velocity and angular velocity
-    private Vector3 lastPosition = Vector3.zero;
-    private Quaternion lastRotation = Quaternion.identity;
+    // Child objects for left and right hands (only non-null when tracking device is available)
+    private SyncObject leftHandObj, rightHandObj;
+    private GameObject leftHandGameObj, rightHandGameObj;
 
     private Vector3 lastMousePosition;
     private Quaternion camRotBeforeDrag;
 
     private Camera xrCamera;
+
+    private InputDevice? rightController;
+
+    private ButtonDetector leftButtonDetector, rightButtonDetector;
     
     private List<GameObject> headForShadow = new List<GameObject>();
 
@@ -134,8 +132,10 @@ public class PlayerAvatar : MonoBehaviour
                     InputDeviceCharacteristics.Controller | InputDeviceCharacteristics.Right,
                     devices
                 );
+                if (devices.Count >= 1) rightController = devices[0];
                 Vector2 stick;
-                if (devices.Count != 0 && devices[0].TryGetFeatureValue(CommonUsages.primary2DAxis, out stick))
+                if (rightController.HasValue &&
+                    rightController.Value.TryGetFeatureValue(CommonUsages.primary2DAxis, out stick))
                 {
                     turn = AngularSpeedCoeff * stick.x;
                 }
@@ -163,22 +163,16 @@ public class PlayerAvatar : MonoBehaviour
             }
 
             // Left hand
-            // If device is not present, GetDeviceAtXRNode returns an "invalid" InputDevice.
-            //   https://docs.unity3d.com/ja/2019.4/ScriptReference/XR.InputDevices.GetDeviceAtXRNode.html
-            if (InputDevices.GetDeviceAtXRNode(XRNode.LeftHand).isValid)
+            if (leftHandGameObj != null)
             {
-                // If left hand device is present
-                leftHandPosition = transform.worldToLocalMatrix * LeftHand.position;
-                leftHandRotation = Quaternion.Inverse(transform.rotation) * Quaternion.AngleAxis(90, LeftHand.transform.forward) * LeftHand.rotation;
-                leftHandTracked = true;
+                leftHandGameObj.transform.position = LeftHand.position;
+                leftHandGameObj.transform.rotation = Quaternion.AngleAxis(90, LeftHand.transform.forward) * LeftHand.rotation;
             }
             // Right hand
-            if (InputDevices.GetDeviceAtXRNode(XRNode.RightHand).isValid)
+            if (rightHandGameObj != null)
             {
-                // If right hand device is present
-                rightHandPosition = transform.worldToLocalMatrix * RightHand.position;
-                rightHandRotation = Quaternion.Inverse(transform.rotation) * Quaternion.AngleAxis(-90, RightHand.transform.forward) * RightHand.rotation;
-                rightHandTracked = true;
+                rightHandGameObj.transform.position = RightHand.position;
+                rightHandGameObj.transform.rotation = Quaternion.AngleAxis(-90, RightHand.transform.forward) * RightHand.rotation;
             }
         }
 
@@ -188,20 +182,59 @@ public class PlayerAvatar : MonoBehaviour
 
     public void FixedUpdate()
     {
-        SyncObject obj = GetComponent<ObjectSync>()?.SyncObject;
-        if (obj == null) return;
-
-        if (GetComponent<ObjectSync>().IsOriginal)
+        SyncBehaviour syncBehaviour = GetComponent<ObjectSync>().NetManager.GetComponent<SyncBehaviour>();
+        if (leftHandObj != null)
         {
-            velocity = (transform.position - lastPosition) / Time.fixedDeltaTime;
-            angularVelocity = Mathf.Deg2Rad * (Quaternion.Inverse(lastRotation) * transform.rotation).eulerAngles / Time.fixedDeltaTime;
-            lastPosition = transform.position;
-            lastRotation = transform.rotation;
+            leftHandGameObj = syncBehaviour.GameObjects[leftHandObj.Id];
+            SetHandCollider(leftHandGameObj);
         }
-        else
+        if (rightHandObj != null)
         {
-            transform.position += velocity * Time.fixedDeltaTime;
-            transform.rotation *= Quaternion.Euler(Mathf.Rad2Deg * angularVelocity * Time.fixedDeltaTime);
+            rightHandGameObj = syncBehaviour.GameObjects[rightHandObj.Id];
+            SetHandCollider(rightHandGameObj);
+        }
+
+        // for grabbing
+        if (leftButtonDetector != null) leftButtonDetector.Detect();
+        if (rightButtonDetector != null) rightButtonDetector.Detect();
+    }
+
+    void SetHandCollider(GameObject handGameObj)
+    {
+        if (handGameObj.GetComponent<GrabDetector>() != null) return;
+        handGameObj.AddComponent<GrabDetector>();
+    }
+
+    void GrabObject(GameObject handGameObj)
+    {
+        if (handGameObj == null) return;
+        var detector = handGameObj.GetComponent<GrabDetector>();
+        var handObj = handGameObj.GetComponent<ObjectSync>().SyncObject;
+        foreach (var obj in detector.ObjectToGrab)
+        {
+            obj.GetComponent<ObjectSync>().SyncObject.SendEvent(
+                "grab",
+                handObj.Id,
+                new IValue[0]
+            );
+        }
+    }
+
+    void UngrabObject(GameObject handGameObj)
+    {
+        if (handGameObj == null) return;
+        var handObj = handGameObj.GetComponent<ObjectSync>().SyncObject;
+        // FIXME: provisional implementation
+        if (handObj.TryGetField("children", out Sequence children))
+        {
+            foreach (var child in children.Elements.Select(elem => elem as ObjectRef).Where(elem => elem != null))
+            {
+                handObj.Node.Objects[child.Id].SendEvent(
+                    "ungrab",
+                    handObj.Id,
+                    new IValue[0]
+                );
+            }
         }
     }
 
@@ -212,17 +245,6 @@ public class PlayerAvatar : MonoBehaviour
         obj.SetField("turn", new Primitive<float> { Value = turn });
 
         obj.SetField("lookAt", UnityUtil.ToVec(lookAt));
-
-        obj.SetField("leftHandTracked", new Primitive<int>(leftHandTracked ? 1 : 0));
-        obj.SetField("leftHandPosition", UnityUtil.ToVec(leftHandPosition));
-        obj.SetField("leftHandRotation", UnityUtil.ToQuat(leftHandRotation));
-
-        obj.SetField("rightHandTracked", new Primitive<int>(rightHandTracked ? 1 : 0));
-        obj.SetField("rightHandPosition", UnityUtil.ToVec(rightHandPosition));
-        obj.SetField("rightHandRotation", UnityUtil.ToQuat(rightHandRotation));
-
-        obj.SetField("velocity", UnityUtil.ToVec(velocity));
-        obj.SetField("angularVelocity", UnityUtil.ToVec(angularVelocity));
     }
 
     void OnAfterSync(SyncObject obj)
@@ -240,34 +262,6 @@ public class PlayerAvatar : MonoBehaviour
         {
             lookAt = UnityUtil.FromVec(lookAtVec);
         }
-        
-        if (obj.TryGetFieldPrimitive("leftHandTracked", out int leftHandTrackedInt))
-            leftHandTracked = leftHandTrackedInt != 0;
-        if (obj.TryGetFieldPrimitive("rightHandTracked", out int rightHandTrackedInt))
-            rightHandTracked = rightHandTrackedInt != 0;
-        if (leftHandTracked)
-        {
-            if (obj.TryGetField("leftHandPosition", out Vec leftHandPositionVec))
-                leftHandPosition = UnityUtil.FromVec(leftHandPositionVec);
-            if (obj.TryGetField("leftHandRotation", out Quat leftHandRotationQuat))
-                leftHandRotation = UnityUtil.FromQuat(leftHandRotationQuat);
-        }
-        if (rightHandTracked)
-        {
-            if (obj.TryGetField("rightHandPosition", out Vec rightHandPositionVec))
-                rightHandPosition = UnityUtil.FromVec(rightHandPositionVec);
-            if (obj.TryGetField("rightHandRotation", out Quat rightHandRotationQuat))
-                rightHandRotation = UnityUtil.FromQuat(rightHandRotationQuat);
-        }
-
-        if (obj.TryGetField("velocity", out Vec velocityVec))
-        {
-            velocity = UnityUtil.FromVec(velocityVec);
-        }
-        if (obj.TryGetField("angularVelocity", out Vec angularVelocityVec))
-        {
-            angularVelocity = UnityUtil.FromVec(angularVelocityVec);
-        }
     }
 
     // Called by ObjectSync when become ready
@@ -278,11 +272,13 @@ public class PlayerAvatar : MonoBehaviour
         SyncObject obj = GetComponent<ObjectSync>().SyncObject;
         SyncNode node = GetComponent<ObjectSync>().Node;
 
-        lastPosition = transform.position;
-        lastRotation = transform.rotation;
-
         obj.BeforeSync += OnBeforeSync;
         obj.AfterSync += OnAfterSync;
+        obj.RegisterFieldUpdateHandler("leftHand", OnLeftHandUpdated);
+        obj.RegisterFieldUpdateHandler("rightHand", OnRightHandUpdated);
+
+        OnLeftHandUpdated();
+        OnRightHandUpdated();
 
         Blob vrmBlob;
         if (GetComponent<ObjectSync>().IsOriginal)
@@ -364,6 +360,46 @@ public class PlayerAvatar : MonoBehaviour
                 // Do not render layer "VRMFirstPersonOnly" on third person camera
                 ThirdPersonCamera.cullingMask &= ~LayerMask.GetMask("VRMFirstPersonOnly");
             }
+
+            // Left hand
+            // If device is not present, GetDeviceAtXRNode returns an "invalid" InputDevice.
+            //   https://docs.unity3d.com/ja/2019.4/ScriptReference/XR.InputDevices.GetDeviceAtXRNode.html
+            InputDevice dev;
+            if ((dev = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand)).isValid)
+            {
+                // If left hand device is present
+                var leftId = await node.CreateObject();
+                leftHandObj = node.Objects[leftId];
+                leftHandObj.SetField("parent", obj.GetObjectRef());
+                leftHandObj.SetField("tag", new Sequence(new IValue[] {
+                    new Primitive<string>("constantVelocity"),
+                    new Primitive<string>("collider")
+                }));
+                obj.SetField("leftHand", leftHandObj.GetObjectRef());
+
+                // grab-related
+                leftButtonDetector = new ButtonDetector(dev, CommonUsages.gripButton);
+                leftButtonDetector.ButtonDown += (bd) => GrabObject(leftHandGameObj);
+                leftButtonDetector.ButtonUp += (bd) => UngrabObject(leftHandGameObj);
+            }
+            // Right hand
+            if ((dev = InputDevices.GetDeviceAtXRNode(XRNode.RightHand)).isValid)
+            {
+                // If right hand device is present
+                var rightId = await node.CreateObject();
+                rightHandObj = node.Objects[rightId];
+                rightHandObj.SetField("parent", obj.GetObjectRef());
+                rightHandObj.SetField("tag", new Sequence(new IValue[] {
+                    new Primitive<string>("constantVelocity"),
+                    new Primitive<string>("collider")
+                }));
+                obj.SetField("rightHand", rightHandObj.GetObjectRef());
+
+                // grab-related
+                rightButtonDetector = new ButtonDetector(dev, CommonUsages.gripButton);
+                rightButtonDetector.ButtonDown += (bd) => GrabObject(rightHandGameObj);
+                rightButtonDetector.ButtonUp += (bd) => UngrabObject(rightHandGameObj);
+            }
         }
     }
 
@@ -375,20 +411,40 @@ public class PlayerAvatar : MonoBehaviour
         anim.SetLookAtWeight(1.0f);
         anim.SetLookAtPosition(transform.localToWorldMatrix * lookAt);
 
-        if (leftHandTracked)
+        if (leftHandGameObj != null)
         {
             anim.SetIKPositionWeight(AvatarIKGoal.LeftHand, 1.0f);
             anim.SetIKRotationWeight(AvatarIKGoal.LeftHand, 1.0f);
-            anim.SetIKPosition(AvatarIKGoal.LeftHand, transform.localToWorldMatrix * leftHandPosition);
-            anim.SetIKRotation(AvatarIKGoal.LeftHand, transform.rotation * leftHandRotation);
+            anim.SetIKPosition(AvatarIKGoal.LeftHand, leftHandGameObj.transform.position);
+            anim.SetIKRotation(AvatarIKGoal.LeftHand, leftHandGameObj.transform.rotation);
         }
 
-        if (rightHandTracked)
+        if (rightHandGameObj != null)
         {
             anim.SetIKPositionWeight(AvatarIKGoal.RightHand, 1.0f);
             anim.SetIKRotationWeight(AvatarIKGoal.RightHand, 1.0f);
-            anim.SetIKPosition(AvatarIKGoal.RightHand, transform.localToWorldMatrix * rightHandPosition);
-            anim.SetIKRotation(AvatarIKGoal.RightHand, transform.rotation * rightHandRotation);
+            anim.SetIKPosition(AvatarIKGoal.RightHand, rightHandGameObj.transform.position);
+            anim.SetIKRotation(AvatarIKGoal.RightHand, rightHandGameObj.transform.rotation);
+        }
+    }
+    
+    void OnLeftHandUpdated()
+    {
+        SyncObject obj = GetComponent<ObjectSync>().SyncObject;
+
+        if (obj.TryGetField("leftHand", out ObjectRef leftHandRef))
+        {
+            leftHandObj = obj.Node.Objects[leftHandRef.Id];
+        }
+    }
+
+    void OnRightHandUpdated()
+    {
+        SyncObject obj = GetComponent<ObjectSync>().SyncObject;
+
+        if (obj.TryGetField("rightHand", out ObjectRef rightHandRef))
+        {
+            rightHandObj = obj.Node.Objects[rightHandRef.Id];
         }
     }
 
