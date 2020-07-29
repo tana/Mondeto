@@ -1,33 +1,64 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class ColliderSync : MonoBehaviour
 {
     // Because parameter setting did not work correctly with GetComponent<Collider> in ApplyState,
     // the collider is stored right after creating with AddComponent<XxxCollider> .
-    Collider addedCollider;
+    List<Collider> addedColliders = new List<Collider>();
+
+    PhysicMaterial material;
 
     public void Initialize(SyncObject obj)
     {
+        material = new PhysicMaterial();
+
         if (obj.HasTag("cube"))
         {
-            addedCollider = gameObject.AddComponent<BoxCollider>();
+            var collider = gameObject.AddComponent<BoxCollider>();
+            collider.sharedMaterial = material;
+            addedColliders.Add(collider);
         }
         else if (obj.HasTag("sphere"))
         {
-            addedCollider = gameObject.AddComponent<SphereCollider>();
+            var collider = gameObject.AddComponent<SphereCollider>();
+            collider.sharedMaterial = material;
+            addedColliders.Add(collider);
         }
-        else    // FIXME:
+        else if (obj.HasTag("model"))
         {
-            addedCollider = gameObject.AddComponent<MeshCollider>();
+            GetComponent<ModelSync>().LoadComplete += AddMeshCollidersForModel;
+        }
+        else
+        {
+            var collider = gameObject.AddComponent<MeshCollider>();
+            collider.sharedMaterial = material;
+            addedColliders.Add(collider);
         }
 
-        obj.BeforeSync += OnBeforeSync;
-        obj.AfterSync += OnAfterSync;
+        obj.RegisterFieldUpdateHandler("friction", () => ApplyFieldValues(obj));
+        obj.RegisterFieldUpdateHandler("restitution", () => ApplyFieldValues(obj));
 
-        ApplyState(obj);
+        ApplyFieldValues(obj);
     }
 
-    void ApplyState(SyncObject obj)
+    // To support GLB loading (multiple meshes may be dynamically added as children)
+    void AddMeshCollidersForModel(ModelSync ms)
+    {
+        foreach (var go in ms.GetMeshes())
+        {
+            if (go.GetComponent<Collider>() != null)
+            {
+                // Already have collider
+                continue;
+            }
+            var collider = go.AddComponent<MeshCollider>();
+            collider.sharedMaterial = material;
+            addedColliders.Add(collider);
+        }
+    }
+
+    void ApplyFieldValues(SyncObject obj)
     {
         // Uses same value for both static and dynamic friction coefficients.
         // This is for compatibility with engines other than Unity.
@@ -43,28 +74,15 @@ public class ColliderSync : MonoBehaviour
         //  https://docs.unity3d.com/2019.3/Documentation/ScriptReference/PhysicMaterialCombine.html
         // (Therefore, it is needed to set restitution of two objects larger than zero to make them actually bounce)
 
-        if (obj.HasField("friction") && obj.GetField("friction") is Primitive<float> friction)
+        if (obj.TryGetFieldPrimitive("friction", out float friction))
         {
-            addedCollider.material.staticFriction = friction.Value;
-            addedCollider.material.dynamicFriction = friction.Value;
+            material.staticFriction = friction;
+            material.dynamicFriction = friction;
         }
 
-        if (obj.HasField("restitution") && obj.GetField("restitution") is Primitive<float> restitution)
+        if (obj.TryGetFieldPrimitive("restitution", out float restitution))
         {
-            addedCollider.material.bounciness = restitution.Value;
+            material.bounciness = restitution;
         }
-    }
-
-    void OnBeforeSync(SyncObject obj)
-    {
-        obj.SetField("friction", new Primitive<float>(addedCollider.material.dynamicFriction));
-        obj.SetField("restitution", new Primitive<float>(addedCollider.material.bounciness));
-    }
-
-    void OnAfterSync(SyncObject obj)
-    {
-        if (GetComponent<ObjectSync>().IsOriginal) return;
-
-        ApplyState(obj);
     }
 }

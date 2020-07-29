@@ -80,3 +80,5 @@ crashlytics-build.properties
 #Assets/Plugins/
 
 avatar*.vrm
+
+*.blend1

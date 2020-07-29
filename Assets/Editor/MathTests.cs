@@ -28,4 +28,28 @@ class MathTests
         Quaternion qUnity = Quaternion.Euler(12, 97, 215);
         TestUtils.AssertQuat(qOurs, qUnity.w, qUnity.x, qUnity.y, qUnity.z);
     }
+
+    [Test]
+    public void QuatConjTest()
+    {
+        Quat originalOurs = Quat.FromEuler(12 * Mathf.Deg2Rad, 97 * Mathf.Deg2Rad, 215 * Mathf.Deg2Rad);
+        Quaternion originalUnity = UnityUtil.FromQuat(originalOurs);
+        Quat qOurs = originalOurs.Conjugate();
+        Quaternion qUnity = Quaternion.Inverse(originalUnity);
+
+        TestUtils.AssertQuat(qOurs, qUnity.w, qUnity.x, qUnity.y, qUnity.z);
+    }
+
+    [Test]
+    public void VectorRotationTest()
+    {
+        Vec vOrigOurs = new Vec(1.2f, 3.4f, 5.6f);
+        Vector3 vOrigUnity = UnityUtil.FromVec(vOrigOurs);
+        Quat qOurs = Quat.FromEuler(12 * Mathf.Deg2Rad, 97 * Mathf.Deg2Rad, 215 * Mathf.Deg2Rad);
+        Quaternion qUnity = UnityUtil.FromQuat(qOurs);
+        Vec vOurs = qOurs * vOrigOurs;
+        Vector3 vUnity = qUnity * vOrigUnity;
+
+        TestUtils.AssertVec(vOurs, vUnity.x, vUnity.y, vUnity.z);
+    }
 }

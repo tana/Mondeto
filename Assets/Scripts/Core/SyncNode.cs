@@ -13,6 +13,8 @@ public abstract class SyncNode : IDisposable
 
     public const uint ServerNodeId = 0;
 
+    public const uint WorldObjectId = 0;    // Object ID 0 is reserved for World object (system object)
+
     //public Dictionary<IPAddress, int> UdpEpToNodeId { get; } = new Dictionary<IPAddress, int>();
 
     // Do not modify Objects outside main loop! Otherwise data corrupts (e.g. strange null)
@@ -318,16 +320,48 @@ public abstract class SyncNode : IDisposable
     public abstract Task<uint> CreateObject();
     public abstract void DeleteObject(uint id);
 
+    public void SendEvent(string name, uint sender, uint receiver, IValue[] args)
+    {
+        foreach (Connection conn in Connections.Values)
+        {
+            conn.SendMessage(Connection.ChannelType.Control, new EventSentMessage {
+                Name = name,
+                Sender = sender,
+                Receiver = receiver,
+                Args = args
+            });
+        }
+    }
+
+    protected void HandleEventSentMessage(string name, uint sender, uint receiver, IValue[] args)
+    {
+        if (Objects.TryGetValue(receiver, out SyncObject obj))
+        {
+            obj.HandleEvent(name, sender, args);
+        }
+        else
+        {
+            Logger.Log("SyncNode", $"Event receiver (object {receiver}) not found");
+        }
+    }
+
     protected abstract Task<uint> InternSymbol(string symbol);
 
     protected abstract void OnNewBlob(BlobHandle handle, Blob blob);
     protected abstract void RequestBlob(BlobHandle handle);
 
-    public void SendAudioData(uint oid, byte[] data)
+    public void SendAudioData(uint oid, float[] data)
     {
+        // Convert to byte array (TODO: encoding)
+        var buf = new byte[data.Length];
+        for (int i = 0; i < data.Length; i++)
+        {
+            buf[i] = (byte)(127 * data[i] + 127);
+        }
+
         foreach (var conn in Connections.Values)
         {
-            var msg = new AudioDataMessage { ObjectId = oid, Data = data };
+            var msg = new AudioDataMessage { ObjectId = oid, Data = buf };
             conn.SendMessage<AudioDataMessage>(Connection.ChannelType.Audio, msg);
         }
     }
@@ -337,7 +371,9 @@ public abstract class SyncNode : IDisposable
         if (!Objects.ContainsKey(msg.ObjectId)) return;  // Something is wrong
         SyncObject obj = Objects[msg.ObjectId];
         if (obj.OriginalNodeId == NodeId) return;
-        obj.HandleAudio(msg.Data);
+        // Convert byte array to float array (TODO: decoding)
+        float[] data = msg.Data.Select(b => 2 * (float)b / 256 - 1).ToArray();
+        obj.HandleAudio(data);
     }
 
     protected void InvokeObjectCreated(uint objId) => ObjectCreated?.Invoke(objId);

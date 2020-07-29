@@ -17,6 +17,7 @@ using MessagePack;
 [MessagePack.Union(8, typeof(Quat))]
 [MessagePack.Union(9, typeof(BlobHandle))]
 [MessagePack.Union(10, typeof(Sequence))]
+[MessagePack.Union(11, typeof(ObjectRef))]
 public interface IValue
 {
 }
@@ -61,6 +62,10 @@ public class Vec : IValue
     public Vec(float x, float y, float z) {
         X = x; Y = y; Z = z;
     }
+
+    public static Vec operator+(Vec a, Vec b) => new Vec(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
+
+    public static Vec operator-(Vec a, Vec b) => new Vec(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
 
     public static Vec operator*(float k, Vec v)
     {
@@ -112,6 +117,17 @@ public class Quat : IValue
             Y = a.W * b.Y + a.Y * b.W + a.Z * b.X - a.X * b.Z,
             Z = a.W * b.Z + a.Z * b.W + a.X * b.Y - a.Y * b.X
         };
+    }
+    // rotate a vector
+    public static Vec operator*(Quat q, Vec v)
+    {
+        Quat vQuat = new Quat { W = 0, X = v.X, Y = v.Y, Z = v.Z };
+        Quat after = q * vQuat * q.Conjugate();
+        return new Vec(after.X, after.Y, after.Z);
+    }
+    public Quat Conjugate()
+    {
+        return new Quat { W = W, X = -X, Y = -Y, Z = -Z };
     }
 
     // angle is in radians
@@ -184,7 +200,13 @@ public class BlobHandle : IValue
 public class Sequence : IValue
 {
     [Key(0)]
-    public List<IValue> Elements;
+    public List<IValue> Elements = new List<IValue>();
+
+    public Sequence() {}
+    public Sequence(IList<IValue> elements)
+    {
+        Elements = elements.ToList();
+    }
 
     public override bool Equals(object obj)
     {
@@ -198,6 +220,13 @@ public class Sequence : IValue
     {
         return Elements.Aggregate(0, (accum, elem) => accum ^ elem.GetHashCode());
     }
+}
+
+[MessagePackObject]
+public class ObjectRef : IValue
+{
+    [Key(0)]
+    public uint Id;
 }
 
 // State of an object
@@ -268,6 +297,7 @@ public class FieldUpdate
 [MessagePack.Union(5, typeof(ObjectDeletedMessage))]
 [MessagePack.Union(6, typeof(RegisterSymbolMessage))]
 [MessagePack.Union(7, typeof(SymbolRegisteredMessage))]
+[MessagePack.Union(8, typeof(EventSentMessage))]
 public interface ITcpMessage
 {
 }
@@ -336,6 +366,20 @@ public class SymbolRegisteredMessage : ITcpMessage
     public string Symbol;
     [Key(1)]
     public uint SymbolId;
+}
+
+// (Both directions)
+[MessagePackObject]
+public class EventSentMessage : ITcpMessage
+{
+    [Key(0)]
+    public string Name; // Name of the event
+    [Key(1)]
+    public uint Sender; // Object ID of the sender
+    [Key(2)]
+    public uint Receiver;   // Object ID of the receiver
+    [Key(3)]
+    public IValue[] Args;
 }
 
 [MessagePack.Union(0, typeof(BlobBodyMessage))]

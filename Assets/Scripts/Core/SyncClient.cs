@@ -104,6 +104,15 @@ public class SyncClient : SyncNode
                 Logger.Debug("Client", $"Received Symbol {symMsg.Symbol}->{symMsg.SymbolId}");
                 break;
             }
+            case EventSentMessage eventSentMessage:
+            {
+                HandleEventSentMessage(
+                    eventSentMessage.Name,
+                    eventSentMessage.Sender, eventSentMessage.Receiver,
+                    eventSentMessage.Args
+                );
+                break;
+            }
         }
     }
 

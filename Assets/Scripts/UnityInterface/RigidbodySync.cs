@@ -9,6 +9,11 @@ public class RigidbodySync : MonoBehaviour
         var rb = gameObject.AddComponent<Rigidbody>();
         obj.BeforeSync += OnBeforeSync;
         obj.AfterSync += OnAfterSync;
+        obj.RegisterFieldUpdateHandler("mass", () => {
+            if (obj.TryGetFieldPrimitive("mass", out float mass))
+                rb.mass = mass;
+        });
+
         ApplyState(obj);
     }
 
@@ -17,17 +22,15 @@ public class RigidbodySync : MonoBehaviour
         var rb = GetComponent<Rigidbody>();
 
         if (obj.HasField("velocity") && obj.GetField("velocity") is Vec velocity)
-            rb.velocity = UnityUtil.FromVec(velocity);
+            rb.velocity = transform.TransformVector(UnityUtil.FromVec(velocity));
         if (obj.HasField("angularVelocity") && obj.GetField("angularVelocity") is Vec angularVelocity)
-            rb.angularVelocity = UnityUtil.FromVec(angularVelocity);
-        if (obj.HasField("mass") && obj.GetField("mass") is Primitive<float> massValue)
-            rb.mass = massValue.Value;
+            rb.angularVelocity = transform.TransformVector(UnityUtil.FromVec(angularVelocity));
     }
 
     void OnBeforeSync(SyncObject obj)
     {
-        obj.SetField("velocity", UnityUtil.ToVec(GetComponent<Rigidbody>().velocity));
-        obj.SetField("angularVelocity", UnityUtil.ToVec(GetComponent<Rigidbody>().angularVelocity));
+        obj.SetField("velocity", UnityUtil.ToVec(transform.InverseTransformVector(GetComponent<Rigidbody>().velocity)));
+        obj.SetField("angularVelocity", UnityUtil.ToVec(transform.InverseTransformVector(GetComponent<Rigidbody>().angularVelocity)));
     }
 
     void OnAfterSync(SyncObject obj)

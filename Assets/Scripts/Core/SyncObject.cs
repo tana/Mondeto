@@ -12,7 +12,11 @@ public class SyncObject
 
     public readonly Dictionary<string, Field> Fields = new Dictionary<string, Field>();
 
-    public delegate void AudioReceivedDelegate(byte[] data);
+    public readonly Dictionary<string, HashSet<Action>> FieldUpdateHandlers = new Dictionary<string, HashSet<Action>>();
+
+    public readonly Dictionary<string, HashSet<Action<uint, IValue[]>>> EventHandlers = new Dictionary<string, HashSet<Action<uint, IValue[]>>>();
+
+    public delegate void AudioReceivedDelegate(float[] data);
     // Called when the original used SendAudio
     public event AudioReceivedDelegate AudioReceived;
 
@@ -51,6 +55,14 @@ public class SyncObject
         field.Value = val;
         field.LastUpdatedTick = Node.Tick;
         Fields[key] = field;
+
+        if (FieldUpdateHandlers.ContainsKey(key))
+        {
+            foreach (Action handler in FieldUpdateHandlers[key])
+            {
+                handler();
+            }
+        }
     }
 
     public IValue GetField(string key)
@@ -61,6 +73,23 @@ public class SyncObject
     public bool HasField(string key)
     {
         return Fields.ContainsKey(key);
+    }
+    
+    public void RegisterFieldUpdateHandler(string key, Action handler)
+    {
+        if (!FieldUpdateHandlers.ContainsKey(key))
+        {
+            FieldUpdateHandlers[key] = new HashSet<Action>();
+        }
+
+        FieldUpdateHandlers[key].Add(handler);
+    }
+
+    public void DeleteFieldUpdateHandler(string key, Action handler)
+    {
+        if (!FieldUpdateHandlers.ContainsKey(key)) return;
+
+        FieldUpdateHandlers[key].Remove(handler);
     }
 
     public bool TryGetField<T>(string key, out T value)
@@ -97,12 +126,59 @@ public class SyncObject
         return tags.Contains(tag);
     }
 
-    public void SendAudio(byte[] data)
+    public void SendAudio(float[] data)
     {
         Node.SendAudioData(Id, data);
     }
 
-    internal void HandleAudio(byte[] data)
+    public ObjectRef GetObjectRef()
+    {
+        return new ObjectRef { Id = this.Id };
+    }
+
+    public void RegisterEventHandler(string name, Action<uint, IValue[]> handler)
+    {
+        if (!EventHandlers.ContainsKey(name))
+        {
+            EventHandlers[name] = new HashSet<Action<uint, IValue[]>>();
+        }
+
+        EventHandlers[name].Add(handler);
+    }
+
+    public void DeleteEventHandler(string name, Action<uint, IValue[]> handler)
+    {
+        if (!EventHandlers.ContainsKey(name)) return;
+
+        EventHandlers[name].Remove(handler);
+    }
+
+    internal void HandleEvent(string name, uint caller, IValue[] args)
+    {
+        if (EventHandlers.TryGetValue(name, out var handlers))
+        {
+            foreach (var handler in handlers)
+            {
+                handler(caller, args);
+            }
+        }
+        else
+        {
+            Logger.Log("SyncObject", $"Object {Id}: no handler for event {name}");
+        }
+    }
+
+    public void SendEvent(string name, uint sender, IValue[] args)
+    {
+        // TODO: option to prevent sync if both sender and this is on the same node
+        HandleEvent(name, sender, args);
+    }
+
+    public void SendEvent(string name, uint sender) => SendEvent(name, sender, new IValue[0]);
+    public void SendEvent(string name, IValue[] args) => SendEvent(name, SyncNode.WorldObjectId, args);
+    public void SendEvent(string name) => SendEvent(name, SyncNode.WorldObjectId);
+
+    internal void HandleAudio(float[] data)
     {
         AudioReceived?.Invoke(data);
     }

@@ -11,7 +11,7 @@ public class SyncBehaviour : MonoBehaviour
     public SyncNode Node { get; private set; }
     public bool Ready = false;
 
-    Dictionary<uint, GameObject> gameObjects = new Dictionary<uint, GameObject>();
+    public readonly Dictionary<uint, GameObject> GameObjects = new Dictionary<uint, GameObject>();
 
     // For adding objects not defined in YAML (e.g. player avatar)
     public GameObject[] OriginalObjects = new GameObject[0];
@@ -29,14 +29,15 @@ public class SyncBehaviour : MonoBehaviour
     // Component Tag (Tags that need a GameObject)
     Dictionary<string, Action<SyncObject, GameObject>> ComponentTagInitializers = new Dictionary<string, Action<SyncObject, GameObject>>();
 
-    public GameObject PlayerPrefab, StagePrefab;
+    HashSet<uint> OriginalObjectIds = new HashSet<uint>();
+
+    public GameObject PlayerPrefab;
 
     // Start is called before the first frame update
     async void Start()
     {
         // Tags that create new GameObject
         RegisterObjectTag("player", obj => Instantiate(PlayerPrefab));
-        RegisterObjectTag("stage", obj => Instantiate(StagePrefab, transform));
         // primitives
         var primitives = new (string, PrimitiveType)[] {
             ("cube", PrimitiveType.Cube),
@@ -54,47 +55,35 @@ public class SyncBehaviour : MonoBehaviour
         }
         RegisterObjectTag("model", obj => {
             var gameObj = new GameObject();
+            gameObj.AddComponent<ModelSync>().Initialize(obj);
+            return gameObj;
+        });
+        RegisterObjectTag("light", obj => {
+            var gameObj = new GameObject();
+            // https://docs.unity3d.com/ja/2019.4/Manual/Lighting.html
+            var light = gameObj.AddComponent<Light>();
 
-            if (!obj.HasField("model") || !(obj.GetField("model") is BlobHandle))
+            light.shadows = LightShadows.Soft;  // TODO:
+
+            // TODO: real-time sync
+            if (obj.TryGetField("color", out Vec colorVec))
             {
-                // FIXME:
-                Logger.Error("Model", $"Object {obj.Id} has no model field or not a blob handle. Empty GameObject was created");
-                return gameObj;
+                light.color = new Color(colorVec.X, colorVec.Y, colorVec.Z);
             }
-
-            BlobHandle handle = (BlobHandle)obj.GetField("model");
-
-            Action loading = async () => {
-                Blob blob = await Node.ReadBlob(handle);
-                Logger.Debug("Model", $"Blob {handle} loaded");
-
-                // Because UniGLTF.ImporterContext is the parent class of VRMImporterContext,
-                //  ( https://github.com/vrm-c/UniVRM/blob/3b68eb7f99bfe78ea9c83ea75511282ef1782f1a/Assets/VRM/UniVRM/Scripts/Format/VRMImporterContext.cs#L11 )
-                // loading procedure is probably almost same (See PlyayerAvatar.cs for VRM loading).
-                //  https://github.com/vrm-c/UniVRM/blob/3b68eb7f99bfe78ea9c83ea75511282ef1782f1a/Assets/VRM/UniGLTF/Editor/Tests/UniGLTFTests.cs#L46
-                var ctx = new UniGLTF.ImporterContext();
-                // ParseGlb parses GLB file.
-                //  https://github.com/vrm-c/UniVRM/blob/3b68eb7f99bfe78ea9c83ea75511282ef1782f1a/Assets/VRM/UniGLTF/Scripts/IO/ImporterContext.cs#L239
-                // Currently, only GLB (glTF binary format) is supported because it is self-contained
-                ctx.ParseGlb(blob.Data);
-                ctx.Root = gameObj;
-                await ctx.LoadAsyncTask();
-                // UniGLTF also has ShowMeshes https://github.com/ousttrue/UniGLTF/wiki/Rutime-API#import
-                ctx.ShowMeshes();
-                // TODO: release ctx
-
-                Logger.Debug("Model", "Model load completed");
-
-                var collider = gameObj.GetComponent<MeshCollider>();
-                if (collider != null)
+            // https://docs.unity3d.com/ja/2019.4/Manual/Lighting.html
+            if (obj.TryGetFieldPrimitive("lightType", out string lightType))
+            {
+                switch (lightType)
                 {
-                    // refresh MeshCollider
-                    //  https://docs.unity3d.com/2019.4/Documentation/ScriptReference/MeshCollider-sharedMesh.html
-                    // FIXME: currently only one mesh is supported
-                    collider.sharedMesh = gameObj.GetComponentInChildren<MeshFilter>().mesh;
+                    case "directional":
+                        light.type = LightType.Directional;
+                        break;
+                    case "point":
+                        light.type = LightType.Point;
+                        break;
+                    // TODO
                 }
-            };
-            loading();
+            }
 
             return gameObj;
         });
@@ -109,6 +98,9 @@ public class SyncBehaviour : MonoBehaviour
         // TODO: think more appropriate name for this tag
         RegisterComponentTag("material", (obj, gameObj) => {
             gameObj.AddComponent<MaterialSync>().Initialize(obj);
+        });
+        RegisterComponentTag("constantVelocity", (obj, gameObj) => {
+            gameObj.AddComponent<ConstantVelocity>().Initialize(obj);
         });
 
         if (IsServer)
@@ -137,6 +129,12 @@ public class SyncBehaviour : MonoBehaviour
         foreach (GameObject obj in OriginalObjects)
         {
             var id = await Node.CreateObject();
+            OriginalObjectIds.Add(id);
+            if (GameObjects.ContainsKey(id))
+            {
+                // Delete provisional GameObject created in OnObjectCreated
+                ReplaceObject(Node.Objects[id], obj);
+            }
             // With SynchronizationContext of Unity, the line below will run in main thread.
             // https://qiita.com/toRisouP/items/a2c1bb1b0c4f73366bc6
             SetupObjectSync(obj, Node.Objects[id]);
@@ -169,37 +167,46 @@ public class SyncBehaviour : MonoBehaviour
     void OnObjectCreated(uint id)
     {
         SyncObject obj = Node.Objects[id];
+        // Provisional empty GameObject for all objects
+        var gameObj = new GameObject();
+        gameObj.transform.SetParent(this.transform);
+        SetupObjectSync(gameObj, obj);
         obj.TagAdded += OnTagAdded;
     }
 
     void OnTagAdded(SyncObject obj, string tag)
     {
-        if (ObjectTagInitializers.ContainsKey(tag))
+        if (ObjectTagInitializers.ContainsKey(tag) && !OriginalObjectIds.Contains(obj.Id))
         {
-            // Because these tags creates an Unity GameObject,
+            // Because these tags creates a new Unity GameObject,
             // these can be added only once per one SyncObject.
             // This also happens for GameObjects in OriginalObjects that have the above tags in initialTags.
-            if (gameObjects.ContainsKey(obj.Id))
-            {
-                Logger.Log("SyncBehaviour", $"Tag {tag} is ignored because GameObject is already created for object {obj.Id}");
-                return;
-            }
 
             var gameObj = ObjectTagInitializers[tag](obj);
             gameObj.transform.SetParent(this.transform);
+            if (GameObjects.ContainsKey(obj.Id))
+            {
+                // Replace old GameObject
+                Logger.Log("SyncBehaviour", $"Replacing GameObject because a GameObject is already created for object {obj.Id}");
+                ReplaceObject(obj, gameObj);
+            }
             SetupObjectSync(gameObj, obj);
         }
         else if (ComponentTagInitializers.ContainsKey(tag))
         {
             // These tag require GameObject
-            if (!gameObjects.ContainsKey(obj.Id))
+            if (!GameObjects.ContainsKey(obj.Id))
             {
                 Logger.Log("SyncBehaviour", $"Tag {tag} is ignored because there is no GameObject corresponds to  object {obj.Id}");
                 return;
             }
 
-            var gameObj = gameObjects[obj.Id];
+            var gameObj = GameObjects[obj.Id];
             ComponentTagInitializers[tag](obj, gameObj);
+        }
+        else if (tag == "grabbable")    // TODO: move to somewhere of core, not in Unity-specific code
+        {
+            (new GrabbableTag()).Initialize(obj);
         }
         else
         {
@@ -221,39 +228,52 @@ public class SyncBehaviour : MonoBehaviour
     {
         var id = obj.Id;
 
-        if (!gameObjects.ContainsKey(id))
+        if (!GameObjects.ContainsKey(id))
         {
             ObjectSync sync = gameObj.GetComponent<ObjectSync>();
             if (sync == null) sync = gameObj.AddComponent<ObjectSync>();
             sync.IsOriginal = (obj.OriginalNodeId == Node.NodeId);
             sync.NetManager = this.gameObject;
-            gameObjects[id] = gameObj;
+            GameObjects[id] = gameObj;
             sync.Initialize(obj);
             Logger.Debug("SyncBehaviour", "Created GameObject " + gameObj.ToString() + " for ObjectId=" + id);
         }
     }
 
+    void ReplaceObject(SyncObject obj, GameObject newGameObj)
+    {
+        var oldGameObj = GameObjects[obj.Id];
+        // Move children
+        while (oldGameObj.transform.childCount > 0)
+        {
+            oldGameObj.transform.GetChild(0).SetParent(newGameObj.transform);
+        }
+        // Delete
+        Destroy(oldGameObj);
+        GameObjects.Remove(obj.Id);
+    }
+
     void OnObjectDeleted(uint id)
     {
         // destroy and remove deleted objects
-        if (gameObjects.ContainsKey(id))
+        if (GameObjects.ContainsKey(id))
         {
-            Destroy(gameObjects[id]);
-            gameObjects.Remove(id);
+            Destroy(GameObjects[id]);
+            GameObjects.Remove(id);
         }
     }
 
     public void DeleteOriginal(GameObject obj)
     {
         var ids = new HashSet<uint>();
-        foreach (var pair in gameObjects)
+        foreach (var pair in GameObjects)
         {
             if (pair.Value == obj) ids.Add(pair.Key);
         }
         foreach (var id in ids)
         {
             Node.DeleteObject(id);
-            gameObjects.Remove(id);
+            GameObjects.Remove(id);
         }
     }
 

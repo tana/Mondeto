@@ -18,7 +18,7 @@ public class SyncServer : SyncNode
 
     public override uint NodeId { get; protected set; } = ServerNodeId; // Node ID for server is always 0
 
-    IdRegistry objectIdRegistry = new IdRegistry(0);
+    IdRegistry objectIdRegistry = new IdRegistry(WorldObjectId + 1);
 
     IdRegistry symbolIdRegistry = new IdRegistry(0);
 
@@ -31,6 +31,11 @@ public class SyncServer : SyncNode
 
     public override async Task Initialize()
     {
+        // Create World object
+        Objects[WorldObjectId] = new SyncObject(this, WorldObjectId, ServerNodeId);
+        InvokeObjectCreated(WorldObjectId); // To invoke ObjectCreated event for World Object (ID=0)
+
+        // Start communication
         await signaler.ConnectAsync();
         Logger.Log("Server", "Connected to signaling server");
         signaler.ClientConnected += async (uint clientNodeId) => {
@@ -105,6 +110,14 @@ public class SyncServer : SyncNode
                 else if (msg is DeleteObjectMessage deleteObjectMessage)
                 {
                     DeleteObjectAndNotify(deleteObjectMessage.ObjectId, id);
+                }
+                else if (msg is EventSentMessage eventSentMessage)
+                {
+                    HandleEventSentMessage(
+                        eventSentMessage.Name,
+                        eventSentMessage.Sender, eventSentMessage.Receiver,
+                        eventSentMessage.Args
+                    );
                 }
             }
 
