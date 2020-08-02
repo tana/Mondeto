@@ -162,6 +162,7 @@ public class Connection : IDisposable
         */
     }
 
+    // Generic type specification is necessary to specify msg is interface type, not message type itself
     public void SendMessage<T>(ChannelType type, T msg)
     {
         byte[] buf = MessagePackSerializer.Serialize<T>(msg);
