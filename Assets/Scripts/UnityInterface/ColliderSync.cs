@@ -29,11 +29,22 @@ public class ColliderSync : MonoBehaviour
         {
             GetComponent<ModelSync>().LoadComplete += AddMeshCollidersForModel;
         }
-        else
+        else if (obj.HasTag("plane") || obj.HasTag("cylinder"))
         {
+            // For primitives that use MeshCollider
             var collider = gameObject.AddComponent<MeshCollider>();
             collider.sharedMaterial = material;
             addedColliders.Add(collider);
+        }
+        else if (GetComponent<Collider>() != null)
+        {
+            // If the object already has a Unity Collider component (e.g. hands, player avatar)
+            // Note:
+            //  At this time, the default Collider created by CreatePrimitive may not destroyed.
+            //  To ignore this collider, "GetComponent<Collider() != null" has to be the last of else-if.
+            var collider = GetComponent<Collider>();
+            collider.sharedMaterial = material;
+            addedColliders.Add(GetComponent<Collider>());
         }
 
         obj.RegisterFieldUpdateHandler("friction", () => ApplyFieldValues(obj));
