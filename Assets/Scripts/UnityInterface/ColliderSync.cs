@@ -53,6 +53,36 @@ public class ColliderSync : MonoBehaviour
         ApplyFieldValues(obj);
     }
 
+    public void OnCollisionEnter(Collision collision)
+    {
+        SendEventToGameObject(collision.gameObject, "collisionStart", new IValue[0]);
+    }
+
+    public void OnCollisionExit(Collision collision)
+    {
+        SendEventToGameObject(collision.gameObject, "collisionEnd", new IValue[0]);
+    }
+
+    public void OnTriggerEnter(Collider other)
+    {
+        SendEventToGameObject(other.gameObject, "collisionStart", new IValue[0]);
+    }
+
+    public void OnTriggerExit(Collider other)
+    {
+        SendEventToGameObject(other.gameObject, "collisionEnd", new IValue[0]);
+    }
+
+    void SendEventToGameObject(GameObject recvGameObject, string eventName, IValue[] args)
+    {
+        var sync = GetComponent<ObjectSync>();
+
+        var recvSync = recvGameObject.GetComponent<ObjectSync>();
+        if (recvSync == null) return;
+
+        recvSync.SyncObject.SendEvent(eventName, sync.SyncObject.Id, args);
+    }
+
     // To support GLB loading (multiple meshes may be dynamically added as children)
     void AddMeshCollidersForModel(ModelSync ms)
     {
