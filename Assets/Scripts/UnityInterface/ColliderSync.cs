@@ -9,8 +9,11 @@ public class ColliderSync : MonoBehaviour
 
     PhysicMaterial material;
 
+    SyncObject obj;
+
     public void Initialize(SyncObject obj)
     {
+        this.obj = obj;
         material = new PhysicMaterial();
 
         if (obj.HasTag("cube"))
@@ -47,10 +50,10 @@ public class ColliderSync : MonoBehaviour
             addedColliders.Add(GetComponent<Collider>());
         }
 
-        obj.RegisterFieldUpdateHandler("friction", () => ApplyFieldValues(obj));
-        obj.RegisterFieldUpdateHandler("restitution", () => ApplyFieldValues(obj));
+        obj.RegisterFieldUpdateHandler("friction", HandleUpdate);
+        obj.RegisterFieldUpdateHandler("restitution", HandleUpdate);
 
-        ApplyFieldValues(obj);
+        HandleUpdate();
     }
 
     public void OnCollisionEnter(Collision collision)
@@ -99,7 +102,7 @@ public class ColliderSync : MonoBehaviour
         }
     }
 
-    void ApplyFieldValues(SyncObject obj)
+    void HandleUpdate()
     {
         // Uses same value for both static and dynamic friction coefficients.
         // This is for compatibility with engines other than Unity.
@@ -125,5 +128,11 @@ public class ColliderSync : MonoBehaviour
         {
             material.bounciness = restitution;
         }
+    }
+
+    public void OnDestroy()
+    {
+        obj.DeleteFieldUpdateHandler("friction", HandleUpdate);
+        obj.DeleteFieldUpdateHandler("restitution", HandleUpdate);
     }
 }
