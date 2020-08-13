@@ -3,7 +3,7 @@ objects:
   # Use an angled directional light as the sun
   #   https://docs.unity3d.com/ja/2019.4/Manual/UsingLights.html
   - position: !vec [10, 10, 10]
-    rotation: !euler [20, 0, 0]
+    rotation: !euler [70, 0, 0]
     color: !vec [1, 1, 1]
     lightType: directional
     tags: [light]
@@ -71,7 +71,7 @@ objects:
     mass: 0.01
     tags: [sphere, material, collider, physics]
   # Ball launch buttons (collision handler test)
-  - position: !vec [2, 1.2, 0.5]
+  - position: !vec [2.2, 1.4, 0.9]
     rotation: !euler [0, 0, 0]
     scale: !vec [0.3, 0.3, 0.3]
     color: !vec [1, 1, 0]
@@ -82,7 +82,7 @@ objects:
     launchVelocity: !vec [0, 0, -40]
     launchAngularVelocity: !vec [0, 0, 0]
     tags: [cube, material, collider, objectMoveButton]
-  - position: !vec [4, 1.2, 3.5]
+  - position: !vec [3.8, 1.4, 3.1]
     rotation: !euler [0, 0, 0]
     scale: !vec [0.3, 0.3, 0.3]
     color: !vec [1, 1, 0]
