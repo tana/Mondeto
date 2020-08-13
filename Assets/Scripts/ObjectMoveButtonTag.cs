@@ -18,14 +18,16 @@ public class ObjectMoveButtonTag
     {
         Logger.Debug("objectMoveButton", $"Touched by object {sender}");
 
-        if (obj.TryGetField<ObjectRef>("objectToMove", out ObjectRef objToMoveRef) &&
-            obj.TryGetField<Vec>("destination", out Vec destination))
+        if (obj.TryGetField<ObjectRef>("objectToMove", out ObjectRef objToMoveRef))
         {
             if (!node.Objects.ContainsKey(objToMoveRef.Id)) return;    // something is wrong
             SyncObject objToMove = node.Objects[objToMoveRef.Id];
-            objToMove.SetField("position", destination);
 
-            // FIXME: velocity/angularVelocity setting is unstable
+            if (obj.TryGetField<Vec>("destination", out Vec destination))
+                objToMove.SetField("position", destination);
+            
+            if (obj.TryGetField<Quat>("destRotation", out Quat destRotation))
+                objToMove.SetField("rotation", destRotation);
 
             if (obj.TryGetField<Vec>("launchVelocity", out Vec launchVel))
                 objToMove.SetField("velocity", launchVel);
