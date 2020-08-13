@@ -35,6 +35,10 @@ public class GrabDetector : MonoBehaviour
 
     void OnTriggerExit(Collider other)
     {
-        ObjectsToGrab.Remove(other.gameObject);
+        GameObject obj = other.GetComponentInParent<ObjectSync>().gameObject;
+        if (obj != null)
+        {
+            ObjectsToGrab.Remove(obj);
+        }
     }
 }
