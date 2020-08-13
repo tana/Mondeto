@@ -41,7 +41,7 @@ objects:
   - $name: ball
     position: !vec [3, 5, 2]
     rotation: !euler [0, 0, 0]
-    scale: !vec [0.3, 0.3, 0.3]
+    scale: !vec [0.1, 0.1, 0.1]
     color: !vec [1, 1, 0]
     restitution: 0.5
     mass: 0.01
@@ -66,14 +66,12 @@ objects:
     scale: !vec [0.3, 0.3, 0.3]
     color: !vec [1, 1, 1]
     tags: [sphere, material]
-  # Grabbable objects
-  - position: !vec [2, 1.2, 3]
-    rotaiton: !euler [0, 0, 0]
-    scale: !vec [0.3, 0.3, 0.3]
-    color: !vec [1, 0, 0]
-    tags: [cube, material, collider, grabbable]
-  - position: !vec [2.5, 1.2, 3]
-    rotation: !euler [20, 30, 40]
-    scale: !vec [0.3, 0.3, 0.3]
-    color: !vec [0, 1, 0]
-    tags: [cube, material, collider, grabbable]
+  # Rackets (grabbable)
+  - position: !vec [3, 1.2, 0.5]
+    rotation: !euler [180, 90, 90]
+    model: !load_file "scene_data/racket.glb"
+    tags: [model, collider, grabbable]
+  - position: !vec [3, 1.2, 3.5]
+    rotation: !euler [180, 90, 90]
+    model: !load_file "scene_data/racket.glb"
+    tags: [model, collider, grabbable]
