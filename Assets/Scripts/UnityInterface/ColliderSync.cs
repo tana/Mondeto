@@ -9,8 +9,11 @@ public class ColliderSync : MonoBehaviour
 
     PhysicMaterial material;
 
+    SyncObject obj;
+
     public void Initialize(SyncObject obj)
     {
+        this.obj = obj;
         material = new PhysicMaterial();
 
         if (obj.HasTag("cube"))
@@ -29,17 +32,58 @@ public class ColliderSync : MonoBehaviour
         {
             GetComponent<ModelSync>().LoadComplete += AddMeshCollidersForModel;
         }
-        else
+        else if (obj.HasTag("plane") || obj.HasTag("cylinder"))
         {
+            // For primitives that use MeshCollider
             var collider = gameObject.AddComponent<MeshCollider>();
             collider.sharedMaterial = material;
             addedColliders.Add(collider);
         }
+        else if (GetComponent<Collider>() != null)
+        {
+            // If the object already has a Unity Collider component (e.g. hands, player avatar)
+            // Note:
+            //  At this time, the default Collider created by CreatePrimitive may not destroyed.
+            //  To ignore this collider, "GetComponent<Collider() != null" has to be the last of else-if.
+            var collider = GetComponent<Collider>();
+            collider.sharedMaterial = material;
+            addedColliders.Add(GetComponent<Collider>());
+        }
 
-        obj.RegisterFieldUpdateHandler("friction", () => ApplyFieldValues(obj));
-        obj.RegisterFieldUpdateHandler("restitution", () => ApplyFieldValues(obj));
+        obj.RegisterFieldUpdateHandler("friction", HandleUpdate);
+        obj.RegisterFieldUpdateHandler("restitution", HandleUpdate);
 
-        ApplyFieldValues(obj);
+        HandleUpdate();
+    }
+
+    public void OnCollisionEnter(Collision collision)
+    {
+        SendEventToGameObject(collision.gameObject, "collisionStart", new IValue[0]);
+    }
+
+    public void OnCollisionExit(Collision collision)
+    {
+        SendEventToGameObject(collision.gameObject, "collisionEnd", new IValue[0]);
+    }
+
+    public void OnTriggerEnter(Collider other)
+    {
+        SendEventToGameObject(other.gameObject, "collisionStart", new IValue[0]);
+    }
+
+    public void OnTriggerExit(Collider other)
+    {
+        SendEventToGameObject(other.gameObject, "collisionEnd", new IValue[0]);
+    }
+
+    void SendEventToGameObject(GameObject recvGameObject, string eventName, IValue[] args)
+    {
+        var sync = GetComponent<ObjectSync>();
+
+        var recvSync = recvGameObject.GetComponent<ObjectSync>();
+        if (recvSync == null) return;
+
+        recvSync.SyncObject.SendEvent(eventName, sync.SyncObject.Id, args);
     }
 
     // To support GLB loading (multiple meshes may be dynamically added as children)
@@ -58,7 +102,7 @@ public class ColliderSync : MonoBehaviour
         }
     }
 
-    void ApplyFieldValues(SyncObject obj)
+    void HandleUpdate()
     {
         // Uses same value for both static and dynamic friction coefficients.
         // This is for compatibility with engines other than Unity.
@@ -84,5 +128,11 @@ public class ColliderSync : MonoBehaviour
         {
             material.bounciness = restitution;
         }
+    }
+
+    public void OnDestroy()
+    {
+        obj.DeleteFieldUpdateHandler("friction", HandleUpdate);
+        obj.DeleteFieldUpdateHandler("restitution", HandleUpdate);
     }
 }

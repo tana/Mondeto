@@ -16,6 +16,8 @@ public class ObjectSync : MonoBehaviour
 
     public SyncObject SyncObject;
 
+    bool beforeSync = false;
+
     SyncBehaviour syncBehaviour
     {
         get
@@ -33,8 +35,10 @@ public class ObjectSync : MonoBehaviour
         SyncObject = obj;
 
         SyncObject.BeforeSync += OnBeforeSync;
-        SyncObject.AfterSync += OnAfterSync;
         SyncObject.RegisterFieldUpdateHandler("parent", HandleParentChange);
+        SyncObject.RegisterFieldUpdateHandler("position", HandleUpdate);
+        SyncObject.RegisterFieldUpdateHandler("rotation", HandleUpdate);
+        SyncObject.RegisterFieldUpdateHandler("scale", HandleUpdate);
 
         if (IsOriginal && SetInitialTags)
         {
@@ -44,9 +48,7 @@ public class ObjectSync : MonoBehaviour
         }
 
         HandleParentChange();
-
-        // TODO: consider better design
-        ApplyState(); // Set initial state of Unity GameObject based on SyncObject
+        HandleUpdate();
 
         SendMessage("OnSyncReady", options: SendMessageOptions.DontRequireReceiver);
         return;
@@ -55,8 +57,10 @@ public class ObjectSync : MonoBehaviour
     void OnDestroy()
     {
         SyncObject.BeforeSync -= OnBeforeSync;
-        SyncObject.AfterSync -= OnAfterSync;
         SyncObject.DeleteFieldUpdateHandler("parent", HandleParentChange);
+        SyncObject.DeleteFieldUpdateHandler("position", HandleUpdate);
+        SyncObject.DeleteFieldUpdateHandler("rotation", HandleUpdate);
+        SyncObject.DeleteFieldUpdateHandler("scale", HandleUpdate);
     }
 
     void HandleParentChange()
@@ -84,23 +88,23 @@ public class ObjectSync : MonoBehaviour
 
     void OnBeforeSync(SyncObject obj)
     {
+        beforeSync = true;
+
         obj.SetField("position", UnityUtil.ToVec(transform.localPosition));
         obj.SetField("rotation", UnityUtil.ToQuat(transform.localRotation));
+        
+        beforeSync = false;
     }
 
-    void OnAfterSync(SyncObject obj)
+    void HandleUpdate()
     {
-        if (IsOriginal) return;
-        ApplyState();
-    }
+        if (beforeSync) return;
 
-    public void ApplyState()   // TODO: move
-    {
-        if (SyncObject.HasField("position") && SyncObject.GetField("position") is Vec position)
+        if (SyncObject.TryGetField("position", out Vec position))
             transform.localPosition = UnityUtil.FromVec(position);
-        if (SyncObject.HasField("rotation") && SyncObject.GetField("rotation") is Quat rotation)
+        if (SyncObject.TryGetField("rotation", out Quat rotation))
             transform.localRotation = UnityUtil.FromQuat(rotation);
-        if (SyncObject.HasField("scale") && SyncObject.GetField("scale") is Vec scale)
+        if (SyncObject.TryGetField("scale", out Vec scale))
             transform.localScale = UnityUtil.FromVec(scale);
     }
 }

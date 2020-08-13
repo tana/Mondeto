@@ -4,6 +4,10 @@ using UnityEngine;
 // using assumptions that the object moves with constant velocity and angular velocity.
 public class ConstantVelocity : MonoBehaviour
 {
+    private SyncObject obj;
+
+    bool beforeSync = false;
+
     private Vector3 velocity = Vector3.zero, angularVelocity = Vector3.zero;
 
     // For calculation of velocity and angular velocity
@@ -12,13 +16,16 @@ public class ConstantVelocity : MonoBehaviour
 
     public void Initialize(SyncObject obj)
     {
+        this.obj = obj;
+
         lastPosition = transform.position;
         lastRotation = transform.rotation;
 
         obj.BeforeSync += OnBeforeSync;
-        obj.AfterSync += OnAfterSync;
+        obj.RegisterFieldUpdateHandler("velocity", HandleUpdate);
+        obj.RegisterFieldUpdateHandler("angularVelocity", HandleUpdate);
 
-        ApplyState(obj);
+        HandleUpdate();
     }
 
     public void FixedUpdate()
@@ -40,8 +47,10 @@ public class ConstantVelocity : MonoBehaviour
         }
     }
 
-    void ApplyState(SyncObject obj)
+    void HandleUpdate()
     {
+        if (beforeSync) return;
+
         if (obj.TryGetField("velocity", out Vec localVelocityVec))
         {
             velocity = transform.TransformVector(UnityUtil.FromVec(localVelocityVec));
@@ -54,14 +63,18 @@ public class ConstantVelocity : MonoBehaviour
 
     void OnBeforeSync(SyncObject obj)
     {
+        beforeSync = true;
+
         obj.SetField("velocity", UnityUtil.ToVec(transform.InverseTransformVector(velocity)));
         obj.SetField("angularVelocity", UnityUtil.ToVec(transform.InverseTransformVector(angularVelocity)));
+
+        beforeSync = false;
     }
 
-    void OnAfterSync(SyncObject obj)
+    public void OnDestroy()
     {
-        if (GetComponent<ObjectSync>().IsOriginal) return;
-
-        ApplyState(obj);
+        obj.BeforeSync -= OnBeforeSync;
+        obj.DeleteFieldUpdateHandler("velocity", HandleUpdate);
+        obj.DeleteFieldUpdateHandler("angularVelocity", HandleUpdate);
     }
 }

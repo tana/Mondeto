@@ -38,13 +38,22 @@ objects:
     restitution: 0.5
     tags: [cube, material, collider]
   # Ball
-  - position: !vec [3, 5, 2]
+  - $name: ball
+    position: !vec [3, 5, 2]
     rotation: !euler [0, 0, 0]
     scale: !vec [0.3, 0.3, 0.3]
     color: !vec [1, 1, 0]
     restitution: 0.5
     mass: 0.01
     tags: [sphere, material, collider, physics]
+  # Collision handler test
+  - position: !vec [2.3, 1.2, 2]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.3, 0.3, 0.3]
+    color: !vec [1, 1, 0]
+    objectToMove: !ref ball
+    destination: !vec [3, 5, 2]
+    tags: [cube, material, collider, objectMoveButton]
   # GLB loading
   - position: !vec [-4, 1, 3]
     rotation: !euler [0, 0, 0]

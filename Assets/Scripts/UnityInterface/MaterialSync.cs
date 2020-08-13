@@ -2,19 +2,22 @@ using UnityEngine;
 
 public class MaterialSync : MonoBehaviour
 {
+    SyncObject obj;
+
     Renderer meshRenderer;
 
     public void Initialize(SyncObject obj)
     {
+        this.obj = obj;
         meshRenderer = GetComponent<MeshRenderer>();
 
-        obj.RegisterFieldUpdateHandler("color", () => ApplyFieldValues(obj));
-        obj.RegisterFieldUpdateHandler("alpha", () => ApplyFieldValues(obj));
+        obj.RegisterFieldUpdateHandler("color", HandleUpdate);
+        obj.RegisterFieldUpdateHandler("alpha", HandleUpdate);
 
-        ApplyFieldValues(obj);
+        HandleUpdate();
     }
 
-    void ApplyFieldValues(SyncObject obj)
+    void HandleUpdate()
     {
         var color = new Color(0.0f, 0.0f, 0.0f, 1.0f);
         
@@ -32,5 +35,11 @@ public class MaterialSync : MonoBehaviour
         }
 
         meshRenderer.material.color = color;
+    }
+
+    public void OnDestroy()
+    {
+        obj.DeleteFieldUpdateHandler("color", HandleUpdate);
+        obj.DeleteFieldUpdateHandler("alpha", HandleUpdate);
     }
 }
