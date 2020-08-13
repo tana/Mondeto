@@ -210,7 +210,7 @@ public class PlayerAvatar : MonoBehaviour
         if (handGameObj == null) return;
         var detector = handGameObj.GetComponent<GrabDetector>();
         var handObj = handGameObj.GetComponent<ObjectSync>().SyncObject;
-        foreach (var obj in detector.ObjectToGrab)
+        foreach (var obj in detector.ObjectsToGrab)
         {
             obj.GetComponent<ObjectSync>().SyncObject.SendEvent(
                 "grab",
