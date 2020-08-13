@@ -18,14 +18,24 @@ public class ObjectMoveButtonTag
     {
         Logger.Debug("objectMoveButton", $"Touched by object {sender}");
 
-        if (obj.TryGetField<ObjectRef>("objectToMove", out ObjectRef objToMove) &&
+        if (obj.TryGetField<ObjectRef>("objectToMove", out ObjectRef objToMoveRef) &&
             obj.TryGetField<Vec>("destination", out Vec destination))
         {
-            if (!node.Objects.ContainsKey(objToMove.Id)) return;    // something is wrong
-            // FIXME: not working
-            node.Objects[objToMove.Id].SetField("position", destination);
-            node.Objects[objToMove.Id].SetField("velocity", new Vec(0.0f, 0.0f, 0.0f));
-            node.Objects[objToMove.Id].SetField("angularVelocity", new Vec(0.0f, 0.0f, 0.0f));
+            if (!node.Objects.ContainsKey(objToMoveRef.Id)) return;    // something is wrong
+            SyncObject objToMove = node.Objects[objToMoveRef.Id];
+            objToMove.SetField("position", destination);
+
+            // FIXME: velocity/angularVelocity setting is unstable
+
+            if (obj.TryGetField<Vec>("launchVelocity", out Vec launchVel))
+                objToMove.SetField("velocity", launchVel);
+            else
+                objToMove.SetField("velocity", new Vec(0, 0, 0));
+
+            if (obj.TryGetField<Vec>("launchAngularVelocity", out Vec launchAngVel))
+                objToMove.SetField("angularVelocity", launchAngVel);
+            else
+                objToMove.SetField("angularVelocity", new Vec(0, 0, 0));
         }
     }
 }

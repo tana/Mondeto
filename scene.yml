@@ -39,20 +39,23 @@ objects:
     tags: [cube, material, collider]
   # Ball
   - $name: ball
-    position: !vec [3, 5, 2]
+    position: !vec [3, 2, 2]
     rotation: !euler [0, 0, 0]
     scale: !vec [0.1, 0.1, 0.1]
     color: !vec [1, 1, 0]
+    velocity: !vec [0, 0, -20]
     restitution: 0.5
     mass: 0.01
     tags: [sphere, material, collider, physics]
-  # Collision handler test
+  # Ball launch button (collision handler test)
   - position: !vec [2.3, 1.2, 2]
     rotation: !euler [0, 0, 0]
     scale: !vec [0.3, 0.3, 0.3]
     color: !vec [1, 1, 0]
     objectToMove: !ref ball
-    destination: !vec [3, 5, 2]
+    destination: !vec [3, 2, 2]
+    launchVelocity: !vec [0, 0, -20]
+    launchAngularVelocity: !vec [0, 0, 0]
     tags: [cube, material, collider, objectMoveButton]
   # GLB loading
   - position: !vec [-4, 1, 3]
