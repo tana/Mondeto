@@ -80,7 +80,8 @@ public class ColliderSync : MonoBehaviour
     {
         var sync = GetComponent<ObjectSync>();
 
-        var recvSync = recvGameObject.GetComponent<ObjectSync>();
+        // GetComponentInParent is used because a model can have Collider in child meshes.
+        var recvSync = recvGameObject.GetComponentInParent<ObjectSync>();
         if (recvSync == null) return;
 
         recvSync.SyncObject.SendEvent(eventName, sync.SyncObject.Id, args);

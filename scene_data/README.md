@@ -6,3 +6,5 @@
     - Self-made using Blender (`slope-and-stage.blend`).
 - `halfpipe.glb`
     - Self-made using Blender (`halfpipe.blend`).
+- `racket.glb`
+    - Self-made using Blender (`racket.blend`).
