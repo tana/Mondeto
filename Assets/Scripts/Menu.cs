@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR;
 using UnityEngine.UI;
+using Cysharp.Threading.Tasks;
 
 public class Menu : MonoBehaviour
 {
@@ -75,6 +76,24 @@ public class Menu : MonoBehaviour
         GetComponent<CharacterController>().enabled = true;
     }
 
+    public async void OnRecenterButtonClicked()
+    {
+        // Recenter using Unity's new XR API
+        //  See https://docs.unity3d.com/2019.4/Documentation/Manual/xr_input.html (the "XRInputSubsystem and InputDevice association" section)
+        var subsystems = new List<XRInputSubsystem>();
+        SubsystemManager.GetInstances<XRInputSubsystem>(subsystems);
+        foreach (var subsystem in subsystems)
+        {
+            subsystem.TryRecenter();
+        }
+
+        // Wait until recentered
+        await UniTask.WaitForEndOfFrame();
+        await UniTask.WaitForEndOfFrame();
+
+        MoveMenu();
+    }
+
     void OnSyncReady()
     {
         var objectSync = GetComponent<ObjectSync>();
@@ -89,8 +108,17 @@ public class Menu : MonoBehaviour
         isOpen = !isOpen;
         MenuCanvas.gameObject.SetActive(isOpen);
 
+        MoveMenu();
+
         // Display controller line only if menu is open
         LeftLine.enabled = isOpen;
         RightLine.enabled = isOpen;
+    }
+
+    void MoveMenu()
+    {
+        // Make the menu appear in front of the camera
+        MenuCanvas.transform.position = Camera.main.transform.TransformPoint(new Vector3(0, 0, 1));
+        MenuCanvas.transform.rotation = Camera.main.transform.rotation;
     }
 }
