@@ -75,6 +75,18 @@ public class Menu : MonoBehaviour
         GetComponent<CharacterController>().enabled = true;
     }
 
+    public void OnRecenterButtonClicked()
+    {
+        // Recenter using Unity's new XR API
+        //  See https://docs.unity3d.com/2019.4/Documentation/Manual/xr_input.html (the "XRInputSubsystem and InputDevice association" section)
+        var subsystems = new List<XRInputSubsystem>();
+        SubsystemManager.GetInstances<XRInputSubsystem>(subsystems);
+        foreach (var subsystem in subsystems)
+        {
+            subsystem.TryRecenter();
+        }
+    }
+
     void OnSyncReady()
     {
         var objectSync = GetComponent<ObjectSync>();
