@@ -78,6 +78,7 @@ public class Menu : MonoBehaviour
 
     public async void OnRecenterButtonClicked()
     {
+        /*
         // Recenter using Unity's new XR API
         //  See https://docs.unity3d.com/2019.4/Documentation/Manual/xr_input.html (the "XRInputSubsystem and InputDevice association" section)
         var subsystems = new List<XRInputSubsystem>();
@@ -86,6 +87,8 @@ public class Menu : MonoBehaviour
         {
             subsystem.TryRecenter();
         }
+        */
+        InputTracking.Recenter();   // Legacy XR needs legacy recenter method
 
         // Wait until recentered
         await UniTask.WaitForEndOfFrame();
