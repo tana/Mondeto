@@ -5,7 +5,7 @@ using UnityEngine;
 // FIXME: more flexible approach (e.g. using collider tag with shape setting and collision events)
 public class GrabDetector : MonoBehaviour
 {
-    public readonly HashSet<GameObject> ObjectToGrab = new HashSet<GameObject>();
+    public readonly HashSet<GameObject> ObjectsToGrab = new HashSet<GameObject>();
 
     SphereCollider col;
 
@@ -25,14 +25,20 @@ public class GrabDetector : MonoBehaviour
     void OnTriggerEnter(Collider other)
     {
         // synchronized object only
-        if (other.GetComponent<ObjectSync>() != null)
+        // GetComponentInParent is used because a model can have Collider in child meshes.
+        GameObject obj = other.GetComponentInParent<ObjectSync>().gameObject;
+        if (obj != null)
         {
-            ObjectToGrab.Add(other.gameObject);
+            ObjectsToGrab.Add(obj);
         }
     }
 
     void OnTriggerExit(Collider other)
     {
-        ObjectToGrab.Remove(other.gameObject);
+        GameObject obj = other.GetComponentInParent<ObjectSync>().gameObject;
+        if (obj != null)
+        {
+            ObjectsToGrab.Remove(obj);
+        }
     }
 }

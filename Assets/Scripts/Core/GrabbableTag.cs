@@ -17,13 +17,22 @@ public class GrabbableTag
 
     void OnGrab(uint sender, IValue[] args)
     {
+        // Calculate coordinate of this object relative to sender
+        Vec relPos;
+        Quat relRot;
+        if (!CalcRelativeCoord(obj, node.Objects[sender], out relPos, out relRot))
+        {
+            // When calculation failed
+            relPos = new Vec();
+            relRot = new Quat();
+        }
+
         // Become a child of sender
         obj.SetField("parent", node.Objects[sender].GetObjectRef());
         // Set relative coordinate
-        // TODO: specify grabbing point (relative coordinate) using fields
-        //       (or keep relative position/rotation at the time of grabbing?)
-        obj.SetField("position", new Vec());    // (0,0,0)
-        obj.SetField("rotation", new Quat());   // identity
+        // Keep relative position/rotation at the time of grabbing
+        obj.SetField("position", relPos);
+        obj.SetField("rotation", relRot);
 
         Logger.Debug("grabbable", $"Grabbed by object {sender}");
     }
@@ -87,5 +96,28 @@ public class GrabbableTag
             rotation = default;
             return false;
         }
+    }
+
+    // Calculate coordinate of obj relative to refObj
+    // Note: when return value is false (failed), position and rotation will be null (because these are reference type)
+    bool CalcRelativeCoord(SyncObject obj, SyncObject refObj, out Vec position, out Quat rotation)
+    {
+        position = default;
+        rotation = default;
+
+        // Calculate world coordinate of obj
+        Vec worldPos;
+        Quat worldRot;
+        if (!CalcWorldCoord(obj, out worldPos, out worldRot)) return false;
+
+        // Calculate world coordinate of refObj
+        Vec refWorldPos;
+        Quat refWorldRot;
+        if (!CalcWorldCoord(refObj, out refWorldPos, out refWorldRot)) return false;
+
+        // Calculate relative coordinate
+        position = refWorldRot.Conjugate() * (worldPos - refWorldPos);
+        rotation = refWorldRot.Conjugate() * worldRot;
+        return true;
     }
 }

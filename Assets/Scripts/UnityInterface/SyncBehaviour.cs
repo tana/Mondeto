@@ -208,6 +208,10 @@ public class SyncBehaviour : MonoBehaviour
         {
             (new GrabbableTag()).Initialize(obj);
         }
+        else if (tag == "objectMoveButton") // TODO: move to somewhere of core, not in Unity-specific code
+        {
+            (new ObjectMoveButtonTag()).Initialize(obj);
+        }
         else
         {
             Logger.Log("SyncBehaviour", "Unknown tag " + tag);

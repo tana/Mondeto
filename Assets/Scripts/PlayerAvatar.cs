@@ -210,7 +210,7 @@ public class PlayerAvatar : MonoBehaviour
         if (handGameObj == null) return;
         var detector = handGameObj.GetComponent<GrabDetector>();
         var handObj = handGameObj.GetComponent<ObjectSync>().SyncObject;
-        foreach (var obj in detector.ObjectToGrab)
+        foreach (var obj in detector.ObjectsToGrab)
         {
             obj.GetComponent<ObjectSync>().SyncObject.SendEvent(
                 "grab",
@@ -371,7 +371,7 @@ public class PlayerAvatar : MonoBehaviour
                 var leftId = await node.CreateObject();
                 leftHandObj = node.Objects[leftId];
                 leftHandObj.SetField("parent", obj.GetObjectRef());
-                leftHandObj.SetField("tag", new Sequence(new IValue[] {
+                leftHandObj.SetField("tags", new Sequence(new IValue[] {
                     new Primitive<string>("constantVelocity"),
                     new Primitive<string>("collider")
                 }));
@@ -389,7 +389,7 @@ public class PlayerAvatar : MonoBehaviour
                 var rightId = await node.CreateObject();
                 rightHandObj = node.Objects[rightId];
                 rightHandObj.SetField("parent", obj.GetObjectRef());
-                rightHandObj.SetField("tag", new Sequence(new IValue[] {
+                rightHandObj.SetField("tags", new Sequence(new IValue[] {
                     new Primitive<string>("constantVelocity"),
                     new Primitive<string>("collider")
                 }));

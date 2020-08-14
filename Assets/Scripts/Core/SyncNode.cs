@@ -322,9 +322,10 @@ public abstract class SyncNode : IDisposable
 
     public void SendEvent(string name, uint sender, uint receiver, IValue[] args)
     {
+        // TODO: Should prevent using sender which is not original on this node? (security)
         foreach (Connection conn in Connections.Values)
         {
-            conn.SendMessage(Connection.ChannelType.Control, new EventSentMessage {
+            conn.SendMessage<ITcpMessage>(Connection.ChannelType.Control, new EventSentMessage {
                 Name = name,
                 Sender = sender,
                 Receiver = receiver,

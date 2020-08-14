@@ -172,6 +172,11 @@ public class SyncObject
     {
         // TODO: option to prevent sync if both sender and this is on the same node
         HandleEvent(name, sender, args);
+        if (OriginalNodeId != Node.Objects[sender].OriginalNodeId)
+        {
+            // If the event is sent from an object of different original node
+            Node.SendEvent(name, sender, Id, args);
+        }
     }
 
     public void SendEvent(string name, uint sender) => SendEvent(name, sender, new IValue[0]);

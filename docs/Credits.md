@@ -1,7 +1,6 @@
 # Credits
 ## Mondeto itself
-Copyright (c) 2020 Satoshi Tanaka
-Mondeto itself is licensed under MIT License.
+Mondeto itself is licensed under [MIT License](../LICENSE).
 
 ### Acknowledgements
 This project is supported by [The MITOU Program](https://www.ipa.go.jp/english/about/about_2_3.html) of [Information-technology Promotion Agency (IPA)](https://www.ipa.go.jp/index-e.html).
