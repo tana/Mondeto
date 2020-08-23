@@ -51,12 +51,16 @@ public class Connection : IDisposable
             }
         });
 
-        pc.LocalSdpReadytoSend += (string type, string sdp) => {
+        // Do signaling
+        //  https://microsoft.github.io/MixedReality-WebRTC/manual/cs/cs-signaling.html
+        //  https://microsoft.github.io/MixedReality-WebRTC/manual/cs/helloworld-cs-signaling-core3.html
+
+        pc.LocalSdpReadytoSend += (SdpMessage sdpMessage) => {
             // ここはawaitではなくWaitにしないとSocketが切れる．スレッドセーフ関係?
-            signaler.SendSdpAsync(type == "offer", sdp, clientNodeId).Wait();
+            signaler.SendSdpAsync(sdpMessage.Type == SdpMessageType.Offer, sdpMessage.Content, clientNodeId).Wait();
         };
-        pc.IceCandidateReadytoSend += (string candidate, int sdpMLineIndex, string sdpMid) => {
-            signaler.SendIceAsync(sdpMid, sdpMLineIndex, candidate, clientNodeId).Wait();
+        pc.IceCandidateReadytoSend += (IceCandidate candidate) => {
+            signaler.SendIceAsync(candidate.SdpMid, candidate.SdpMlineIndex, candidate.Content, clientNodeId).Wait();
         };
 
         pc.IceStateChanged += (IceConnectionState state) => {
@@ -72,14 +76,17 @@ public class Connection : IDisposable
             }
         };
 
-        signaler.SdpReceived += (bool isOffer, string sdp, uint cid) => {
+        signaler.SdpReceived += async (bool isOffer, string sdp, uint cid) => {
             if (isServer && cid != clientNodeId)
             {
                 // ignore messages for other clients
                 return;
             }
 
-            pc.SetRemoteDescription(isOffer ? "offer" : "answer", sdp);
+            await pc.SetRemoteDescriptionAsync(new SdpMessage {
+                Type = isOffer ? SdpMessageType.Offer : SdpMessageType.Answer,
+                Content = sdp
+            });
             if (isOffer)
             {
                 pc.CreateAnswer();
@@ -92,7 +99,11 @@ public class Connection : IDisposable
                 return;
             }
 
-            pc.AddIceCandidate(sdpMid, sdpMLineIndex, candidate);
+            pc.AddIceCandidate(new IceCandidate {
+                SdpMid = sdpMid,
+                SdpMlineIndex = sdpMLineIndex,
+                Content = candidate
+            });
             //Logger.Write((isServer ? "Server: " : "Client: ") + $"{sdpMid} {sdpMLineIndex} {candidate}");
         };
 
