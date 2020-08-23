@@ -153,13 +153,13 @@ public class SyncObject
         EventHandlers[name].Remove(handler);
     }
 
-    internal void HandleEvent(string name, uint caller, IValue[] args)
+    internal void HandleEvent(string name, uint sender, IValue[] args)
     {
         if (EventHandlers.TryGetValue(name, out var handlers))
         {
             foreach (var handler in handlers)
             {
-                handler(caller, args);
+                handler(sender, args);
             }
         }
         else

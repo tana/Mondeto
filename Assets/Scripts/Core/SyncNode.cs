@@ -335,6 +335,12 @@ public abstract class SyncNode : IDisposable
 
     protected void HandleEventSentMessage(string name, uint sender, uint receiver, IValue[] args)
     {
+        if (!Objects.ContainsKey(sender) || Objects[sender].OriginalNodeId == NodeId)
+        {
+            // Something wrong
+            Logger.Error("SyncNode", "Blocked invalid EventSentMessage");
+        }
+
         if (Objects.TryGetValue(receiver, out SyncObject obj))
         {
             obj.HandleEvent(name, sender, args);
