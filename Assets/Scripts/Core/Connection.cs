@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using Microsoft.MixedReality.WebRTC;
 using MessagePack;
+using System.Threading.Channels;
 
 public class Connection : IDisposable
 {
@@ -25,16 +26,20 @@ public class Connection : IDisposable
     ChannelType[] channelTypes = { ChannelType.Sync, ChannelType.Control, ChannelType.Blob, ChannelType.Audio };
     string[] channelLabels = { "sync", "control", "blob", "audio" };
 
-    ConcurrentQueue<byte[]>[] queues;
+    // System.Threading.Channels.Channel for inter-thread communications
+    //  (For usage, see https://devblogs.microsoft.com/dotnet/an-introduction-to-system-threading-channels/ )
+    // This is not a built-in class, but can be installed by adding three DLLs.
+    //  (see https://yotiky.hatenablog.com/entry/unity_channels )
+    Channel<byte[]>[] threadChannels;
 
     public Connection()
     {
         pc = new PeerConnection();
 
-        queues = new ConcurrentQueue<byte[]>[channels.Length];
-        for (int i = 0; i < queues.Length; i++)
+        threadChannels = new Channel<byte[]>[channels.Length];
+        for (int i = 0; i < channels.Length; i++)
         {
-            queues[i] = new ConcurrentQueue<byte[]>();
+            threadChannels[i] = Channel.CreateUnbounded<byte[]>();
         }
     }
 
@@ -139,7 +144,7 @@ public class Connection : IDisposable
         foreach (var (dc, idx) in channels.Select((dc, idx) => (dc, idx)))
         {
             dc.MessageReceived += (data) => {
-                queues[idx].Enqueue(data);
+                threadChannels[idx].Writer.TryWrite(data);  // Always succeeds because the Channel is unbounded
             };
             dc.StateChanged += () => {
                 Logger.Debug("Connection", $"DC {(ChannelType)idx} state changed to {dc.State}");
@@ -172,7 +177,7 @@ public class Connection : IDisposable
     public bool TryReceiveMessage<T>(ChannelType type, out T msg)
     {
         byte[] buf;
-        if (queues[(int)type].TryDequeue(out buf))
+        if (threadChannels[(int)type].Reader.TryRead(out buf))
         {
             msg = MessagePackSerializer.Deserialize<T>(buf);
             return true;
@@ -184,16 +189,10 @@ public class Connection : IDisposable
         }
     }
 
-    public Task<T> ReceiveMessageAsync<T>(ChannelType type, CancellationToken cancel = default)
+    public async Task<T> ReceiveMessageAsync<T>(ChannelType type, CancellationToken cancel = default)
     {
-        return Task.Run(() => {
-            T msg;
-            while (!TryReceiveMessage<T>(type, out msg))
-            {
-                // FIXME
-            }
-            return msg;
-        }, cancel);
+        byte[] buf = await threadChannels[(int)type].Reader.ReadAsync(cancel);
+        return MessagePackSerializer.Deserialize<T>(buf);
     }
 
     public void Dispose()
