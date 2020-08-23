@@ -28,7 +28,7 @@ public class Connection : IDisposable
 
     // System.Threading.Channels.Channel for inter-thread communications
     //  (For usage, see https://devblogs.microsoft.com/dotnet/an-introduction-to-system-threading-channels/ )
-    // This is not a built-in class, but can be installed by adding three DLLs.
+    // This is not a built-in class, but (in Unity) can be installed by adding three DLLs.
     //  (see https://yotiky.hatenablog.com/entry/unity_channels )
     Channel<byte[]>[] threadChannels;
 
