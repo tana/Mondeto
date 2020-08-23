@@ -168,13 +168,11 @@ public class SyncObject
         }
     }
 
-    public void SendEvent(string name, uint sender, IValue[] args)
+    public void SendEvent(string name, uint sender, IValue[] args, bool localOnly = false)
     {
-        // TODO: option to prevent sync if both sender and this is on the same node
         HandleEvent(name, sender, args);
-        if (OriginalNodeId != Node.Objects[sender].OriginalNodeId)
+        if (!localOnly)
         {
-            // If the event is sent from an object of different original node
             Node.SendEvent(name, sender, Id, args);
         }
     }

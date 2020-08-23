@@ -113,6 +113,9 @@ public class SyncServer : SyncNode
                 }
                 else if (msg is EventSentMessage eventSentMessage)
                 {
+                    // Broadcast to other clients
+                    BroadcastEventSentMessage(id, eventSentMessage);
+
                     HandleEventSentMessage(
                         eventSentMessage.Name,
                         eventSentMessage.Sender, eventSentMessage.Receiver,
@@ -123,6 +126,19 @@ public class SyncServer : SyncNode
 
             // FIXME
             ProcessAudioMessages(id, conn);
+        }
+    }
+
+    void BroadcastEventSentMessage(uint fromClientId, EventSentMessage msg)
+    {
+        foreach (var pair in clients)
+        {
+            uint id = pair.Key;
+            Connection conn = pair.Value;
+
+            if (id == fromClientId) continue;   // Don't send back to the client that sent this msg
+            
+            conn.SendMessage<ITcpMessage>(Connection.ChannelType.Control, msg);
         }
     }
 
