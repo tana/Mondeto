@@ -49,3 +49,15 @@ There are some modified files (paths are relative to root directory of UnityChan
 - [Airplane](https://poly.google.com/view/8VysVKMXN2J)
 - Author is [Poly by Google](https://poly.google.com/user/4aEd8rQgKu2) and licensed under [CC-BY](https://creativecommons.org/licenses/by/3.0/legalcode).
 - Downloaded in OBJ format then converted into GLB using Blender.
+
+### System.Threading.Channels
+- [LICENSE.txt](ThirdPartyLicenses/System.Threading.Channels/LICENSE.txt)
+- [THIRD-PARTY-NOTICES.txt](ThirdPartyLicenses/System.Threading.Channels/THIRD-PARTY-NOTICES.txt)
+
+### System.Threading.Tasks.Extensions
+- [LICENSE.txt](ThirdPartyLicenses/System.Threading.Tasks.Extensions/LICENSE.txt)
+- [THIRD-PARTY-NOTICES.txt](ThirdPartyLicenses/System.Threading.Tasks.Extensions/THIRD-PARTY-NOTICES.txt)
+
+### System.Runtime.CompilerServices.Unsafe
+- [LICENSE.txt](ThirdPartyLicenses/System.Runtime.CompilerServices.Unsafe/LICENSE.txt)
+- [THIRD-PARTY-NOTICES.txt](ThirdPartyLicenses/System.Runtime.CompilerServices.Unsafe/THIRD-PARTY-NOTICES.txt)
