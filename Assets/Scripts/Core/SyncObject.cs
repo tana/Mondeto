@@ -153,13 +153,13 @@ public class SyncObject
         EventHandlers[name].Remove(handler);
     }
 
-    internal void HandleEvent(string name, uint caller, IValue[] args)
+    internal void HandleEvent(string name, uint sender, IValue[] args)
     {
         if (EventHandlers.TryGetValue(name, out var handlers))
         {
             foreach (var handler in handlers)
             {
-                handler(caller, args);
+                handler(sender, args);
             }
         }
         else
@@ -168,13 +168,11 @@ public class SyncObject
         }
     }
 
-    public void SendEvent(string name, uint sender, IValue[] args)
+    public void SendEvent(string name, uint sender, IValue[] args, bool localOnly = false)
     {
-        // TODO: option to prevent sync if both sender and this is on the same node
         HandleEvent(name, sender, args);
-        if (OriginalNodeId != Node.Objects[sender].OriginalNodeId)
+        if (!localOnly)
         {
-            // If the event is sent from an object of different original node
             Node.SendEvent(name, sender, Id, args);
         }
     }

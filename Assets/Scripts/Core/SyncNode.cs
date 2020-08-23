@@ -322,7 +322,6 @@ public abstract class SyncNode : IDisposable
 
     public void SendEvent(string name, uint sender, uint receiver, IValue[] args)
     {
-        // TODO: Should prevent using sender which is not original on this node? (security)
         foreach (Connection conn in Connections.Values)
         {
             conn.SendMessage<ITcpMessage>(Connection.ChannelType.Control, new EventSentMessage {
@@ -336,6 +335,12 @@ public abstract class SyncNode : IDisposable
 
     protected void HandleEventSentMessage(string name, uint sender, uint receiver, IValue[] args)
     {
+        if (!Objects.ContainsKey(sender) || Objects[sender].OriginalNodeId == NodeId)
+        {
+            // Something wrong
+            Logger.Error("SyncNode", "Blocked invalid EventSentMessage");
+        }
+
         if (Objects.TryGetValue(receiver, out SyncObject obj))
         {
             obj.HandleEvent(name, sender, args);
