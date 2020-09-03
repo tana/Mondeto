@@ -47,7 +47,7 @@ public class Connection : IDisposable
     {
         await pc.InitializeAsync(new PeerConnectionConfiguration {
             IceServers = new List<IceServer> {
-                new IceServer { Urls = { "stun:stun.l.google.com:19302" } } // TODO:
+                new IceServer { Urls = { signaler.IceServerUrl } }
             }
         });
 
