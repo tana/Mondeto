@@ -82,3 +82,6 @@ crashlytics-build.properties
 avatar*.vrm
 
 *.blend1
+
+# cache
+temp_data/
