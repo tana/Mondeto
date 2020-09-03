@@ -283,10 +283,10 @@ public class PlayerAvatar : MonoBehaviour
         Blob vrmBlob;
         if (GetComponent<ObjectSync>().IsOriginal)
         {
-            BlobHandle vrmHandle = node.GenerateBlobHandle();
             byte[] vrmData = File.ReadAllBytes(Settings.Instance.AvatarPath);
             // Use MIME type for GLTF binary https://www.iana.org/assignments/media-types/model/gltf-binary
-            vrmBlob = new Blob { MimeType = "model/gltf-binary", Data = vrmData };
+            vrmBlob = new Blob(vrmData, "model/gltf-binary");
+            BlobHandle vrmHandle = vrmBlob.GenerateHandle();
             node.WriteBlob(vrmHandle, vrmBlob);
             obj.SetField("vrm", vrmHandle);
         }

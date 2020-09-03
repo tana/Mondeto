@@ -203,12 +203,6 @@ public abstract class SyncNode : IDisposable
         }
     }
 
-    public BlobHandle GenerateBlobHandle()
-    {
-        Guid guid = System.Guid.NewGuid();
-        return new BlobHandle { Guid = guid.ToByteArray() };
-    }
-
     public void WriteBlob(BlobHandle handle, Blob blob)
     {
         BlobStorage.Write(handle, blob);
@@ -264,7 +258,7 @@ public abstract class SyncNode : IDisposable
                 byte[] data = await ReceiveBlobBodyAsync(conn, (int)infoMsg.Size, cancel);
                 BlobStorage.Write(
                     infoMsg.Handle,
-                    new Blob { MimeType = infoMsg.MimeType, Data = data }
+                    new Blob(data, infoMsg.MimeType)
                 );
                 Logger.Debug("Node", $"Received Blob {infoMsg.Handle}");
             }
