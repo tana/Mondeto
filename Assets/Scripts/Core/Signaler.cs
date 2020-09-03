@@ -18,6 +18,8 @@ public class Signaler : IDisposable
 
     public uint LocalNodeId { get; private set; }
 
+    public string IceServerUrl { get; private set; }
+
     ClientWebSocket ws;
     string uri;
     bool isServer;
@@ -77,6 +79,10 @@ public class Signaler : IDisposable
             if ((string)msg["type"] == "hello")
             {
                 LocalNodeId = (uint)(int)msg["nodeID"];
+
+                IceServerUrl = (string)msg["iceServerUrl"];
+                Logger.Debug("Signaler", $"Using ICE server {IceServerUrl}");
+
                 if (isServer && LocalNodeId != 0)
                 {
                     throw new Exception("Cannot register as the server");
