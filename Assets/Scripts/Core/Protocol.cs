@@ -164,12 +164,12 @@ public class Quat : IValue
 public class BlobHandle : IValue
 {
     [Key(0)]
-    public byte[] Guid;
+    public byte[] Hash;  // SHA-256 hash (32 bytes) of blob data
 
     public override bool Equals(object obj)
     {
         if (obj is BlobHandle other)
-            return Guid.SequenceEqual(other.Guid);
+            return Hash.SequenceEqual(other.Hash);
         else
             return false;
     }
@@ -177,9 +177,9 @@ public class BlobHandle : IValue
     public override int GetHashCode()
     {
         int hash = 0;
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < 8; i++)
         {
-            hash ^= (Guid[4 * i] << 24 | Guid[4 * i + 1] << 16 | Guid[4 * i + 2] << 8 | Guid[4 * i + 3]);
+            hash ^= (Hash[4 * i] << 24 | Hash[4 * i + 1] << 16 | Hash[4 * i + 2] << 8 | Hash[4 * i + 3]);
         }
         return hash;
     }
@@ -187,7 +187,7 @@ public class BlobHandle : IValue
     public override string ToString()
     {
         StringBuilder sb = new StringBuilder();
-        foreach (byte b in Guid)
+        foreach (byte b in Hash)
         {
             sb.Append($"{b:x}");
         }

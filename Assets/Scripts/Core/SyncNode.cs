@@ -30,6 +30,8 @@ public abstract class SyncNode : IDisposable
 
     protected BlobStorage BlobStorage = new BlobStorage();
 
+    private BlobCache BlobCache;
+
     protected const int BlobChunkSize = 65536;
 
     private ConcurrentDictionary<uint, object> blobSendLockTokens = new ConcurrentDictionary<uint, object>();
@@ -203,20 +205,27 @@ public abstract class SyncNode : IDisposable
         }
     }
 
-    public BlobHandle GenerateBlobHandle()
+    private void InitBlobCache()
     {
-        Guid guid = System.Guid.NewGuid();
-        return new BlobHandle { Guid = guid.ToByteArray() };
+        BlobCache = new BlobCache(Settings.Instance.TempDirectory);
     }
 
     public void WriteBlob(BlobHandle handle, Blob blob)
     {
         BlobStorage.Write(handle, blob);
         OnNewBlob(handle, blob);
+
+        if (BlobCache == null) InitBlobCache();
+        BlobCache.Add(handle, blob);
     }
 
     public async Task<Blob> ReadBlob(BlobHandle handle)
     {
+        if (BlobCache == null) InitBlobCache();
+        Blob? cache = BlobCache.Find(handle);
+        if (cache.HasValue) return cache.Value;
+
+        // Request blob if it was not found in cache
         RequestBlob(handle);
         return await BlobStorage.Read(handle);
     }
@@ -264,7 +273,7 @@ public abstract class SyncNode : IDisposable
                 byte[] data = await ReceiveBlobBodyAsync(conn, (int)infoMsg.Size, cancel);
                 BlobStorage.Write(
                     infoMsg.Handle,
-                    new Blob { MimeType = infoMsg.MimeType, Data = data }
+                    new Blob(data, infoMsg.MimeType)
                 );
                 Logger.Debug("Node", $"Received Blob {infoMsg.Handle}");
             }

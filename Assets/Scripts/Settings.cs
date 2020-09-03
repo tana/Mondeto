@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 
 public class Settings
 {
@@ -8,6 +9,8 @@ public class Settings
     public string SignalerUrlForClient = "wss://devel.luftmensch.info:15902/client";
 
     public string AvatarPath = "avatar.vrm";
+
+    public string TempDirectory = "." + Path.DirectorySeparatorChar + "temp_data";
 
     private Settings()
     {

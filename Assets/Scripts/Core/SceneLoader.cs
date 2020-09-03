@@ -145,8 +145,8 @@ public class SceneLoader
         // Currently, we use "application/octet-stream" as a sign of unknown type.
         //  https://www.iana.org/assignments/media-types/application/octet-stream
         //  https://wiki.developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types$revision/1589213
-        Blob blob = new Blob { Data = data, MimeType = "application/octet-stream" };
-        BlobHandle handle = node.GenerateBlobHandle();
+        Blob blob = new Blob(data, "application/octet-stream");
+        BlobHandle handle = blob.GenerateHandle();
         node.WriteBlob(handle, blob);
         
         return handle;
