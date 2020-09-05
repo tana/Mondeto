@@ -61,3 +61,6 @@ There are some modified files (paths are relative to root directory of UnityChan
 ### System.Runtime.CompilerServices.Unsafe
 - [LICENSE.txt](ThirdPartyLicenses/System.Runtime.CompilerServices.Unsafe/LICENSE.txt)
 - [THIRD-PARTY-NOTICES.txt](ThirdPartyLicenses/System.Runtime.CompilerServices.Unsafe/THIRD-PARTY-NOTICES.txt)
+
+### WebAssembly for .NET
+- [LICENSE](ThirdPartyLicenses/dotnet-webassembly/LICENSE)
