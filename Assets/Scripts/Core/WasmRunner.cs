@@ -28,6 +28,13 @@ class WasmRunner : IDisposable
 
     public void Initialize()
     {
+        // Initialization of WASM code
+        // In the future, we are planning to support WASI reactors.
+        // (See https://github.com/WebAssembly/WASI/blob/master/design/application-abi.md )
+        // However, until we support it, we use ABI (especially function names) that is
+        // intentionally different from WASI, because our preliminary ABI is incompatible with WASI reactor.
+        // (for example, we use "_init" instead of WASI "_initialize")
+
         // Call WASM functions using reflection.
         var type = instance.GetType();
         // Constructors
