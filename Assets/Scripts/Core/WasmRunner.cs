@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using WebAssembly;
 using WebAssembly.Runtime;
 
@@ -49,7 +50,7 @@ class WasmRunner : IDisposable
         var callCtorsMethod = type.GetMethod("__wasm_call_ctors", new Type[0]);
         if (callCtorsMethod != null)
         {
-            callCtorsMethod.Invoke(instance, new object[0]);
+            callCtorsMethod.Invoke(instance.Exports, new object[0]);
         }
         // Initialization
         var initMethod = type.GetMethod("_init", new Type[0]);
@@ -58,7 +59,9 @@ class WasmRunner : IDisposable
             Logger.Error("WasmRunner", "Cannot find function _init");
             return;
         }
-        initMethod.Invoke(instance, new object[0]);
+        initMethod.Invoke(instance.Exports, new object[0]);
+
+        Logger.Debug("WasmRunner", "WASM initialized");
     }
 
     public void Dispose()
