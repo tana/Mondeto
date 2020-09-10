@@ -29,6 +29,8 @@ public class SyncObject
 
     HashSet<string> tags = new HashSet<string>();
 
+    Dictionary<BlobHandle, WasmRunner> codes = new Dictionary<BlobHandle, WasmRunner>();
+
     public SyncObject(SyncNode node, uint id, uint originalNodeId)
     {
         Node = node;
@@ -46,6 +48,13 @@ public class SyncObject
             Elements = new List<IValue> {
             }
         });
+        
+        SetField("codes", new Sequence { 
+            Elements = new List<IValue> {
+            }
+        });
+
+        RegisterFieldUpdateHandler("codes", OnCodesUpdated);    // TODO: dispose
     }
 
     // Update field value and refresh last updated time.
@@ -210,6 +219,26 @@ public class SyncObject
                     Logger.Debug("Object", $"Tag {tag} is added to object {Id}");
                 }
                 // TODO: handle deleted tags?
+            }
+        }
+    }
+
+    void OnCodesUpdated()
+    {
+        if (GetField("codes") is Sequence codesSeq)
+        {
+            foreach (var elem in codesSeq.Elements)
+            {
+                if (elem is BlobHandle codeHandle && !codes.ContainsKey(codeHandle))
+                {
+                    // new code is added
+                    codes[codeHandle] = null;   // To prevent multiple initialization
+                    Node.ReadBlob(codeHandle).ContinueWith(task => {
+                        var runner = new WasmRunner(task.Result.Data);    // TODO: dispose
+                        codes[codeHandle] = runner;
+                        runner.Initialize();
+                    });
+                }
             }
         }
     }

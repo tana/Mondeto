@@ -93,3 +93,9 @@ objects:
     launchVelocity: !vec [0, 0, 40]
     launchAngularVelocity: !vec [0, 0, 0]
     tags: [cube, material, collider, objectMoveButton]
+  # WASM test
+  - position: !vec [1, 1, 1]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.3, 0.3, 0.3]
+    tags: [cube]
+    codes: [!load_file "wasm/test.wasm"]
