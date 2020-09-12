@@ -80,7 +80,7 @@ public class WasmRunner : IDisposable
         // (See https://github.com/WebAssembly/WASI/blob/master/design/application-abi.md )
         // However, until we support it, we use ABI (especially function names) that is
         // intentionally different from WASI, because our preliminary ABI is incompatible with WASI reactor.
-        // (for example, we use "_init" instead of WASI "_initialize")
+        // (for example, we use "init" instead of WASI "_initialize")
 
         // Call WASM functions using reflection.
         var type = instance.Exports.GetType();
@@ -92,10 +92,10 @@ public class WasmRunner : IDisposable
             CallWasmFunc(callCtorsMethod);
         }
         // Initialization
-        var initMethod = type.GetMethod("_init", new Type[0]);
+        var initMethod = type.GetMethod("init", new Type[0]);
         if (initMethod == null)
         {
-            Logger.Error("WasmRunner", "Cannot find function _init");
+            Logger.Error("WasmRunner", "Cannot find function init");
             return;
         }
         //initMethod.Invoke(instance.Exports, new object[0]);
