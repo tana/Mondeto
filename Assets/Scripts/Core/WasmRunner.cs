@@ -103,20 +103,42 @@ public class WasmRunner : IDisposable
 
         Logger.Debug("WasmRunner", "WASM initialized");
 
+        // Search event handlers
+        foreach (var method in type.GetMethods())
+        {
+            // Event handlers should have names like handle_EVENTNAME
+            if (!method.Name.StartsWith("handle_")) continue;
+            // Event handlers should have signatures "void handle_EVENTNAME(i32 sender)"
+            var parameters = method.GetParameters();
+            if (method.ReturnType != typeof(void) || parameters[0].ParameterType != typeof(int)) continue;
+
+            string eventName = method.Name.Substring("handle_".Length);
+            // Register as a handler
+            // TODO: unregister
+            Object.RegisterEventHandler(eventName, (sender, args) => {
+                CallWasmFunc(method, new object[] { (int)sender });
+            });
+        }
+
         IsReady = true;
     }
 
-    void CallWasmFunc(System.Reflection.MethodInfo method)
+    void CallWasmFunc(System.Reflection.MethodInfo method, object[] args)
     {
         try
         {
-            method.Invoke(instance.Exports, new object[0]);
+            method.Invoke(instance.Exports, args);
         }
         catch (Exception e)
         {
             Logger.Error("WasmRunner", e.ToString());
             IsReady = false;
         }
+    }
+
+    void CallWasmFunc(System.Reflection.MethodInfo method)
+    {
+        CallWasmFunc(method, new object[0]);
     }
 
     // WASI-compatible fd_write

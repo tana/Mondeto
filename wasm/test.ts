@@ -5,3 +5,7 @@ import "wasi"
 export function init(): void {
     trace("hello")
 }
+
+export function handle_collisionStart(sender: u32): void {
+    trace("collisionStart")
+}
