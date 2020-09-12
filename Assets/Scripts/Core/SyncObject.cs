@@ -232,10 +232,10 @@ public class SyncObject
                 if (elem is BlobHandle codeHandle && !codes.ContainsKey(codeHandle))
                 {
                     // new code is added
-                    codes[codeHandle] = null;   // To prevent multiple initialization
+                    codes[codeHandle] = new WasmRunner(this);   // TODO: dispose
                     Node.ReadBlob(codeHandle).ContinueWith(task => {
-                        var runner = new WasmRunner(task.Result.Data);    // TODO: dispose
-                        codes[codeHandle] = runner;
+                        var runner = codes[codeHandle];
+                        runner.Load(task.Result.Data);
                         runner.Initialize();
                     });
                 }

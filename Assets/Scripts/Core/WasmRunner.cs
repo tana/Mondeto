@@ -11,8 +11,12 @@ using WebAssembly.Runtime;
 //  https://github.com/RyanLamansky/dotnet-webassembly/blob/master/README.md#sample-create-and-execute-a-webassembly-file-in-memory
 public class WasmRunner : IDisposable
 {
+    public SyncObject Object;
+    public bool IsReady { get; private set; }
+
     Module module;
     Instance<Exports> instance;
+    ImportDictionary imports;
     
     List<byte> outBuf = new List<byte>();
 
@@ -25,22 +29,27 @@ public class WasmRunner : IDisposable
         public abstract UnmanagedMemory memory { get; }
     }
 
-    public WasmRunner(byte[] wasmBinary)
+    public WasmRunner(SyncObject obj)
+    {
+        // Prepare external (C#) functions
+        //  See: https://github.com/RyanLamansky/dotnet-webassembly/blob/8c60c4a657d9caf616f1926acf10adbf26a0980b/WebAssembly.Tests/FunctionImportTests.cs#L50-L52
+        imports = new ImportDictionary {
+            // WASI-compatible output for printf debugging
+            { "wasi_snapshot_preview1", "fd_write", new FunctionImport(new Func<int, int, int, int, int>(WasiFdWrite)) },
+            // WASI-compatible exit for AssemblyScript
+            { "wasi_snapshot_preview1", "proc_exit", new FunctionImport(new Action<int>(WasiProcExit)) }
+        };
+
+        Object = obj;
+    }
+
+    public void Load(byte[] wasmBinary)
     {
         // Load WASM from binary
         using (var stream = new MemoryStream(wasmBinary))
         {
             module = Module.ReadFromBinary(stream);
         }
-
-        // Prepare external (C#) functions
-        //  See: https://github.com/RyanLamansky/dotnet-webassembly/blob/8c60c4a657d9caf616f1926acf10adbf26a0980b/WebAssembly.Tests/FunctionImportTests.cs#L50-L52
-        var imports = new ImportDictionary {
-            // WASI-compatible output for printf debugging
-            { "wasi_snapshot_preview1", "fd_write", new FunctionImport(new Func<int, int, int, int, int>(WasiFdWrite)) },
-            // WASI-compatible exit for AssemblyScript
-            { "wasi_snapshot_preview1", "proc_exit", new FunctionImport(new Action<int>(WasiProcExit)) }
-        };
 
         // Compile WASM
         // Although dynamic can be used (as explained in the following URLs), we use reflections to call functions more dynamically.
@@ -93,6 +102,8 @@ public class WasmRunner : IDisposable
         CallWasmFunc(initMethod);
 
         Logger.Debug("WasmRunner", "WASM initialized");
+
+        IsReady = true;
     }
 
     void CallWasmFunc(System.Reflection.MethodInfo method)
@@ -104,6 +115,7 @@ public class WasmRunner : IDisposable
         catch (Exception e)
         {
             Logger.Error("WasmRunner", e.ToString());
+            IsReady = false;
         }
     }
 
@@ -171,8 +183,7 @@ public class WasmRunner : IDisposable
     //  https://github.com/WebAssembly/WASI/blob/master/phases/snapshot/docs.md#-exitcode-u32
     void WasiProcExit(int exitCode)
     {
-        // Currently it does nothing.
-        // TODO: exit
+        IsReady = false;
     }
 
     IntPtr WasmToIntPtr(int wasmPtr)
