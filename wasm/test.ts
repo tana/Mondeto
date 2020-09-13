@@ -7,5 +7,5 @@ export function init(): void {
 }
 
 export function handle_collisionStart(sender: u32): void {
-    trace("collisionStart")
+    trace("collisionStart from " + sender.toString())
 }

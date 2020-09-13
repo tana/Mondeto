@@ -60,15 +60,8 @@ public class WasmRunner : IDisposable
         //  These test codes use ToInstance that is not present in library (used only in their tests).
         //      See: https://github.com/RyanLamansky/dotnet-webassembly/blob/6a19dd5816865ef06c5beb056384d11ef216ace9/WebAssembly.Tests/ModuleExtensions.cs#L85
 
-        try
-        {
-            var instanceCreator = module.Compile<Exports>();
-            instance = instanceCreator(imports);
-        }
-        catch (Exception e)
-        {
-            Logger.Error("WasmRunner", e.ToString());
-        }
+        var instanceCreator = module.Compile<Exports>();
+        instance = instanceCreator(imports);
 
         Logger.Debug("WasmRunner", "WASM instance created");
     }
@@ -125,15 +118,7 @@ public class WasmRunner : IDisposable
 
     void CallWasmFunc(System.Reflection.MethodInfo method, object[] args)
     {
-        try
-        {
-            method.Invoke(instance.Exports, args);
-        }
-        catch (Exception e)
-        {
-            Logger.Error("WasmRunner", e.ToString());
-            IsReady = false;
-        }
+        method.Invoke(instance.Exports, args);
     }
 
     void CallWasmFunc(System.Reflection.MethodInfo method)

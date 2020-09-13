@@ -235,8 +235,15 @@ public class SyncObject
                     codes[codeHandle] = new WasmRunner(this);   // TODO: dispose
                     Node.ReadBlob(codeHandle).ContinueWith(task => {
                         var runner = codes[codeHandle];
-                        runner.Load(task.Result.Data);
-                        runner.Initialize();
+                        try
+                        {
+                            runner.Load(task.Result.Data);
+                            runner.Initialize();
+                        }
+                        catch (Exception e)
+                        {
+                            Logger.Error("SyncObject", "WASM init error " + e);
+                        }
                     });
                 }
             }
