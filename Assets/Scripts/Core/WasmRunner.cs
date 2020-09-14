@@ -23,16 +23,28 @@ public class WasmRunner : IDisposable
 
     List<byte> outBuf = new List<byte>();
 
+    Delegate fdWriteDelegate, procExitDelegate;
+
     public WasmRunner(SyncObject obj)
     {
+        // WasmerSharp uses Marshal.GetFunctionPointerForDelegate.
+        //  ( https://github.com/migueldeicaza/WasmerSharp/blob/0f168586501cd9a22800c1b447f2625d0dbfbea3/WasmerSharp/Wasmer.cs#L1164 )
+        // When passing delegates to native codes using GetFunctionPointerForDelegate,
+        // it is necessary to store delegates in somewhere in order to prevent deletion by GC.
+        // See:
+        //  https://docs.microsoft.com/en-us/dotnet/api/system.runtime.interopservices.marshal.getfunctionpointerfordelegate?view=netcore-3.1
+        //  https://stackoverflow.com/a/4907039
+        fdWriteDelegate = (Func<InstanceContext, int, int, int, int, int>)(WasiFdWrite);
+        procExitDelegate = (Action<InstanceContext, int>)(WasiProcExit);
+
         // Prepare external (C#) functions
         // Imports are specified as an array
         //  https://migueldeicaza.github.io/WasmerSharp/api/WasmerSharp/WasmerSharp.Instance.html
         imports = new Import[] {
             // WASI-compatible output for printf debugging
-            new Import("wasi_snapshot_preview1", "fd_write", new ImportFunction((Func<InstanceContext, int, int, int, int, int>)(WasiFdWrite))),
+            new Import("wasi_snapshot_preview1", "fd_write", new ImportFunction(fdWriteDelegate)),
             // WASI-compatible exit for AssemblyScript
-            new Import("wasi_snapshot_preview1", "proc_exit", new ImportFunction((Action<InstanceContext, int>)(WasiProcExit)))
+            new Import("wasi_snapshot_preview1", "proc_exit", new ImportFunction(procExitDelegate))
         };
 
         Object = obj;
