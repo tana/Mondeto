@@ -20,7 +20,7 @@ class WasmRunnerTests
     [Test]
     public void WasmInitTest()
     {
-        var runner = new WasmRunner(obj);
+        var runner = new ObjectWasmRunner(obj);
         runner.Load(File.ReadAllBytes(wasmDir + "test.wasm"));
         runner.Initialize();
         Assert.That(runner.IsReady);

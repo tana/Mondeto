@@ -29,7 +29,7 @@ public class SyncObject
 
     HashSet<string> tags = new HashSet<string>();
 
-    Dictionary<BlobHandle, WasmRunner> codes = new Dictionary<BlobHandle, WasmRunner>();
+    Dictionary<BlobHandle, ObjectWasmRunner> codes = new Dictionary<BlobHandle, ObjectWasmRunner>();
 
     public SyncObject(SyncNode node, uint id, uint originalNodeId)
     {
@@ -232,12 +232,13 @@ public class SyncObject
                 if (elem is BlobHandle codeHandle && !codes.ContainsKey(codeHandle))
                 {
                     // new code is added
-                    codes[codeHandle] = new WasmRunner(this);   // TODO: dispose
+                    codes[codeHandle] = new ObjectWasmRunner(this);   // TODO: dispose
                     Node.ReadBlob(codeHandle).ContinueWith(task => {
                         var runner = codes[codeHandle];
                         try
                         {
                             runner.Load(task.Result.Data);
+                            runner.RegisterEventHandlers();
                             runner.Initialize();
                         }
                         catch (Exception e)

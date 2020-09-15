@@ -13,41 +13,37 @@ using WasmerSharp;
 //  https://github.com/RyanLamansky/dotnet-webassembly
 public class WasmRunner : IDisposable
 {
-    public SyncObject Object;
     public bool IsReady { get; private set; }
 
-    WebAssembly.Module module;
+    protected WebAssembly.Module module;
 
-    Instance instance;
-    Import[] imports;
+    protected Instance instance;
 
     List<byte> outBuf = new List<byte>();
 
-    Delegate fdWriteDelegate, procExitDelegate;
+    Dictionary<(string, string), Delegate> importDelegates = new Dictionary<(string, string), Delegate>();
 
-    public WasmRunner(SyncObject obj)
+    public WasmRunner()
+    {
+        // Prepare external (C#) functions
+        // WASI-compatible output for printf debugging
+        AddImportFunction("wasi_snapshot_preview1", "fd_write", (Func<InstanceContext, int, int, int, int, int>)WasiFdWrite);
+        // WASI-compatible exit for AssemblyScript
+        AddImportFunction("wasi_snapshot_preview1", "proc_exit", (Action<InstanceContext, int>)WasiProcExit);
+    }
+
+    // Add imported (C#) function
+    // Note: this method must be called before Load.
+    protected void AddImportFunction(string module, string name, Delegate func)
     {
         // WasmerSharp uses Marshal.GetFunctionPointerForDelegate.
         //  ( https://github.com/migueldeicaza/WasmerSharp/blob/0f168586501cd9a22800c1b447f2625d0dbfbea3/WasmerSharp/Wasmer.cs#L1164 )
         // When passing delegates to native codes using GetFunctionPointerForDelegate,
-        // it is necessary to store delegates in somewhere in order to prevent deletion by GC.
+        // it is necessary to store delegates in somewhere (other than in ImportFunction) in order to prevent deletion by GC.
         // See:
         //  https://docs.microsoft.com/en-us/dotnet/api/system.runtime.interopservices.marshal.getfunctionpointerfordelegate?view=netcore-3.1
         //  https://stackoverflow.com/a/4907039
-        fdWriteDelegate = (Func<InstanceContext, int, int, int, int, int>)(WasiFdWrite);
-        procExitDelegate = (Action<InstanceContext, int>)(WasiProcExit);
-
-        // Prepare external (C#) functions
-        // Imports are specified as an array
-        //  https://migueldeicaza.github.io/WasmerSharp/api/WasmerSharp/WasmerSharp.Instance.html
-        imports = new Import[] {
-            // WASI-compatible output for printf debugging
-            new Import("wasi_snapshot_preview1", "fd_write", new ImportFunction(fdWriteDelegate)),
-            // WASI-compatible exit for AssemblyScript
-            new Import("wasi_snapshot_preview1", "proc_exit", new ImportFunction(procExitDelegate))
-        };
-
-        Object = obj;
+        importDelegates[(module, name)] = func;
     }
 
     public void Load(byte[] wasmBinary)
@@ -57,7 +53,13 @@ public class WasmRunner : IDisposable
         {
             module = WebAssembly.Module.ReadFromBinary(stream);
         }
-        //module.Exports[0].
+
+        // Imports are specified as an array
+        //  https://migueldeicaza.github.io/WasmerSharp/api/WasmerSharp/WasmerSharp.Instance.html
+        var imports = importDelegates.Select(pair => {
+            var (module, name) = pair.Key;
+            return new Import(module, name, new ImportFunction(pair.Value));
+        }).ToArray();
 
         // Load WASM from binary
         instance = new Instance(wasmBinary, imports);
@@ -93,27 +95,10 @@ public class WasmRunner : IDisposable
 
         Logger.Debug("WasmRunner", "WASM initialized");
 
-        // Search event handlers
-        foreach (var export in module.Exports.Where(ex => ex.Kind == WebAssembly.ExternalKind.Function))
-        {
-            // Event handlers should have names like handle_EVENTNAME
-            if (!export.Name.StartsWith("handle_")) continue;
-            // TODO: signature check (event handlers should have signatures "void handle_EVENTNAME(i32 sender)")
-
-            string funcName = export.Name;
-            string eventName = export.Name.Substring("handle_".Length);
-            // Register as a handler
-            // TODO: unregister
-            Object.RegisterEventHandler(eventName, (sender, args) => {
-                //CallWasmFunc(func, new object[] { (int)sender });
-                instance.Call(funcName, (int)sender);
-            });
-        }
-
         IsReady = true;
     }
 
-    WebAssembly.Export FindExport(string name, WebAssembly.ExternalKind kind)
+    protected WebAssembly.Export FindExport(string name, WebAssembly.ExternalKind kind)
     {
         return module.Exports.FirstOrDefault(export => export.Name == name && export.Kind == kind);
     }
@@ -238,7 +223,7 @@ public class WasmRunner : IDisposable
         IsReady = false;
     }
 
-    IntPtr WasmToIntPtr(Memory memory, int wasmPtr)
+    protected IntPtr WasmToIntPtr(Memory memory, int wasmPtr)
     {
         // Memory is accessed using IntPtr
         //  https://migueldeicaza.github.io/WasmerSharp/api/WasmerSharp/WasmerSharp.Memory.html
@@ -257,7 +242,7 @@ public class WasmRunner : IDisposable
         public int Size;
     }
 
-    public void Dispose()
+    public virtual void Dispose()
     {
         instance.Dispose();
     }
