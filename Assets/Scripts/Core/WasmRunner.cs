@@ -80,8 +80,7 @@ public class WasmRunner : IDisposable
         var callCtors = FindExport("__wasm_call_ctors", WebAssembly.ExternalKind.Function);
         if (callCtors != null)
         {
-            //CallWasmFunc(callCtors.GetExportFunction());
-            instance.Call("__wasm_call_ctors");
+            CallWasmFunc("__wasm_call_ctors");
         }
         // Initialization
         var init = FindExport("init", WebAssembly.ExternalKind.Function);
@@ -90,8 +89,7 @@ public class WasmRunner : IDisposable
             Logger.Error("WasmRunner", "Cannot find function init");
             return;
         }
-        //CallWasmFunc(init.GetExportFunction());
-        instance.Call("init");
+        CallWasmFunc("init");
 
         Logger.Debug("WasmRunner", "WASM initialized");
 
@@ -102,6 +100,14 @@ public class WasmRunner : IDisposable
     {
         return module.Exports.FirstOrDefault(export => export.Name == name && export.Kind == kind);
     }
+
+    protected void CallWasmFunc(string name, params object[] args)
+    {
+        instance.Call(name, args);
+        AfterCall();
+    }
+
+    protected virtual void AfterCall() {}
 
     // FIXME: It does not work
     /*
