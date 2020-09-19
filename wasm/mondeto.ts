@@ -14,5 +14,6 @@ export enum TypeCode
 
 // Declarations for imported functions
 // https://www.assemblyscript.org/exports-and-imports.html#imports
-export declare function get_field(name_ptr: usize, name_len: usize): i64
-export declare function get_type(value_od: u32): TypeCode
+export declare function get_field(name_ptr: usize, name_len: usize): i64;
+export declare function get_type(value_id: u32): TypeCode;
+export declare function decomp_vec(value_id: u32, x_ptr: usize, y_ptr: usize, z_ptr: usize): void;

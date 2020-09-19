@@ -15,6 +15,7 @@ public class ObjectWasmRunner : WasmRunner
     {
         AddImportFunction("mondeto", "get_field", (Func<InstanceContext, int, int, long>)GetField);
         AddImportFunction("mondeto", "get_type", (Func<InstanceContext, int, int>)GetValueType);
+        AddImportFunction("mondeto", "decomp_vec", (Action<InstanceContext, int, int, int, int>)DecompVec);
 
         Object = obj;
     }
@@ -80,9 +81,22 @@ public class ObjectWasmRunner : WasmRunner
     }
 
     // i32 get_type(i32 value_id)
-    int GetValueType(InstanceContext context, int valueId)
+    int GetValueType(InstanceContext ctx, int valueId)
     {
         // TODO: error check
         return (int)FindValue((uint)valueId).Type;
+    }
+
+    // void decomp_vec(i32 value_id, i32 x_ptr, i32 y_ptr, i32 z_ptr)
+    void DecompVec(InstanceContext ctx, int valueId, int xPtr, int yPtr, int zPtr)
+    {
+        Memory memory = ctx.GetMemory(0);
+
+        // TODO: error check and boundary check
+        var vec = (Vec)FindValue((uint)valueId);
+        var xyz = new float[] { vec.X, vec.Y, vec.Z };
+        Marshal.Copy(xyz, 0, WasmToIntPtr(memory, xPtr), 1);
+        Marshal.Copy(xyz, 1, WasmToIntPtr(memory, yPtr), 1);
+        Marshal.Copy(xyz, 2, WasmToIntPtr(memory, zPtr), 1);
     }
 }
