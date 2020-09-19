@@ -14,6 +14,7 @@ public class ObjectWasmRunner : WasmRunner
     public ObjectWasmRunner(SyncObject obj)
     {
         AddImportFunction("mondeto", "get_field", (Func<InstanceContext, int, int, long>)GetField);
+        AddImportFunction("mondeto", "get_type", (Func<InstanceContext, int, int>)GetValueType);
 
         Object = obj;
     }
@@ -55,6 +56,7 @@ public class ObjectWasmRunner : WasmRunner
         valueList.Clear();
     }
 
+    // i64 get_field(i32 name_ptr, i32 name_len)
     long GetField(InstanceContext ctx, int namePtr, int nameLen)
     {
         // Get memory from InstanceContext
@@ -75,5 +77,12 @@ public class ObjectWasmRunner : WasmRunner
         {
             return -1;
         }
+    }
+
+    // i32 get_type(i32 value_id)
+    int GetValueType(InstanceContext context, int valueId)
+    {
+        // TODO: error check
+        return (int)FindValue((uint)valueId).Type;
     }
 }
