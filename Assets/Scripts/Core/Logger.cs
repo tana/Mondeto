@@ -8,6 +8,20 @@ public class Logger
         Debug, Log, Error
     }
 
+    public struct LogEntry
+    {
+        public readonly LogType Type;
+        public readonly string Component;
+        public readonly string Message;
+
+        public LogEntry(LogType type, string component, string message)
+        {
+            Type = type;
+            Component = component;
+            Message = message;
+        }
+    }
+
     public delegate void LogHandler(LogType type, string component, string msg);
     public static event LogHandler OnLog;
 
