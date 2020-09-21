@@ -12,6 +12,8 @@ public class Settings
 
     public string TempDirectory = "." + Path.DirectorySeparatorChar + "temp_data";
 
+    public int ObjectLogSize = 1000;
+
     private Settings()
     {
     }

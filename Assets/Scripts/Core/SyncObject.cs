@@ -29,6 +29,10 @@ public class SyncObject
 
     HashSet<string> tags = new HashSet<string>();
 
+    // Logging-related
+    Queue<Logger.LogEntry> logEntries = new Queue<Logger.LogEntry>();
+    public IEnumerable<Logger.LogEntry> Logs { get => logEntries; }
+
     public SyncObject(SyncNode node, uint id, uint originalNodeId)
     {
         Node = node;
@@ -164,7 +168,7 @@ public class SyncObject
         }
         else
         {
-            Logger.Log("SyncObject", $"Object {Id}: no handler for event {name}");
+            WriteLog("SyncObject", $"no handler for event {name}");
         }
     }
 
@@ -180,6 +184,21 @@ public class SyncObject
     public void SendEvent(string name, uint sender) => SendEvent(name, sender, new IValue[0]);
     public void SendEvent(string name, IValue[] args) => SendEvent(name, SyncNode.WorldObjectId, args);
     public void SendEvent(string name) => SendEvent(name, SyncNode.WorldObjectId);
+
+    public void WriteLog(Logger.LogType type, string component, string message)
+    {
+        Logger.Write(type, $"{component} (Object {Id})", message);
+
+        logEntries.Enqueue(new Logger.LogEntry(type, component, message));
+        if (logEntries.Count > Settings.Instance.ObjectLogSize)
+        {
+            logEntries.Dequeue();
+        }
+    }
+
+    public void WriteLog(string component, string message) => WriteLog(Logger.LogType.Log, component, message);
+    public void WriteDebugLog(string component, string message) => WriteLog(Logger.LogType.Debug, component, message);
+    public void WriteErrorLog(string component, string message) => WriteLog(Logger.LogType.Error, component, message);
 
     internal void HandleAudio(float[] data)
     {
@@ -207,7 +226,7 @@ public class SyncObject
                 {
                     TagAdded?.Invoke(this, tag);
                     tags.Add(tag);
-                    Logger.Debug("Object", $"Tag {tag} is added to object {Id}");
+                    WriteDebugLog("Object", $"Tag {tag} has been added");
                 }
                 // TODO: handle deleted tags?
             }

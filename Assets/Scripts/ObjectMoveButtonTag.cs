@@ -11,12 +11,12 @@ public class ObjectMoveButtonTag
         node = obj.Node;
 
         obj.RegisterEventHandler("collisionStart", OnCollisionStart);
-        Logger.Debug("objectMoveButton", $"Registered event handlers");
+        obj.WriteDebugLog("objectMoveButton", $"Registered event handlers");
     }
 
     void OnCollisionStart(uint sender, IValue[] args)
     {
-        Logger.Debug("objectMoveButton", $"Touched by object {sender}");
+        obj.WriteDebugLog("objectMoveButton", $"Touched by object {sender}");
 
         if (obj.TryGetField<ObjectRef>("objectToMove", out ObjectRef objToMoveRef))
         {

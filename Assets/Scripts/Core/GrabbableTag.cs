@@ -12,7 +12,7 @@ public class GrabbableTag
 
         obj.RegisterEventHandler("grab", OnGrab);
         obj.RegisterEventHandler("ungrab", OnUngrab);
-        Logger.Debug("grabbable", $"Registered event handlers");
+        obj.WriteDebugLog("grabbable", $"Registered event handlers");
     }
 
     void OnGrab(uint sender, IValue[] args)
@@ -34,7 +34,7 @@ public class GrabbableTag
         obj.SetField("position", relPos);
         obj.SetField("rotation", relRot);
 
-        Logger.Debug("grabbable", $"Grabbed by object {sender}");
+        obj.WriteDebugLog("grabbable", $"Grabbed by object {sender}");
     }
 
     void OnUngrab(uint sender, IValue[] args)
@@ -56,7 +56,7 @@ public class GrabbableTag
         obj.SetField("position", worldPos);
         obj.SetField("rotation", worldRot);
 
-        Logger.Debug("grabbable", $"Ungrabbed by object {sender}");
+        obj.WriteDebugLog("grabbable", $"Ungrabbed by object {sender}");
     }
 
     // Calculate world coordinate of an object

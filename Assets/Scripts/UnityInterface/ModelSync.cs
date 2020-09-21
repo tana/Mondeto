@@ -16,14 +16,14 @@ public class ModelSync : MonoBehaviour
         if (!obj.HasField("model") || !(obj.GetField("model") is BlobHandle))
         {
             // TODO:
-            Logger.Error("Model", $"Object {obj.Id} has no model field or not a blob handle. Ignoring.");
+            obj.WriteErrorLog("Model", $"This object has no model field or not a blob handle. Ignoring.");
             return;
         }
 
         BlobHandle handle = (BlobHandle)obj.GetField("model");
 
         Blob blob = await obj.Node.ReadBlob(handle);
-        Logger.Debug("Model", $"Blob {handle} loaded");
+        obj.WriteDebugLog("Model", $"Blob {handle} loaded");
 
         // Because UniGLTF.ImporterContext is the parent class of VRMImporterContext,
         //  ( https://github.com/vrm-c/UniVRM/blob/3b68eb7f99bfe78ea9c83ea75511282ef1782f1a/Assets/VRM/UniVRM/Scripts/Format/VRMImporterContext.cs#L11 )
@@ -39,7 +39,7 @@ public class ModelSync : MonoBehaviour
         // UniGLTF also has ShowMeshes https://github.com/ousttrue/UniGLTF/wiki/Rutime-API#import
         ctx.ShowMeshes();
 
-        Logger.Debug("Model", "Model load completed");
+        obj.WriteDebugLog("Model", "Model load completed");
 
         LoadComplete?.Invoke(this);
     }
