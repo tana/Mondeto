@@ -2,13 +2,7 @@
 // See https://www.assemblyscript.org/exports-and-imports.html#anatomy-of-a-module
 import "wasi"
 
-import { get_field, get_type, decomp_vec, TypeCode } from "./mondeto"
-
-class Vec {
-    x: f32;
-    y: f32;
-    z: f32;
-}
+import { get_type, TypeCode, getField, get_int, get_float, getString, getVec } from "./mondeto"
 
 export function init(): void {
     trace("hello");
@@ -17,35 +11,28 @@ export function init(): void {
 export function handle_collisionStart(sender: u32): void {
     trace("collisionStart from " + sender.toString());
     
-    var name = "position";
-    // https://www.assemblyscript.org/stdlib/string.html#encoding-api
-    var buf = String.UTF8.encode("position");
-    // https://www.assemblyscript.org/runtime.html#interface
-    // https://www.assemblyscript.org/stdlib/arraybuffer.html#constructor
-    var field = get_field(changetype<usize>(buf), buf.byteLength);
-    trace("Value ID: " + field.toString());
-    if (field < 0)
+    const fieldRaw = getField("position");
+    if (fieldRaw < 0)
     {
         trace("Field not found");
         return;
     }
+    const field = fieldRaw as u32;
+    trace("Value ID: " + field.toString());
 
-    var type = get_type(field as u32);
-    trace("Type: " + (type as i32).toString())
+    const type = get_type(field);
+    trace("Type: " + type.toString());
     if (type != TypeCode.Vec)
     {
         trace("Incorrect type");
         return;
     }
 
-    var vec = new Vec();
-    // https://www.assemblyscript.org/environment.html#sizes-and-alignments
-    // https://www.assemblyscript.org/interoperability.html#class-layout
-    var ptr = changetype<usize>(vec);
-    var xOffset = offsetof<Vec>("x");
-    var yOffset = offsetof<Vec>("y");
-    var zOffset = offsetof<Vec>("z");
-    decomp_vec(field as u32, ptr + xOffset, ptr + yOffset, ptr + zOffset);
+    const vec = getVec(field);
+    trace(vec.toString());
 
-    trace("(" + vec.x.toString() + "," + vec.y.toString() + "," + vec.z.toString() + ")");
+    // Other fields
+    trace("testInt=" + get_int(getField("testInt") as u32).toString());
+    trace("testFloat=" + get_float(getField("testFloat") as u32).toString());
+    trace("testString=" + getString(getField("testString") as u32));
 }

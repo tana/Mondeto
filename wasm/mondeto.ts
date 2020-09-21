@@ -17,3 +17,50 @@ export enum TypeCode
 export declare function get_field(name_ptr: usize, name_len: usize): i64;
 export declare function get_type(value_id: u32): TypeCode;
 export declare function decomp_vec(value_id: u32, x_ptr: usize, y_ptr: usize, z_ptr: usize): void;
+export declare function get_int(value_id: u32): i32;
+export declare function get_long(value_id: u32): i64;
+export declare function get_float(value_id: u32): f32;
+export declare function get_double(value_id: u32): f64;
+export declare function get_string_length(value_id: u32): i32;
+export declare function get_string(value_id: u32, ptr: usize, max_len: i32): i32;
+
+// Wrappers
+class Vec {
+    x: f32;
+    y: f32;
+    z: f32;
+
+    toString(): string {
+        return "Vec(" + this.x.toString() + "," + this.y.toString() + "," + this.z.toString() + ")"
+    }
+}
+
+export function getField(name: string): i64 {
+    // https://www.assemblyscript.org/stdlib/string.html#encoding-api
+    const buf = String.UTF8.encode(name);
+    // https://www.assemblyscript.org/runtime.html#interface
+    // https://www.assemblyscript.org/stdlib/arraybuffer.html#constructor
+    return get_field(changetype<usize>(buf), buf.byteLength);
+}
+
+export function getString(valueID: u32): string {
+    const len = get_string_length(valueID);
+    const buf = new ArrayBuffer(len);
+    get_string(valueID, changetype<usize>(buf), buf.byteLength);
+    // https://www.assemblyscript.org/stdlib/string.html#encoding-api
+    return String.UTF8.decode(buf, false);
+}
+
+export function getVec(valueID: u32): Vec
+{
+    const vec = new Vec();
+    // https://www.assemblyscript.org/environment.html#sizes-and-alignments
+    // https://www.assemblyscript.org/interoperability.html#class-layout
+    const ptr = changetype<usize>(vec);
+    const xOffset = offsetof<Vec>("x");
+    const yOffset = offsetof<Vec>("y");
+    const zOffset = offsetof<Vec>("z");
+    decomp_vec(valueID, ptr + xOffset, ptr + yOffset, ptr + zOffset);
+
+    return vec;
+}

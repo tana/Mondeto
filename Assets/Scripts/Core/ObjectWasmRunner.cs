@@ -16,6 +16,12 @@ public class ObjectWasmRunner : WasmRunner
         AddImportFunction("mondeto", "get_field", (Func<InstanceContext, int, int, long>)GetField);
         AddImportFunction("mondeto", "get_type", (Func<InstanceContext, int, int>)GetValueType);
         AddImportFunction("mondeto", "decomp_vec", (Action<InstanceContext, int, int, int, int>)DecompVec);
+        AddImportFunction("mondeto", "get_int", (Func<InstanceContext, int, int>)GetInt);
+        AddImportFunction("mondeto", "get_long", (Func<InstanceContext, int, long>)GetLong);
+        AddImportFunction("mondeto", "get_float", (Func<InstanceContext, int, float>)GetFloat);
+        AddImportFunction("mondeto", "get_double", (Func<InstanceContext, int, double>)GetDouble);
+        AddImportFunction("mondeto", "get_string_length", (Func<InstanceContext, int, int>)GetStringLength);
+        AddImportFunction("mondeto", "get_string", (Func<InstanceContext, int, int, int, int>)GetString);
 
         Object = obj;
     }
@@ -98,5 +104,58 @@ public class ObjectWasmRunner : WasmRunner
         Marshal.Copy(xyz, 0, WasmToIntPtr(memory, xPtr), 1);
         Marshal.Copy(xyz, 1, WasmToIntPtr(memory, yPtr), 1);
         Marshal.Copy(xyz, 2, WasmToIntPtr(memory, zPtr), 1);
+    }
+
+    // i32 get_int(i32 value_id)
+    int GetInt(InstanceContext ctx, int valueId)
+    {
+        // TODO: error check
+        var val = (Primitive<int>)FindValue((uint)valueId);
+        return val.Value;
+    }
+
+    // i64 get_long(i32 value_id)
+    long GetLong(InstanceContext ctx, int valueId)
+    {
+        // TODO: error check
+        var val = (Primitive<long>)FindValue((uint)valueId);
+        return val.Value;
+    }
+
+    // f32 get_float(i32 value_id)
+    float GetFloat(InstanceContext ctx, int valueId)
+    {
+        // TODO: error check
+        var val = (Primitive<float>)FindValue((uint)valueId);
+        return val.Value;
+    }
+
+    // f64 get_double(i32 value_id)
+    double GetDouble(InstanceContext ctx, int valueId)
+    {
+        // TODO: error check
+        var val = (Primitive<double>)FindValue((uint)valueId);
+        return val.Value;
+    }
+
+    // i32 get_string_length(i32 value_id)
+    int GetStringLength(InstanceContext ctx, int valueId)
+    {
+        var val = (Primitive<string>)FindValue((uint)valueId);
+        return Encoding.UTF8.GetByteCount(val.Value);
+    }
+
+    // i32 get_string(i32 value_id, i32 ptr, i32 max_len)
+    int GetString(InstanceContext ctx, int valueId, int ptr, int maxLen)
+    {
+        Memory memory = ctx.GetMemory(0);
+
+        var val = (Primitive<string>)FindValue((uint)valueId);
+        byte[] bytes = Encoding.UTF8.GetBytes(val.Value);
+
+        int len = Math.Min(bytes.Length, maxLen);
+        Marshal.Copy(bytes, 0, WasmToIntPtr(memory, ptr), len);
+
+        return len;
     }
 }
