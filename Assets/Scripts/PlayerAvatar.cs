@@ -87,7 +87,7 @@ public class PlayerAvatar : MonoBehaviour
             if (ThirdPersonCamera != null)
                 ThirdPersonCamera.enabled = !firstPerson;
             SetHeadShadow();
-            Logger.Debug("PlayerAvatar", (firstPerson ? "first" : "third") + "person camera");
+            obj.WriteDebugLog("PlayerAvatar", (firstPerson ? "first" : "third") + "person camera");
         }
 
         if (isOriginal)
@@ -294,7 +294,7 @@ public class PlayerAvatar : MonoBehaviour
         {
             while (!obj.HasField("vrm") || !(obj.GetField("vrm") is BlobHandle))
             {
-                Logger.Debug("PlayerAvatar", "Field vrm not ready");
+                obj.WriteDebugLog("PlayerAvatar", "Field vrm not ready");
                 await UniTask.WaitForFixedUpdate();
             }
             BlobHandle blobHandle = (BlobHandle)obj.GetField("vrm");
@@ -316,12 +316,12 @@ public class PlayerAvatar : MonoBehaviour
         ctx.ParseGlb(vrmBlob.Data);
 
         var meta = ctx.ReadMeta();
-        Logger.Log("PlayerAvatar", $"Loading VRM {meta.Title} created by {meta.Author} ({meta.ContactInformation})");
-        Logger.Log("PlayerAvatar", $"AllowedUser={meta.AllowedUser}, ViolentUsage={meta.ViolentUssage}");
-        Logger.Log("PlayerAvatar", $"SexualUsage={meta.SexualUssage}, CommercialUsage={meta.CommercialUssage}");
-        Logger.Log("PlayerAvatar", $"OtherPermissionUrl={meta.OtherPermissionUrl}");
-        Logger.Log("PlayerAvatar", $"LicenseType={meta.LicenseType}");
-        Logger.Log("PlayerAvatar", $"OtherLicenseUrl={meta.OtherLicenseUrl}");
+        obj.WriteLog("PlayerAvatar", $"Loading VRM {meta.Title} created by {meta.Author} ({meta.ContactInformation})");
+        obj.WriteLog("PlayerAvatar", $"AllowedUser={meta.AllowedUser}, ViolentUsage={meta.ViolentUssage}");
+        obj.WriteLog("PlayerAvatar", $"SexualUsage={meta.SexualUssage}, CommercialUsage={meta.CommercialUssage}");
+        obj.WriteLog("PlayerAvatar", $"OtherPermissionUrl={meta.OtherPermissionUrl}");
+        obj.WriteLog("PlayerAvatar", $"LicenseType={meta.LicenseType}");
+        obj.WriteLog("PlayerAvatar", $"OtherLicenseUrl={meta.OtherLicenseUrl}");
 
         await ctx.LoadAsyncTask();
 
@@ -338,7 +338,7 @@ public class PlayerAvatar : MonoBehaviour
 
         GetComponent<Animator>().avatar = ctx.Root.GetComponent<Animator>().avatar;
         
-        Logger.Log("PlayerAvatar", $"VRM loaded");
+        obj.WriteLog("PlayerAvatar", $"VRM loaded");
 
         if (GetComponent<ObjectSync>().IsOriginal)
         {
