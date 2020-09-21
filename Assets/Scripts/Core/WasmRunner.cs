@@ -64,7 +64,7 @@ public class WasmRunner : IDisposable
         // Load WASM from binary
         instance = new Instance(wasmBinary, imports);
 
-        Logger.Debug("WasmRunner", "WASM instance created");
+        WriteLog(Logger.LogType.Debug, "WasmRunner", "WASM instance created");
     }
 
     public void Initialize()
@@ -86,12 +86,12 @@ public class WasmRunner : IDisposable
         var init = FindExport("init", WebAssembly.ExternalKind.Function);
         if (init == null)
         {
-            Logger.Error("WasmRunner", "Cannot find function init");
+            WriteLog(Logger.LogType.Error, "WasmRunner", "Cannot find function init");
             return;
         }
         CallWasmFunc("init");
 
-        Logger.Debug("WasmRunner", "WASM initialized");
+        WriteLog(Logger.LogType.Debug, "WasmRunner", "WASM initialized");
 
         IsReady = true;
     }
@@ -209,7 +209,7 @@ public class WasmRunner : IDisposable
             // Detect newline and print into logger (assuming output from WASM is UTF-8 and newline is LF)
             if (b == 0x0A)  // ASCII code for LF '\n'
             {
-                Logger.Debug("WasmRunner", Encoding.UTF8.GetString(outBuf.ToArray()));
+                WriteLog(Logger.LogType.Log, "WasmRunner", Encoding.UTF8.GetString(outBuf.ToArray()));
                 outBuf.Clear();
             }
             else
@@ -251,5 +251,10 @@ public class WasmRunner : IDisposable
     public virtual void Dispose()
     {
         instance.Dispose();
+    }
+
+    public virtual void WriteLog(Logger.LogType type, string component, string message)
+    {
+        Logger.Write(type, component, message);
     }
 }

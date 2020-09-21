@@ -262,7 +262,7 @@ public class SyncObject
                         }
                         catch (Exception e)
                         {
-                            Logger.Error("SyncObject", "WASM init error " + e);
+                            WriteErrorLog("SyncObject", "WASM init error " + e);
                         }
                     });
                 }

@@ -158,4 +158,9 @@ public class ObjectWasmRunner : WasmRunner
 
         return len;
     }
+
+    public override void WriteLog(Logger.LogType type, string component, string message)
+    {
+        Object.WriteLog(type, component, message);
+    }
 }
