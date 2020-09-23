@@ -24,6 +24,13 @@ export declare function get_float(value_id: u32): f32;
 export declare function get_double(value_id: u32): f64;
 export declare function get_string_length(value_id: u32): i32;
 export declare function get_string(value_id: u32, ptr: usize, max_len: i32): i32;
+export declare function make_int(value: i32): u32;
+export declare function make_long(value: i64): u32;
+export declare function make_float(value: f32): u32;
+export declare function make_double(value: f64): u32;
+export declare function make_vec(x: f32, y: f32, z: f32): u32;
+export declare function make_quat(w: f32, x: f32, y: f32, z: f32): u32;
+export declare function make_string(ptr: usize, len: i32): u32;
 
 // Wrappers
 class Vec {

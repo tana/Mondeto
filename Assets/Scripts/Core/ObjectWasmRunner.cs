@@ -13,16 +13,24 @@ public class ObjectWasmRunner : WasmRunner
 
     public ObjectWasmRunner(SyncObject obj)
     {
+        // Field manipulation functions
         AddImportFunction("mondeto", "get_field", (Func<InstanceContext, int, int, long>)GetField);
+        // IValue-related functions
         AddImportFunction("mondeto", "get_type", (Func<InstanceContext, int, int>)GetValueType);
         AddImportFunction("mondeto", "decomp_vec", (Action<InstanceContext, int, int, int, int>)DecompVec);
         AddImportFunction("mondeto", "decomp_quat", (Action<InstanceContext, int, int, int, int, int>)DecompQuat);
-        AddImportFunction("mondeto", "get_int", (Func<InstanceContext, int, int>)GetInt);
-        AddImportFunction("mondeto", "get_long", (Func<InstanceContext, int, long>)GetLong);
-        AddImportFunction("mondeto", "get_float", (Func<InstanceContext, int, float>)GetFloat);
-        AddImportFunction("mondeto", "get_double", (Func<InstanceContext, int, double>)GetDouble);
+        AddImportFunction("mondeto", "get_int", (Func<InstanceContext, int, int>)GetPrimitive<int>);
+        AddImportFunction("mondeto", "get_long", (Func<InstanceContext, int, long>)GetPrimitive<long>);
+        AddImportFunction("mondeto", "get_float", (Func<InstanceContext, int, float>)GetPrimitive<float>);
+        AddImportFunction("mondeto", "get_double", (Func<InstanceContext, int, double>)GetPrimitive<double>);
         AddImportFunction("mondeto", "get_string_length", (Func<InstanceContext, int, int>)GetStringLength);
         AddImportFunction("mondeto", "get_string", (Func<InstanceContext, int, int, int, int>)GetString);
+        AddImportFunction("mondeto", "make_int", (Func<InstanceContext, int, int>)MakePrimitive<int>);
+        AddImportFunction("mondeto", "make_long", (Func<InstanceContext, long, int>)MakePrimitive<long>);
+        AddImportFunction("mondeto", "make_float", (Func<InstanceContext, float, int>)MakePrimitive<float>);
+        AddImportFunction("mondeto", "make_double", (Func<InstanceContext, double, int>)MakePrimitive<double>);
+        AddImportFunction("mondeto", "make_vec", (Func<InstanceContext, float, float, float, int>)MakeVec);
+        AddImportFunction("mondeto", "make_quat", (Func<InstanceContext, float, float, float, float, int>)MakeQuat);
 
         Object = obj;
     }
@@ -122,34 +130,13 @@ public class ObjectWasmRunner : WasmRunner
     }
 
     // i32 get_int(i32 value_id)
-    int GetInt(InstanceContext ctx, int valueId)
-    {
-        // TODO: error check
-        var val = (Primitive<int>)FindValue((uint)valueId);
-        return val.Value;
-    }
-
     // i64 get_long(i32 value_id)
-    long GetLong(InstanceContext ctx, int valueId)
-    {
-        // TODO: error check
-        var val = (Primitive<long>)FindValue((uint)valueId);
-        return val.Value;
-    }
-
     // f32 get_float(i32 value_id)
-    float GetFloat(InstanceContext ctx, int valueId)
-    {
-        // TODO: error check
-        var val = (Primitive<float>)FindValue((uint)valueId);
-        return val.Value;
-    }
-
     // f64 get_double(i32 value_id)
-    double GetDouble(InstanceContext ctx, int valueId)
+    T GetPrimitive<T>(InstanceContext ctx, int valueId)
     {
         // TODO: error check
-        var val = (Primitive<double>)FindValue((uint)valueId);
+        var val = (Primitive<T>)FindValue((uint)valueId);
         return val.Value;
     }
 
@@ -172,6 +159,45 @@ public class ObjectWasmRunner : WasmRunner
         Marshal.Copy(bytes, 0, WasmToIntPtr(memory, ptr), len);
 
         return len;
+    }
+
+    // i32 make_int(i32 value)
+    // i32 make_long(i64 value)
+    // i32 make_float(f32 value)
+    // i32 make_double(f64 value)
+    int MakePrimitive<T>(InstanceContext ctx, T value)
+    {
+        var primitive = new Primitive<T>(value);
+        return (int)RegisterValue(primitive);
+    }
+
+    // i32 make_vec(f32 x, f32 y, f32 z)
+    int MakeVec(InstanceContext ctx, float x, float y, float z)
+    {
+        var vec = new Vec(x, y, z);
+        return (int)RegisterValue(vec);
+    }
+
+    // i32 make_quat(f32 w, f32 x, f32 y, f32 z)
+    int MakeQuat(InstanceContext ctx, float w, float x, float y, float z)
+    {
+        var quat = new Quat(w, x, y, z);
+        return (int)RegisterValue(quat);
+    }
+
+    // i32 make_string(i32 ptr, i32 len)
+    int MakeString(InstanceContext ctx, int ptr, int len)
+    {
+        Memory memory = ctx.GetMemory(0);
+        if (ptr + len >= memory.DataLength) throw new Exception();  // TODO: exception
+        
+        string str;
+        unsafe
+        {
+            str = Encoding.UTF8.GetString((byte*)WasmToIntPtr(memory, ptr), len);
+        }
+
+        return (int)RegisterValue(new Primitive<string>(str));
     }
 
     public override void WriteLog(Logger.LogType type, string component, string message)
