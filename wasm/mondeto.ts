@@ -23,15 +23,15 @@ export declare function get_int(value_id: u32): i32;
 export declare function get_long(value_id: u32): i64;
 export declare function get_float(value_id: u32): f32;
 export declare function get_double(value_id: u32): f64;
-export declare function get_string_length(value_id: u32): i32;
-export declare function get_string(value_id: u32, ptr: usize, max_len: i32): i32;
+export declare function get_string_length(value_id: u32): usize;
+export declare function get_string(value_id: u32, ptr: usize, max_len: usize): i32;
 export declare function make_int(value: i32): u32;
 export declare function make_long(value: i64): u32;
 export declare function make_float(value: f32): u32;
 export declare function make_double(value: f64): u32;
 export declare function make_vec(x: f32, y: f32, z: f32): u32;
 export declare function make_quat(w: f32, x: f32, y: f32, z: f32): u32;
-export declare function make_string(ptr: usize, len: i32): u32;
+export declare function make_string(ptr: usize, len: usize): u32;
 
 // Wrappers
 class Vec {
@@ -73,7 +73,7 @@ export function setField(name: string, valueID: u32): void {
 
 export function getString(valueID: u32): string {
     const len = get_string_length(valueID);
-    const buf = new ArrayBuffer(len);
+    const buf = new ArrayBuffer(len as i32);
     get_string(valueID, changetype<usize>(buf), buf.byteLength);
     // https://www.assemblyscript.org/stdlib/string.html#encoding-api
     return String.UTF8.decode(buf, false);
