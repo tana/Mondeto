@@ -17,8 +17,8 @@ public class ObjectWasmRunner : WasmRunner
         AddImportFunction("mondeto", "get_field", (Func<InstanceContext, int, int, long>)GetField);
         // IValue-related functions
         AddImportFunction("mondeto", "get_type", (Func<InstanceContext, int, int>)GetValueType);
-        AddImportFunction("mondeto", "decomp_vec", (Action<InstanceContext, int, int, int, int>)DecompVec);
-        AddImportFunction("mondeto", "decomp_quat", (Action<InstanceContext, int, int, int, int, int>)DecompQuat);
+        AddImportFunction("mondeto", "get_vec", (Action<InstanceContext, int, int, int, int>)GetVec);
+        AddImportFunction("mondeto", "get_quat", (Action<InstanceContext, int, int, int, int, int>)GetQuat);
         AddImportFunction("mondeto", "get_int", (Func<InstanceContext, int, int>)GetPrimitive<int>);
         AddImportFunction("mondeto", "get_long", (Func<InstanceContext, int, long>)GetPrimitive<long>);
         AddImportFunction("mondeto", "get_float", (Func<InstanceContext, int, float>)GetPrimitive<float>);
@@ -102,8 +102,8 @@ public class ObjectWasmRunner : WasmRunner
         return (int)FindValue((uint)valueId).Type;
     }
 
-    // void decomp_vec(i32 value_id, i32 x_ptr, i32 y_ptr, i32 z_ptr)
-    void DecompVec(InstanceContext ctx, int valueId, int xPtr, int yPtr, int zPtr)
+    // void get_vec(i32 value_id, i32 x_ptr, i32 y_ptr, i32 z_ptr)
+    void GetVec(InstanceContext ctx, int valueId, int xPtr, int yPtr, int zPtr)
     {
         Memory memory = ctx.GetMemory(0);
 
@@ -115,8 +115,8 @@ public class ObjectWasmRunner : WasmRunner
         Marshal.Copy(xyz, 2, WasmToIntPtr(memory, zPtr), 1);
     }
 
-    // void decomp_quat(i32 value_id, i32 w_ptr, i32 x_ptr, i32 y_ptr, i32 z_ptr)
-    void DecompQuat(InstanceContext ctx, int valueId, int wPtr, int xPtr, int yPtr, int zPtr)
+    // void get_quat(i32 value_id, i32 w_ptr, i32 x_ptr, i32 y_ptr, i32 z_ptr)
+    void GetQuat(InstanceContext ctx, int valueId, int wPtr, int xPtr, int yPtr, int zPtr)
     {
         Memory memory = ctx.GetMemory(0);
 
