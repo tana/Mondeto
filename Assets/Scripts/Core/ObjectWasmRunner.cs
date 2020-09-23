@@ -15,6 +15,7 @@ public class ObjectWasmRunner : WasmRunner
     {
         // Field manipulation functions
         AddImportFunction("mondeto", "get_field", (Func<InstanceContext, int, int, long>)GetField);
+        AddImportFunction("mondeto", "set_field", (Action<InstanceContext, int, int, int>)SetField);
         // IValue-related functions
         AddImportFunction("mondeto", "get_type", (Func<InstanceContext, int, int>)GetValueType);
         AddImportFunction("mondeto", "get_vec", (Action<InstanceContext, int, int, int, int>)GetVec);
@@ -31,6 +32,7 @@ public class ObjectWasmRunner : WasmRunner
         AddImportFunction("mondeto", "make_double", (Func<InstanceContext, double, int>)MakePrimitive<double>);
         AddImportFunction("mondeto", "make_vec", (Func<InstanceContext, float, float, float, int>)MakeVec);
         AddImportFunction("mondeto", "make_quat", (Func<InstanceContext, float, float, float, float, int>)MakeQuat);
+        AddImportFunction("mondeto", "make_string", (Func<InstanceContext, int, int, int>)MakeString);
 
         Object = obj;
     }
@@ -80,10 +82,7 @@ public class ObjectWasmRunner : WasmRunner
         Memory memory = ctx.GetMemory(0);
 
         // Read field name from WASM memory
-        byte[] buf = new byte[nameLen];
-        // TODO: memory boundary check
-        Marshal.Copy(WasmToIntPtr(memory, namePtr), buf, 0, nameLen);
-        string name = Encoding.UTF8.GetString(buf);
+        string name = ReadStringFromWasm(memory, namePtr, nameLen);
         
         if (Object.TryGetField<IValue>(name, out IValue value))
         {
@@ -93,6 +92,15 @@ public class ObjectWasmRunner : WasmRunner
         {
             return -1;
         }
+    }
+
+    void SetField(InstanceContext ctx, int namePtr, int nameLen, int valueId)
+    {
+        Memory memory = ctx.GetMemory(0);
+
+        string name = ReadStringFromWasm(memory, namePtr, nameLen);
+        // TODO: error check
+        Object.SetField(name, FindValue((uint)valueId));
     }
 
     // i32 get_type(i32 value_id)
@@ -189,13 +197,8 @@ public class ObjectWasmRunner : WasmRunner
     int MakeString(InstanceContext ctx, int ptr, int len)
     {
         Memory memory = ctx.GetMemory(0);
-        if (ptr + len >= memory.DataLength) throw new Exception();  // TODO: exception
         
-        string str;
-        unsafe
-        {
-            str = Encoding.UTF8.GetString((byte*)WasmToIntPtr(memory, ptr), len);
-        }
+        string str = ReadStringFromWasm(memory, ptr, len);
 
         return (int)RegisterValue(new Primitive<string>(str));
     }
@@ -203,5 +206,16 @@ public class ObjectWasmRunner : WasmRunner
     public override void WriteLog(Logger.LogType type, string component, string message)
     {
         Object.WriteLog(type, component, message);
+    }
+
+    string ReadStringFromWasm(Memory memory, int ptr, int len)
+    {
+        // boundary check
+        if (ptr < 0 || ptr + len >= memory.DataLength) throw new Exception();  // TODO: change exception
+        
+        unsafe
+        {
+            return Encoding.UTF8.GetString((byte*)WasmToIntPtr(memory, ptr), len);
+        }
     }
 }

@@ -15,6 +15,7 @@ export enum TypeCode
 // Declarations for imported functions
 // https://www.assemblyscript.org/exports-and-imports.html#imports
 export declare function get_field(name_ptr: usize, name_len: usize): i64;
+export declare function set_field(name_ptr: usize, name_len: usize, value_id: u32): void;
 export declare function get_type(value_id: u32): TypeCode;
 export declare function get_vec(value_id: u32, x_ptr: usize, y_ptr: usize, z_ptr: usize): void;
 export declare function get_quat(value_id: u32, w_ptr: usize, x_ptr: usize, y_ptr: usize, z_ptr: usize): void;
@@ -62,12 +63,28 @@ export function getField(name: string): i64 {
     return get_field(changetype<usize>(buf), buf.byteLength);
 }
 
+export function setField(name: string, valueID: u32): void {
+    // https://www.assemblyscript.org/stdlib/string.html#encoding-api
+    const buf = String.UTF8.encode(name);
+    // https://www.assemblyscript.org/runtime.html#interface
+    // https://www.assemblyscript.org/stdlib/arraybuffer.html#constructor
+    set_field(changetype<usize>(buf), buf.byteLength, valueID);
+}
+
 export function getString(valueID: u32): string {
     const len = get_string_length(valueID);
     const buf = new ArrayBuffer(len);
     get_string(valueID, changetype<usize>(buf), buf.byteLength);
     // https://www.assemblyscript.org/stdlib/string.html#encoding-api
     return String.UTF8.decode(buf, false);
+}
+
+export function makeString(str: string): u32 {
+    // https://www.assemblyscript.org/stdlib/string.html#encoding-api
+    const buf = String.UTF8.encode(str);
+    // https://www.assemblyscript.org/runtime.html#interface
+    // https://www.assemblyscript.org/stdlib/arraybuffer.html#constructor
+    return make_string(changetype<usize>(buf), buf.byteLength);
 }
 
 export function getVec(valueID: u32): Vec

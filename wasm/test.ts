@@ -2,7 +2,7 @@
 // See https://www.assemblyscript.org/exports-and-imports.html#anatomy-of-a-module
 import "wasi"
 
-import { get_type, TypeCode, getField, get_int, get_float, getString, getVec, getQuat } from "./mondeto"
+import { get_type, TypeCode, getField, get_int, get_float, getString, getVec, getQuat, setField, make_int, make_float, make_string, makeString } from "./mondeto"
 
 export function init(): void {
     trace("hello");
@@ -32,8 +32,16 @@ export function handle_collisionStart(sender: u32): void {
     trace(vec.toString());
 
     // Other fields
+    var testInt = get_int(getField("testInt") as u32);
+    var testFloat = get_float(getField("testFloat") as u32);
+    var testString = getString(getField("testString") as u32);
     trace("rotation=" + getQuat(getField("rotation") as u32).toString());
-    trace("testInt=" + get_int(getField("testInt") as u32).toString());
-    trace("testFloat=" + get_float(getField("testFloat") as u32).toString());
-    trace("testString=" + getString(getField("testString") as u32));
+    trace("testInt=" + testInt.toString());
+    trace("testFloat=" + testFloat.toString());
+    trace("testString=" + testString);
+
+    // Field update
+    setField("testInt", make_int(testInt + 1));
+    setField("testFloat", make_float(testFloat + 1.0));
+    setField("testString", makeString(testString + "a"));
 }
