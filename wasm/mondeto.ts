@@ -17,6 +17,7 @@ export enum TypeCode
 export declare function get_field(name_ptr: usize, name_len: usize): i64;
 export declare function get_type(value_id: u32): TypeCode;
 export declare function decomp_vec(value_id: u32, x_ptr: usize, y_ptr: usize, z_ptr: usize): void;
+export declare function decomp_quat(value_id: u32, w_ptr: usize, x_ptr: usize, y_ptr: usize, z_ptr: usize): void;
 export declare function get_int(value_id: u32): i32;
 export declare function get_long(value_id: u32): i64;
 export declare function get_float(value_id: u32): f32;
@@ -32,6 +33,17 @@ class Vec {
 
     toString(): string {
         return "Vec(" + this.x.toString() + "," + this.y.toString() + "," + this.z.toString() + ")"
+    }
+}
+
+class Quat {
+    w: f32;
+    x: f32;
+    y: f32;
+    z: f32;
+
+    toString(): string {
+        return "Quat(" + this.w.toString() + "," + this.x.toString() + "," + this.y.toString() + "," + this.z.toString() + ")"
     }
 }
 
@@ -63,4 +75,19 @@ export function getVec(valueID: u32): Vec
     decomp_vec(valueID, ptr + xOffset, ptr + yOffset, ptr + zOffset);
 
     return vec;
+}
+
+export function getQuat(valueID: u32): Quat
+{
+    const quat = new Quat();
+    // https://www.assemblyscript.org/environment.html#sizes-and-alignments
+    // https://www.assemblyscript.org/interoperability.html#class-layout
+    const ptr = changetype<usize>(quat);
+    const wOffset = offsetof<Quat>("w");
+    const xOffset = offsetof<Quat>("x");
+    const yOffset = offsetof<Quat>("y");
+    const zOffset = offsetof<Quat>("z");
+    decomp_quat(valueID, ptr + wOffset, ptr + xOffset, ptr + yOffset, ptr + zOffset);
+
+    return quat;
 }

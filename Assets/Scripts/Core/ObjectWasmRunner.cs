@@ -16,6 +16,7 @@ public class ObjectWasmRunner : WasmRunner
         AddImportFunction("mondeto", "get_field", (Func<InstanceContext, int, int, long>)GetField);
         AddImportFunction("mondeto", "get_type", (Func<InstanceContext, int, int>)GetValueType);
         AddImportFunction("mondeto", "decomp_vec", (Action<InstanceContext, int, int, int, int>)DecompVec);
+        AddImportFunction("mondeto", "decomp_quat", (Action<InstanceContext, int, int, int, int, int>)DecompQuat);
         AddImportFunction("mondeto", "get_int", (Func<InstanceContext, int, int>)GetInt);
         AddImportFunction("mondeto", "get_long", (Func<InstanceContext, int, long>)GetLong);
         AddImportFunction("mondeto", "get_float", (Func<InstanceContext, int, float>)GetFloat);
@@ -104,6 +105,20 @@ public class ObjectWasmRunner : WasmRunner
         Marshal.Copy(xyz, 0, WasmToIntPtr(memory, xPtr), 1);
         Marshal.Copy(xyz, 1, WasmToIntPtr(memory, yPtr), 1);
         Marshal.Copy(xyz, 2, WasmToIntPtr(memory, zPtr), 1);
+    }
+
+    // void decomp_quat(i32 value_id, i32 w_ptr, i32 x_ptr, i32 y_ptr, i32 z_ptr)
+    void DecompQuat(InstanceContext ctx, int valueId, int wPtr, int xPtr, int yPtr, int zPtr)
+    {
+        Memory memory = ctx.GetMemory(0);
+
+        // TODO: error check and boundary check
+        var quat = (Quat)FindValue((uint)valueId);
+        var wxyz = new float[] { quat.W, quat.X, quat.Y, quat.Z };
+        Marshal.Copy(wxyz, 0, WasmToIntPtr(memory, wPtr), 1);
+        Marshal.Copy(wxyz, 1, WasmToIntPtr(memory, xPtr), 1);
+        Marshal.Copy(wxyz, 2, WasmToIntPtr(memory, yPtr), 1);
+        Marshal.Copy(wxyz, 3, WasmToIntPtr(memory, zPtr), 1);
     }
 
     // i32 get_int(i32 value_id)

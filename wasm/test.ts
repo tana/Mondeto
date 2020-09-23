@@ -2,7 +2,7 @@
 // See https://www.assemblyscript.org/exports-and-imports.html#anatomy-of-a-module
 import "wasi"
 
-import { get_type, TypeCode, getField, get_int, get_float, getString, getVec } from "./mondeto"
+import { get_type, TypeCode, getField, get_int, get_float, getString, getVec, getQuat } from "./mondeto"
 
 export function init(): void {
     trace("hello");
@@ -32,6 +32,7 @@ export function handle_collisionStart(sender: u32): void {
     trace(vec.toString());
 
     // Other fields
+    trace("rotation=" + getQuat(getField("rotation") as u32).toString());
     trace("testInt=" + get_int(getField("testInt") as u32).toString());
     trace("testFloat=" + get_float(getField("testFloat") as u32).toString());
     trace("testString=" + getString(getField("testString") as u32));
