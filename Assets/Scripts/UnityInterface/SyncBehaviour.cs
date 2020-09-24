@@ -160,7 +160,7 @@ public class SyncBehaviour : MonoBehaviour
 
         //if (Time.frameCount % 6 != 0) return;
 
-        Node.SyncFrame();
+        Node.SyncFrame(Time.fixedDeltaTime);
     }
 
     // Prepare Unity GameObject for new SyncObject

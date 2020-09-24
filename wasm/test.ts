@@ -2,7 +2,7 @@
 // See https://www.assemblyscript.org/exports-and-imports.html#anatomy-of-a-module
 import "wasi"
 
-import { get_type, TypeCode, getField, get_int, get_float, getString, getVec, getQuat, setField, make_int, make_float, make_string, makeString } from "./mondeto"
+import { get_type, TypeCode, getField, get_int, get_float, getString, getVec, getQuat, setField, make_int, make_float, make_string, makeString, make_vec } from "./mondeto"
 
 export function init(): void {
     trace("hello");
@@ -44,4 +44,16 @@ export function handle_collisionStart(sender: u32): void {
     setField("testInt", make_int(testInt + 1));
     setField("testFloat", make_float(testFloat + 1.0));
     setField("testString", makeString(testString + "a"));
+}
+
+var phase: f32 = 0.0;
+
+// Called every frame
+// Parameter dt is time difference in seconds.
+export function update(dt: f32): void {
+    // Blink with 0.5 Hz frequency
+    phase = (phase + 2 * 0.5 * Mathf.PI * dt) % (2 * Mathf.PI);
+    var brightness = (Mathf.cos(phase) + 1) / 2;
+
+    setField("color", make_vec(brightness, brightness, brightness));
 }

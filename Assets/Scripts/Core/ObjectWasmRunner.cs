@@ -37,7 +37,7 @@ public class ObjectWasmRunner : WasmRunner
         Object = obj;
     }
 
-    public void RegisterEventHandlers()
+    public void RegisterHandlers()
     {
         // Search event handlers
         foreach (var export in module.Exports.Where(ex => ex.Kind == WebAssembly.ExternalKind.Function))
@@ -53,6 +53,14 @@ public class ObjectWasmRunner : WasmRunner
             Object.RegisterEventHandler(eventName, (sender, args) => {
                 CallWasmFunc(funcName, (int)sender);
             });
+        }
+
+        // Search "update" function
+        WebAssembly.Export updateExport = FindExport("update", WebAssembly.ExternalKind.Function);
+        if (updateExport != null)
+        {
+            // TODO: signature check (update should have "void update(f32 dt)")
+            Object.BeforeSync += CallUpdateFunction;
         }
     }
 
@@ -72,6 +80,11 @@ public class ObjectWasmRunner : WasmRunner
         base.AfterCall();
 
         valueList.Clear();
+    }
+
+    void CallUpdateFunction(SyncObject obj, float dt)
+    {
+        CallWasmFunc("update", dt);
     }
 
     // i64 get_field(i32 name_ptr, i32 name_len)

@@ -97,8 +97,9 @@ objects:
   - position: !vec [1, 1, 1]
     rotation: !euler [0, 0, 0]
     scale: !vec [0.3, 0.3, 0.3]
+    color: !vec [1, 1, 1]
     testInt: 1234
     testFloat: 3.14
     testString: "test"
-    tags: [cube, collider]
+    tags: [cube, material, collider]
     codes: [!load_file "wasm/test.wasm"]

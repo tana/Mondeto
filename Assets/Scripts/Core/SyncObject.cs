@@ -20,7 +20,7 @@ public class SyncObject
     // Called when the original used SendAudio
     public event AudioReceivedDelegate AudioReceived;
 
-    public delegate void BeforeAfterSyncDelegate(SyncObject sender);
+    public delegate void BeforeAfterSyncDelegate(SyncObject sender, float dt);
     public event BeforeAfterSyncDelegate BeforeSync;
     public event BeforeAfterSyncDelegate AfterSync;
 
@@ -214,14 +214,14 @@ public class SyncObject
         AudioReceived?.Invoke(data);
     }
 
-    internal void ProcessBeforeSync()
+    internal void ProcessBeforeSync(float dt)
     {
-        BeforeSync?.Invoke(this);
+        BeforeSync?.Invoke(this, dt);
     }
 
-    internal void ProcessAfterSync()
+    internal void ProcessAfterSync(float dt)
     {
-        AfterSync?.Invoke(this);
+        AfterSync?.Invoke(this, dt);
 
         // Set behavior based on tags
         if (GetField("tags") is Sequence tagsSeq)
@@ -257,7 +257,7 @@ public class SyncObject
                         try
                         {
                             runner.Load(task.Result.Data);
-                            runner.RegisterEventHandlers();
+                            runner.RegisterHandlers();
                             runner.Initialize();
                         }
                         catch (Exception e)

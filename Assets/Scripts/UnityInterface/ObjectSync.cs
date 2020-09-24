@@ -86,7 +86,7 @@ public class ObjectSync : MonoBehaviour
         }
     }
 
-    void OnBeforeSync(SyncObject obj)
+    void OnBeforeSync(SyncObject obj, float dt)
     {
         beforeSync = true;
 
