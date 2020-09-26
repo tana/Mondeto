@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 using WasmerSharp;
 
 // A class for compiling and running WASM using WasmerSharp
@@ -23,9 +24,14 @@ public class WasmRunner : IDisposable
 
     Dictionary<(string, string), Delegate> importDelegates = new Dictionary<(string, string), Delegate>();
 
+    Stopwatch stopwatch = new Stopwatch();
+    const long TimeLimitMilliseconds = 10;
+
     public WasmRunner()
     {
         // Prepare external (C#) functions
+        // Time limiting function
+        AddImportFunction("mondeto", "check_time", (Func<InstanceContext, int>)CheckTime);
         // WASI-compatible output for printf debugging
         AddImportFunction("wasi_snapshot_preview1", "fd_write", (Func<InstanceContext, int, int, int, int, int>)WasiFdWrite);
         // WASI-compatible exit for AssemblyScript
@@ -54,6 +60,23 @@ public class WasmRunner : IDisposable
             module = WebAssembly.Module.ReadFromBinary(stream);
         }
 
+        // Patch the module to allow time-limiting
+        WasmPatcher.PatchModule(module);
+        // Get patched WASM binary
+        byte[] newBinary;
+        using (var stream = new MemoryStream())
+        {
+            module.WriteToBinary(stream);
+            newBinary = stream.ToArray();
+        }
+
+        /*
+        using (var stream = new FileStream("patched.wasm", FileMode.Create))
+        {
+            module.WriteToBinary(stream);
+        }
+        */
+
         // Imports are specified as an array
         //  https://migueldeicaza.github.io/WasmerSharp/api/WasmerSharp/WasmerSharp.Instance.html
         var imports = importDelegates.Select(pair => {
@@ -62,7 +85,7 @@ public class WasmRunner : IDisposable
         }).ToArray();
 
         // Load WASM from binary
-        instance = new Instance(wasmBinary, imports);
+        instance = new Instance(newBinary, imports);
 
         WriteLog(Logger.LogType.Debug, "WasmRunner", "WASM instance created");
     }
@@ -75,6 +98,8 @@ public class WasmRunner : IDisposable
         // However, until we support it, we use ABI (especially function names) that is
         // intentionally different from WASI, because our preliminary ABI is incompatible with WASI reactor.
         // (for example, we use "init" instead of WASI "_initialize")
+
+        IsReady = true;
 
         // Constructors
         var callCtors = FindExport("__wasm_call_ctors", WebAssembly.ExternalKind.Function);
@@ -92,8 +117,6 @@ public class WasmRunner : IDisposable
         CallWasmFunc("init");
 
         WriteLog(Logger.LogType.Debug, "WasmRunner", "WASM initialized");
-
-        IsReady = true;
     }
 
     protected WebAssembly.Export FindExport(string name, WebAssembly.ExternalKind kind)
@@ -103,32 +126,8 @@ public class WasmRunner : IDisposable
 
     protected void CallWasmFunc(string name, params object[] args)
     {
-        instance.Call(name, args);
-        AfterCall();
-    }
+        if (!IsReady) throw new InvalidOperationException("WasmRunner is not ready");
 
-    protected virtual void AfterCall() {}
-
-    // FIXME: It does not work
-    /*
-    // Search exported object by name and kind (function, memory, etc.)
-    //  See: https://migueldeicaza.github.io/WasmerSharp/api/WasmerSharp/WasmerSharp.Export.html
-    // Returns null (default value of Export type) if not found
-    Export FindExport(string name, ImportExportKind kind)
-    {
-        UnityEngine.Debug.Log(string.Join(" ", instance.Exports.Select(ex => ex.Name)));
-        return instance.Exports.FirstOrDefault(ex => ex.Name == name && ex.Kind == kind);
-    }
-    */
-
-    // FIXME: It does not work
-    //  Probably related to: https://github.com/migueldeicaza/WasmerSharp/blob/0f168586501cd9a22800c1b447f2625d0dbfbea3/WasmerSharp/Wasmer.cs#L1244
-    /*
-    // Call WASM function
-    //  https://migueldeicaza.github.io/WasmerSharp/api/WasmerSharp/WasmerSharp.ExportFunction.html
-    // Currently return value is not supported
-    void CallWasmFunc(ExportFunction func, object[] args)
-    {
         // Convert C# objects to Wasmer values
         //  https://migueldeicaza.github.io/WasmerSharp/api/WasmerSharp/WasmerSharp.WasmerValue.html
         var wasmerArgs = args.Select<object, WasmerValue>(val => {
@@ -146,15 +145,38 @@ public class WasmRunner : IDisposable
                     return 0;   // TODO:
             }
         }).ToArray();
-        var results = new WasmerValue[0];   // FIXME:
-        // It seems the return value is success/failure of a call and error is stored in instance.LastError
-        // (if it is same as Instance.Call).
-        //  See: https://migueldeicaza.github.io/WasmerSharp/api/WasmerSharp/WasmerSharp.Instance.html
-        if (!func.Call(wasmerArgs, results)) throw new Exception(instance.LastError);
+
+        stopwatch.Reset();
+        stopwatch.Start();
+
+        var results = new WasmerValue[1];
+        // Return value is success/failure of a call and error is stored in instance.LastError
+        // See: https://migueldeicaza.github.io/WasmerSharp/api/WasmerSharp/WasmerSharp.Instance.html#WasmerSharp_Instance_Call_System_String_WasmerSharp_WasmerValue___WasmerSharp_WasmerValue___
+        if (!instance.Call(name, wasmerArgs, results))
+        {
+            WriteLog(Logger.LogType.Debug, "WasmRunner", instance.LastError);
+            IsReady = false;
+        }
+
+        stopwatch.Stop();
+
+        AfterCall();
     }
 
-    void CallWasmFunc(ExportFunction func) => CallWasmFunc(func, new object[] { 0 });
-    */
+    protected virtual void AfterCall() {}
+
+    int CheckTime(InstanceContext ctx)
+    {
+        if (stopwatch.ElapsedMilliseconds > TimeLimitMilliseconds)
+        {
+            WriteLog(Logger.LogType.Error, "WasmRunner", "Time limit exceeded");
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
 
     // WASI-compatible fd_write
     //  https://github.com/WebAssembly/WASI/blob/master/phases/snapshot/docs.md#fd_write
