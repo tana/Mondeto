@@ -50,11 +50,11 @@ public abstract class SyncNode : IDisposable
     public event ObjectDeletedHandler ObjectDeleted;
 
     // TODO naming
-    public void SyncFrame()
+    public void SyncFrame(float dt)
     {
         foreach (var obj in Objects.Values)
         {
-            obj.ProcessBeforeSync();
+            obj.ProcessBeforeSync(dt);
         }
 
         ProcessControlMessages();
@@ -135,7 +135,7 @@ public abstract class SyncNode : IDisposable
 
         foreach (var obj in Objects.Values)
         {
-            obj.ProcessAfterSync();
+            obj.ProcessAfterSync(dt);
         }
     }
 

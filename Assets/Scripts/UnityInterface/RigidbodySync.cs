@@ -41,7 +41,7 @@ public class RigidbodySync : MonoBehaviour
             rb.mass = mass;
     }
 
-    void OnBeforeSync(SyncObject obj)
+    void OnBeforeSync(SyncObject obj, float dt)
     {
         beforeSync = true;
 

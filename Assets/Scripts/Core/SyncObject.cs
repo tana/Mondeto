@@ -20,7 +20,7 @@ public class SyncObject
     // Called when the original used SendAudio
     public event AudioReceivedDelegate AudioReceived;
 
-    public delegate void BeforeAfterSyncDelegate(SyncObject sender);
+    public delegate void BeforeAfterSyncDelegate(SyncObject sender, float dt);
     public event BeforeAfterSyncDelegate BeforeSync;
     public event BeforeAfterSyncDelegate AfterSync;
 
@@ -28,6 +28,8 @@ public class SyncObject
     public event TagAddedDelegate TagAdded;
 
     HashSet<string> tags = new HashSet<string>();
+
+    Dictionary<BlobHandle, ObjectWasmRunner> codes = new Dictionary<BlobHandle, ObjectWasmRunner>();
 
     // Logging-related
     Queue<Logger.LogEntry> logEntries = new Queue<Logger.LogEntry>();
@@ -50,6 +52,13 @@ public class SyncObject
             Elements = new List<IValue> {
             }
         });
+        
+        SetField("codes", new Sequence { 
+            Elements = new List<IValue> {
+            }
+        });
+
+        RegisterFieldUpdateHandler("codes", OnCodesUpdated);    // TODO: dispose
     }
 
     // Update field value and refresh last updated time.
@@ -205,14 +214,14 @@ public class SyncObject
         AudioReceived?.Invoke(data);
     }
 
-    internal void ProcessBeforeSync()
+    internal void ProcessBeforeSync(float dt)
     {
-        BeforeSync?.Invoke(this);
+        BeforeSync?.Invoke(this, dt);
     }
 
-    internal void ProcessAfterSync()
+    internal void ProcessAfterSync(float dt)
     {
-        AfterSync?.Invoke(this);
+        AfterSync?.Invoke(this, dt);
 
         // Set behavior based on tags
         if (GetField("tags") is Sequence tagsSeq)
@@ -229,6 +238,34 @@ public class SyncObject
                     WriteDebugLog("Object", $"Tag {tag} has been added");
                 }
                 // TODO: handle deleted tags?
+            }
+        }
+    }
+
+    void OnCodesUpdated()
+    {
+        if (GetField("codes") is Sequence codesSeq)
+        {
+            foreach (var elem in codesSeq.Elements)
+            {
+                if (elem is BlobHandle codeHandle && !codes.ContainsKey(codeHandle))
+                {
+                    // new code is added
+                    codes[codeHandle] = new ObjectWasmRunner(this);   // TODO: dispose
+                    Node.ReadBlob(codeHandle).ContinueWith(task => {
+                        var runner = codes[codeHandle];
+                        try
+                        {
+                            runner.Load(task.Result.Data);
+                            runner.RegisterHandlers();
+                            runner.Initialize();
+                        }
+                        catch (Exception e)
+                        {
+                            WriteErrorLog("SyncObject", "WASM init error " + e);
+                        }
+                    });
+                }
             }
         }
     }

@@ -238,7 +238,7 @@ public class PlayerAvatar : MonoBehaviour
         }
     }
 
-    void OnBeforeSync(SyncObject obj)
+    void OnBeforeSync(SyncObject obj, float dt)
     {
         obj.SetField("forward", new Primitive<float> { Value = forward });
         obj.SetField("sideways", new Primitive<float> { Value = sideways });
@@ -247,7 +247,7 @@ public class PlayerAvatar : MonoBehaviour
         obj.SetField("lookAt", UnityUtil.ToVec(lookAt));
     }
 
-    void OnAfterSync(SyncObject obj)
+    void OnAfterSync(SyncObject obj, float dt)
     {
         if (GetComponent<ObjectSync>().IsOriginal) return;
 

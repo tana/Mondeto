@@ -6,20 +6,33 @@ using System.Linq;
 using System.Threading.Tasks;
 using MessagePack;
 
-[MessagePack.Union(0, typeof(Primitive<int>))]
-[MessagePack.Union(1, typeof(Primitive<uint>))]
-[MessagePack.Union(2, typeof(Primitive<long>))]
-[MessagePack.Union(3, typeof(Primitive<ulong>))]
-[MessagePack.Union(4, typeof(Primitive<float>))]
-[MessagePack.Union(5, typeof(Primitive<double>))]
-[MessagePack.Union(6, typeof(Primitive<string>))]
-[MessagePack.Union(7, typeof(Vec))]
-[MessagePack.Union(8, typeof(Quat))]
-[MessagePack.Union(9, typeof(BlobHandle))]
-[MessagePack.Union(10, typeof(Sequence))]
-[MessagePack.Union(11, typeof(ObjectRef))]
+public enum TypeCode
+{
+    Int = 0,
+    Long = 2,
+    Float = 4,
+    Double = 5,
+    String = 6,
+    Vec = 7,
+    Quat = 8,
+    BlobHandle = 9,
+    Sequence = 10,
+    ObjectRef = 11
+}
+
+[MessagePack.Union((int)TypeCode.Int, typeof(Primitive<int>))]
+[MessagePack.Union((int)TypeCode.Long, typeof(Primitive<long>))]
+[MessagePack.Union((int)TypeCode.Float, typeof(Primitive<float>))]
+[MessagePack.Union((int)TypeCode.Double, typeof(Primitive<double>))]
+[MessagePack.Union((int)TypeCode.String, typeof(Primitive<string>))]
+[MessagePack.Union((int)TypeCode.Vec, typeof(Vec))]
+[MessagePack.Union((int)TypeCode.Quat, typeof(Quat))]
+[MessagePack.Union((int)TypeCode.BlobHandle, typeof(BlobHandle))]
+[MessagePack.Union((int)TypeCode.Sequence, typeof(Sequence))]
+[MessagePack.Union((int)TypeCode.ObjectRef, typeof(ObjectRef))]
 public interface IValue
 {
+    TypeCode Type { get; }
 }
 
 // TODO inefficient (wrapping values in Primitive<T> requires additional space)
@@ -34,6 +47,27 @@ public class Primitive<T> : IValue
     public Primitive(T value)
     {
         Value = value;
+    }
+
+    public TypeCode Type {
+        get
+        {
+            switch (Value)
+            {
+                case int _:
+                    return TypeCode.Int;
+                case long _:
+                    return TypeCode.Long;
+                case float _:
+                    return TypeCode.Float;
+                case double _:
+                    return TypeCode.Double;
+                case string _:
+                    return TypeCode.String;
+                default:
+                    return TypeCode.Int;    // TODO: ensure this never happens
+            }
+        }
     }
 
     public override bool Equals(object obj)
@@ -62,6 +96,8 @@ public class Vec : IValue
     public Vec(float x, float y, float z) {
         X = x; Y = y; Z = z;
     }
+
+    public TypeCode Type { get => TypeCode.Vec; }
 
     public static Vec operator+(Vec a, Vec b) => new Vec(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
 
@@ -105,6 +141,8 @@ public class Quat : IValue
     {
         W = w; X = x; Y = y; Z = z;
     }
+
+    public TypeCode Type { get => TypeCode.Quat; }
 
     // Quaternion operations
     //   https://mathworld.wolfram.com/Quaternion.html
@@ -166,6 +204,8 @@ public class BlobHandle : IValue
     [Key(0)]
     public byte[] Hash;  // SHA-256 hash (32 bytes) of blob data
 
+    public TypeCode Type { get => TypeCode.BlobHandle; }
+
     public override bool Equals(object obj)
     {
         if (obj is BlobHandle other)
@@ -208,6 +248,8 @@ public class Sequence : IValue
         Elements = elements.ToList();
     }
 
+    public TypeCode Type { get => TypeCode.Sequence; }
+
     public override bool Equals(object obj)
     {
         if (obj is Sequence other)
@@ -227,6 +269,8 @@ public class ObjectRef : IValue
 {
     [Key(0)]
     public uint Id;
+
+    public TypeCode Type { get => TypeCode.ObjectRef; }
 }
 
 // State of an object
