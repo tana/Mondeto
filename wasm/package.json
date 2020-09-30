@@ -8,6 +8,6 @@
   "author": "Satoshi Tanaka",
   "license": "MIT",
   "devDependencies": {
-    "assemblyscript": "^0.14.10"
+    "assemblyscript": "^0.14.11"
   }
 }

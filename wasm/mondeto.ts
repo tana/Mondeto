@@ -34,24 +34,73 @@ export declare function make_quat(w: f32, x: f32, y: f32, z: f32): u32;
 export declare function make_string(ptr: usize, len: usize): u32;
 
 // Wrappers
-class Vec {
+export class Vec {
     x: f32;
     y: f32;
     z: f32;
 
+    constructor(x: f32, y: f32, z: f32) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+
     toString(): string {
         return "Vec(" + this.x.toString() + "," + this.y.toString() + "," + this.z.toString() + ")"
     }
+
+    magnitude(): f32 {
+        return Mathf.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
+    }
+
+    normalize(): Vec {
+        const mag = this.magnitude();
+        return new Vec(this.x / mag, this.y / mag, this.z / mag);
+    }
 }
 
-class Quat {
+export class Quat {
     w: f32;
     x: f32;
     y: f32;
     z: f32;
 
+    constructor(w: f32 = 1.0, x: f32 = 0.0, y: f32 = 0.0, z: f32 = 0.0) {
+        this.w = w;
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+
     toString(): string {
         return "Quat(" + this.w.toString() + "," + this.x.toString() + "," + this.y.toString() + "," + this.z.toString() + ")"
+    }
+
+    // Quaternion operations
+    //  https://mathworld.wolfram.com/Quaternion.html
+    // Some of them are implemented using operator overloads of AssemblyScript.
+    //  https://www.assemblyscript.org/peculiarities.html#operator-overloads
+
+    @operator("*")
+    static __op(a: Quat, b: Quat): Quat {
+        return new Quat(
+            a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z,
+            a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
+            a.w * b.y + a.y * b.w + a.z * b.x - a.x * b.z,
+            a.w * b.z + a.z * b.w + a.x * b.y - a.y * b.x
+        );
+    }
+
+    // angle is in radians
+    static fromAngleAxis(angle: f32, axis: Vec): Quat {
+        const normalized = axis.normalize();
+        const s = Mathf.sin(angle / 2.0);
+        return new Quat(
+            Mathf.cos(angle / 2.0),
+            normalized.x * s,
+            normalized.y * s,
+            normalized.z * s
+        );
     }
 }
 
@@ -87,9 +136,8 @@ export function makeString(str: string): u32 {
     return make_string(changetype<usize>(buf), buf.byteLength);
 }
 
-export function getVec(valueID: u32): Vec
-{
-    const vec = new Vec();
+export function getVec(valueID: u32): Vec {
+    const vec = new Vec(0, 0, 0);
     // https://www.assemblyscript.org/environment.html#sizes-and-alignments
     // https://www.assemblyscript.org/interoperability.html#class-layout
     const ptr = changetype<usize>(vec);
@@ -101,8 +149,7 @@ export function getVec(valueID: u32): Vec
     return vec;
 }
 
-export function getQuat(valueID: u32): Quat
-{
+export function getQuat(valueID: u32): Quat {
     const quat = new Quat();
     // https://www.assemblyscript.org/environment.html#sizes-and-alignments
     // https://www.assemblyscript.org/interoperability.html#class-layout
@@ -114,4 +161,8 @@ export function getQuat(valueID: u32): Quat
     get_quat(valueID, ptr + wOffset, ptr + xOffset, ptr + yOffset, ptr + zOffset);
 
     return quat;
+}
+
+export function makeQuat(q: Quat): u32 {
+    return make_quat(q.w, q.x, q.y, q.z);
 }
