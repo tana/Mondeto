@@ -11,6 +11,8 @@ public class ObjectWasmRunner : WasmRunner
 
     public List<IValue> valueList = new List<IValue>();
 
+    Queue<(Logger.LogType, string, string)> logQueue = new Queue<(Logger.LogType, string, string)>();
+
     public ObjectWasmRunner(SyncObject obj)
     {
         // Field manipulation functions
@@ -35,6 +37,8 @@ public class ObjectWasmRunner : WasmRunner
         AddImportFunction("mondeto", "make_string", (Func<InstanceContext, int, int, int>)MakeString);
 
         Object = obj;
+
+        Object.AfterSync += OutputLogs;
     }
 
     public void RegisterHandlers()
@@ -218,7 +222,16 @@ public class ObjectWasmRunner : WasmRunner
 
     public override void WriteLog(Logger.LogType type, string component, string message)
     {
-        Object.WriteLog(type, component, message);
+        logQueue.Enqueue((type, component, message));
+    }
+
+    void OutputLogs(SyncObject obj, float dt)
+    {
+        while (logQueue.Count > 0)
+        {
+            var (type, component, message) = logQueue.Dequeue();
+            obj.WriteLog(type, component, message);
+        }
     }
 
     string ReadStringFromWasm(Memory memory, int ptr, int len)
@@ -230,5 +243,11 @@ public class ObjectWasmRunner : WasmRunner
         {
             return Encoding.UTF8.GetString((byte*)WasmToIntPtr(memory, ptr), len);
         }
+    }
+
+    public override void Dispose()
+    {
+        base.Dispose();
+        Object.AfterSync -= OutputLogs;
     }
 }
