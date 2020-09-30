@@ -5,12 +5,14 @@ import "wasi"
 import { getField, getQuat, setField, make_vec, Vec, Quat, makeQuat } from "./mondeto"
 
 export function init(): void {
+    trace("init");
 }
 
 var state: boolean = false;
 
 // Called when collided with another collider.
 export function handle_collisionStart(sender: u32): void {
+    trace("collisionStart from " + sender.toString());
     if (state) {
         setField("color", make_vec(1.0, 0.0, 0.0));
     } else {
