@@ -49,6 +49,7 @@ public class Primitive<T> : IValue
         Value = value;
     }
 
+    [IgnoreMember]
     public TypeCode Type {
         get
         {
@@ -97,6 +98,7 @@ public class Vec : IValue
         X = x; Y = y; Z = z;
     }
 
+    [IgnoreMember]
     public TypeCode Type { get => TypeCode.Vec; }
 
     public static Vec operator+(Vec a, Vec b) => new Vec(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
@@ -142,6 +144,7 @@ public class Quat : IValue
         W = w; X = x; Y = y; Z = z;
     }
 
+    [IgnoreMember]
     public TypeCode Type { get => TypeCode.Quat; }
 
     // Quaternion operations
@@ -204,6 +207,7 @@ public class BlobHandle : IValue
     [Key(0)]
     public byte[] Hash;  // SHA-256 hash (32 bytes) of blob data
 
+    [IgnoreMember]
     public TypeCode Type { get => TypeCode.BlobHandle; }
 
     public override bool Equals(object obj)
@@ -248,6 +252,7 @@ public class Sequence : IValue
         Elements = elements.ToList();
     }
 
+    [IgnoreMember]
     public TypeCode Type { get => TypeCode.Sequence; }
 
     public override bool Equals(object obj)
@@ -270,6 +275,7 @@ public class ObjectRef : IValue
     [Key(0)]
     public uint Id;
 
+    [IgnoreMember]
     public TypeCode Type { get => TypeCode.ObjectRef; }
 }
 
