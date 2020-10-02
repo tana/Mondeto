@@ -25,8 +25,19 @@ public class Menu : MonoBehaviour
 
     bool lastButtonValue = false;   // for detecting button down/up of the XR controller
 
+    Camera lastCamera;
+
     public void Update()
     {
+        // Set camera of canvas when camera is changed (for FirstPerson-ThirdPerson change)
+        Camera camera = Camera.main;
+        if (lastCamera != camera)
+        {
+            lastCamera = camera;
+            MenuCanvas.worldCamera = camera;
+            MoveMenu();
+        }
+
         // For VR
         if (!controller.HasValue)
         {
