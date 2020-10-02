@@ -18,13 +18,7 @@ public class SceneLoader
 
     public async Task Load(TextReader reader)
     {
-        var stream = new YamlStream();
-        stream.Load(reader);
-        if (stream.Documents.Count == 0)
-        {
-            throw new Exception("No document was found inside YAML");
-        }
-        YamlDocument document = stream.Documents[0];
+        YamlDocument document = ReadYaml(reader);
 
         var root = YamlExpect<YamlMappingNode>(document.RootNode);
         var objectsKey = new YamlScalarNode("objects");
@@ -34,29 +28,59 @@ public class SceneLoader
         // Process objects
         foreach (YamlNode elem in objects)
         {
-            YamlMappingNode objNode = YamlExpect<YamlMappingNode>(elem);
+            await LoadObject(elem);
+        }
+    }
 
-            uint objId = await node.CreateObject();
-            SyncObject obj = node.Objects[objId];
+    YamlDocument ReadYaml(TextReader reader)
+    {
+        var stream = new YamlStream();
+        stream.Load(reader);
 
-            // Process fields
-            foreach (var pair in objNode)
+        if (stream.Documents.Count == 0)
+        {
+            throw new Exception("No document was found inside YAML");
+        }
+        return stream.Documents[0];
+    }
+
+    YamlDocument ReadYaml(string text)
+    {
+        using (var reader = new StringReader(text))
+        {
+            return ReadYaml(reader);
+        }
+    }
+
+    public async Task LoadObject(string text)
+    {
+        await LoadObject(ReadYaml(text).RootNode);
+    }
+
+    async Task LoadObject(YamlNode yamlNode)
+    {
+        YamlMappingNode objNode = YamlExpect<YamlMappingNode>(yamlNode);
+
+        uint objId = await node.CreateObject();
+        SyncObject obj = node.Objects[objId];
+
+        // Process fields
+        foreach (var pair in objNode)
+        {
+            var keyNode = YamlExpect<YamlScalarNode>(pair.Key);
+            if (keyNode.Value == null) ThrowError(keyNode, "Invalid field name");
+            if (keyNode.Value == "$name")
             {
-                var keyNode = YamlExpect<YamlScalarNode>(pair.Key);
-                if (keyNode.Value == null) ThrowError(keyNode, "Invalid field name");
-                if (keyNode.Value == "$name")
-                {
-                    // the key "$name" is special
-                    string name = YamlExpect<YamlScalarNode>(pair.Value).Value;
-                    namedObjects[name] = obj.Id;
-                    continue;
-                }
-
-                Console.WriteLine(keyNode.Value);
-                IValue val = YamlToValue(pair.Value);
-
-                obj.SetField(keyNode.Value, val);
+                // the key "$name" is special
+                string name = YamlExpect<YamlScalarNode>(pair.Value).Value;
+                namedObjects[name] = obj.Id;
+                continue;
             }
+
+            Console.WriteLine(keyNode.Value);
+            IValue val = YamlToValue(pair.Value);
+
+            obj.SetField(keyNode.Value, val);
         }
     }
 

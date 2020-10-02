@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using UnityEngine.XR;
 using UnityEngine.UI;
@@ -9,6 +10,8 @@ public class Menu : MonoBehaviour
     public Canvas MenuCanvas;
     public Text NodeIdText;
     public Toggle MicrophoneToggle;
+
+    public InputField ObjectCreationInput;
     
     // To control rendering of line beam from controllers
     // https://docs.unity3d.com/Packages/com.unity.xr.interaction.toolkit@0.9/api/UnityEngine.XR.Interaction.Toolkit.XRInteractorLineVisual.html
@@ -49,7 +52,8 @@ public class Menu : MonoBehaviour
         }
 
         // For desktop (non-VR)
-        if (Input.GetKeyDown(DesktopKey))
+        // If object specification YAML is being typed in, space key does not close the menu.
+        if (Input.GetKeyDown(DesktopKey) && !ObjectCreationInput.isFocused)
             Toggle();
         
         // Show microphone state
@@ -92,6 +96,12 @@ public class Menu : MonoBehaviour
         await UniTask.WaitForEndOfFrame();
 
         MoveMenu();
+    }
+
+    public async void OnCreateObjectButtonClicked()
+    {
+        var sceneLoader = new SceneLoader(GetComponent<ObjectSync>().Node);
+        await sceneLoader.LoadObject(ObjectCreationInput.text);
     }
 
     void OnSyncReady()
