@@ -40,11 +40,14 @@ public class PlayerAvatar : MonoBehaviour
 
     private Camera xrCamera;
 
-    private InputDevice? rightController;
+    private InputDevice? leftController, rightController;
 
-    private ButtonDetector leftButtonDetector, rightButtonDetector;
+    private ButtonDetector leftGripDetector, rightGripDetector;
+    private ButtonDetector leftTriggerDetector, rightTriggerDetector;
     
     private List<GameObject> headForShadow = new List<GameObject>();
+
+    private HashSet<uint> clickedObjects = new HashSet<uint>();
 
     void Start()
     {
@@ -92,6 +95,27 @@ public class PlayerAvatar : MonoBehaviour
 
         if (isOriginal)
         {
+            // VR controller related
+            if (!leftController.HasValue)
+            {
+                SetupLeftController();
+            }
+            else
+            {
+                leftTriggerDetector.Detect();
+                leftGripDetector.Detect();
+            }
+
+            if (!rightController.HasValue)
+            {
+                SetupRightController();
+            }
+            else
+            {
+                rightTriggerDetector.Detect();
+                rightGripDetector.Detect();
+            }
+
             // Orientation and camera control
             turn = 0.0f;
 
@@ -125,14 +149,6 @@ public class PlayerAvatar : MonoBehaviour
             else
             {
                 // VR (HMD) turn control
-                // Search right hand controller
-                // https://docs.unity3d.com/ja/2019.4/Manual/xr_input.html
-                var devices = new List<InputDevice>();
-                InputDevices.GetDevicesWithCharacteristics(
-                    InputDeviceCharacteristics.Controller | InputDeviceCharacteristics.Right,
-                    devices
-                );
-                if (devices.Count >= 1) rightController = devices[0];
                 Vector2 stick;
                 if (rightController.HasValue &&
                     rightController.Value.TryGetFeatureValue(CommonUsages.primary2DAxis, out stick))
@@ -174,6 +190,22 @@ public class PlayerAvatar : MonoBehaviour
                 rightHandGameObj.transform.position = RightHand.position;
                 rightHandGameObj.transform.rotation = Quaternion.AngleAxis(-90, RightHand.transform.forward) * RightHand.rotation;
             }
+
+            // Mouse click
+            // Use primary button (button number 0)
+            //  See https://docs.unity3d.com/ja/current/ScriptReference/Input.GetMouseButtonDown.html
+            if (Input.GetMouseButtonDown(0))
+            {
+                var clickedObj = FindMouseClickedObject();
+                if (clickedObj != null)
+                {
+                    StartClicking(obj, clickedObj);
+                }
+            }
+            else if (Input.GetMouseButtonUp(0))
+            {
+                EndClicking(obj);
+            }
         }
 
         // Walking animation
@@ -193,16 +225,101 @@ public class PlayerAvatar : MonoBehaviour
             rightHandGameObj = syncBehaviour.GameObjects[rightHandObj.Id];
             SetHandCollider(rightHandGameObj);
         }
+    }
 
-        // for grabbing
-        if (leftButtonDetector != null) leftButtonDetector.Detect();
-        if (rightButtonDetector != null) rightButtonDetector.Detect();
+    void SetupLeftController()
+    {
+        // Search left hand controller
+        // https://docs.unity3d.com/ja/2019.4/Manual/xr_input.html
+        var devices = new List<InputDevice>();
+        InputDevices.GetDevicesWithCharacteristics(
+            InputDeviceCharacteristics.Controller | InputDeviceCharacteristics.Left,
+            devices
+        );
+        if (devices.Count >= 1) leftController = devices[0];
+        else return;    // fail
+
+        // button setting
+        // trigger
+        leftTriggerDetector = new ButtonDetector(leftController.Value, CommonUsages.triggerButton);
+        leftTriggerDetector.ButtonDown += (bd) => StartClickingByHand(leftHandGameObj);
+        leftTriggerDetector.ButtonUp += (bd) => EndClicking(leftHandObj);
+        // grab
+        leftGripDetector = new ButtonDetector(leftController.Value, CommonUsages.gripButton);
+        leftGripDetector.ButtonDown += (bd) => GrabObject(leftHandGameObj);
+        leftGripDetector.ButtonUp += (bd) => UngrabObject(leftHandGameObj);
+    }
+    
+    void SetupRightController()
+    {
+        // Search right hand controller
+        // https://docs.unity3d.com/ja/2019.4/Manual/xr_input.html
+        var devices = new List<InputDevice>();
+        InputDevices.GetDevicesWithCharacteristics(
+            InputDeviceCharacteristics.Controller | InputDeviceCharacteristics.Right,
+            devices
+        );
+        if (devices.Count >= 1) rightController = devices[0];
+        else return;    // fail
+
+        // button setting
+        // trigger
+        rightTriggerDetector = new ButtonDetector(rightController.Value, CommonUsages.triggerButton);
+        rightTriggerDetector.ButtonDown += (bd) => StartClickingByHand(rightHandGameObj);
+        rightTriggerDetector.ButtonUp += (bd) => EndClicking(rightHandObj);
+        // grab-related
+        rightGripDetector = new ButtonDetector(rightController.Value, CommonUsages.gripButton);
+        rightGripDetector.ButtonDown += (bd) => GrabObject(rightHandGameObj);
+        rightGripDetector.ButtonUp += (bd) => UngrabObject(rightHandGameObj);
     }
 
     void SetHandCollider(GameObject handGameObj)
     {
         if (handGameObj.GetComponent<GrabDetector>() != null) return;
         handGameObj.AddComponent<GrabDetector>();
+    }
+
+    ObjectSync FindMouseClickedObject()
+    {
+        if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out var hit))
+        {
+            return hit.collider.GetComponentInParent<ObjectSync>();
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    void StartClicking(SyncObject thisObj, ObjectSync clickedObj)
+    {
+        clickedObjects.Add(clickedObj.SyncObject.Id);
+        clickedObj.SyncObject.SendEvent("clickStart", thisObj.Id, new IValue[0]);
+    }
+
+    void StartClickingByHand(GameObject handGameObj)
+    {
+        if (handGameObj == null) return;
+        var detector = handGameObj.GetComponent<GrabDetector>();
+        var handObj = handGameObj.GetComponent<ObjectSync>().SyncObject;
+        foreach (var obj in detector.ObjectsToGrab)
+        {
+            var syncObj = obj.GetComponent<ObjectSync>().SyncObject;
+            clickedObjects.Add(syncObj.Id);
+            syncObj.SendEvent(
+                "clickStart",
+                handObj.Id,
+                new IValue[0]
+            );
+        }
+    }
+
+    void EndClicking(SyncObject thisObj)
+    {
+        foreach (var id in clickedObjects)
+        {
+            thisObj.Node.Objects[id].SendEvent("clickEnd", thisObj.Id, new IValue[0]);
+        }
     }
 
     void GrabObject(GameObject handGameObj)
@@ -362,10 +479,7 @@ public class PlayerAvatar : MonoBehaviour
             }
 
             // Left hand
-            // If device is not present, GetDeviceAtXRNode returns an "invalid" InputDevice.
-            //   https://docs.unity3d.com/ja/2019.4/ScriptReference/XR.InputDevices.GetDeviceAtXRNode.html
-            InputDevice dev;
-            if ((dev = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand)).isValid)
+            if (leftController.HasValue)
             {
                 // If left hand device is present
                 var leftId = await node.CreateObject();
@@ -376,14 +490,9 @@ public class PlayerAvatar : MonoBehaviour
                     new Primitive<string>("collider")
                 }));
                 obj.SetField("leftHand", leftHandObj.GetObjectRef());
-
-                // grab-related
-                leftButtonDetector = new ButtonDetector(dev, CommonUsages.gripButton);
-                leftButtonDetector.ButtonDown += (bd) => GrabObject(leftHandGameObj);
-                leftButtonDetector.ButtonUp += (bd) => UngrabObject(leftHandGameObj);
             }
             // Right hand
-            if ((dev = InputDevices.GetDeviceAtXRNode(XRNode.RightHand)).isValid)
+            if (rightController.HasValue)
             {
                 // If right hand device is present
                 var rightId = await node.CreateObject();
@@ -394,11 +503,6 @@ public class PlayerAvatar : MonoBehaviour
                     new Primitive<string>("collider")
                 }));
                 obj.SetField("rightHand", rightHandObj.GetObjectRef());
-
-                // grab-related
-                rightButtonDetector = new ButtonDetector(dev, CommonUsages.gripButton);
-                rightButtonDetector.ButtonDown += (bd) => GrabObject(rightHandGameObj);
-                rightButtonDetector.ButtonUp += (bd) => UngrabObject(rightHandGameObj);
             }
         }
     }

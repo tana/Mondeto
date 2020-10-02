@@ -10,15 +10,19 @@ export function init(): void {
 
 var state: boolean = false;
 
-// Called when collided with another collider.
-export function handle_collisionStart(sender: u32): void {
-    trace("collisionStart from " + sender.toString());
+// Called when clicked.
+export function handle_clickStart(sender: u32): void {
+    trace("clickStart from " + sender.toString());
+    state = !state;
     if (state) {
         setField("color", make_vec(1.0, 0.0, 0.0));
     } else {
         setField("color", make_vec(1.0, 1.0, 1.0));
     }
-    state = !state;
+}
+
+export function handle_clickEnd(sender: u32): void {
+    trace("clickEnd from " + sender.toString());
 }
 
 // Called every frame
