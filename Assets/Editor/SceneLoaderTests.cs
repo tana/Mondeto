@@ -114,4 +114,18 @@ class SceneLoaderTests
         
         Assert.That(((ObjectRef)secondObj.GetField("reftest")).Id, Is.EqualTo(theCube.Id));
     }
+
+    [Test]
+    public void ValueConversionTest()
+    {
+        var node = new DummyNode();
+        var loader = new SceneLoader(node);
+
+        TestUtils.AssertPrimitive(loader.YamlToValue(SceneLoader.ValueToYamlString(new Primitive<int>(123))), 123);
+        TestUtils.AssertPrimitive(loader.YamlToValue(SceneLoader.ValueToYamlString(new Primitive<float>(3.14f))), 3.14f);
+        TestUtils.AssertPrimitive(loader.YamlToValue(SceneLoader.ValueToYamlString(new Primitive<string>("test"))), "test");
+        TestUtils.AssertVec(loader.YamlToValue(SceneLoader.ValueToYamlString(new Vec(1, 2, 3))), 1, 2, 3);
+        TestUtils.AssertQuat(loader.YamlToValue(SceneLoader.ValueToYamlString(new Quat(1, 0, 0, 0))), 1, 0, 0, 0);
+        // TODO: more tests
+    }
 }

@@ -84,6 +84,16 @@ public class SceneLoader
         }
     }
 
+    public IValue YamlToValue(string yaml)
+    {
+        var stream = new YamlStream();
+        using (var reader = new StringReader(yaml))
+        {
+            stream.Load(reader);
+        }
+        return YamlToValue(stream.Documents[0].RootNode);
+    }
+
     private IValue YamlToValue(YamlNode yaml)
     {
         if (yaml.Tag == "!vec") // vector
@@ -192,6 +202,64 @@ public class SceneLoader
     private void ThrowError(YamlNode yaml, string msg)
     {
         throw new SceneLoadingException(yaml.Start.Line, yaml.Start.Column, msg);
+    }
+
+    public static YamlNode ValueToYaml(IValue value)
+    {
+        switch (value)
+        {
+            case Primitive<int> intValue:
+            {
+                var node = new YamlScalarNode(intValue.Value.ToString());
+                node.Style = YamlDotNet.Core.ScalarStyle.Plain;
+                return node;
+            }
+            case Primitive<float> floatValue:
+            {
+                var node = new YamlScalarNode(floatValue.Value.ToString());
+                node.Style = YamlDotNet.Core.ScalarStyle.Plain;
+                return node;
+            }
+            case Primitive<string> stringValue:
+                return new YamlScalarNode(stringValue.Value);
+            case Vec vec:
+            {
+                var node = new YamlSequenceNode(
+                    new YamlScalarNode(vec.X.ToString()),
+                    new YamlScalarNode(vec.Y.ToString()),
+                    new YamlScalarNode(vec.Z.ToString())
+                );
+                node.Tag = "!vec";
+                return node;
+            }
+            case Quat quat:
+            {
+                var node = new YamlSequenceNode(
+                    new YamlScalarNode(quat.W.ToString()),
+                    new YamlScalarNode(quat.X.ToString()),
+                    new YamlScalarNode(quat.Y.ToString()),
+                    new YamlScalarNode(quat.Z.ToString())
+                );
+                node.Tag = "!quat";
+                return node;
+            }
+            case Sequence seq:
+                return new YamlSequenceNode(seq.Elements.Select(ValueToYaml));
+            default:
+                return new YamlScalarNode("FAILED"); // TODO: FIXME:
+        }
+    }
+
+    public static string ValueToYamlString(IValue value)
+    {
+        var stream = new YamlStream(new YamlDocument(ValueToYaml(value)));
+        // Generate yaml text
+        //https://github.com/aaubry/YamlDotNet/blob/b3cf63744380a9ec031ef9cc2409c39e0c92c953/YamlDotNet/RepresentationModel/YamlStream.cs#L112
+        using (var writer = new StringWriter())
+        {
+            stream.Save(writer);
+            return writer.ToString();
+        }
     }
 
     public class SceneLoadingException : Exception
