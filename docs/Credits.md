@@ -71,3 +71,6 @@ There are some modified files (paths are relative to root directory of UnityChan
 ### Wasmer
 - [LICENSE](ThirdPartyLicenses/Wasmer/LICENSE)
 - [ATTRIBUTIONS.md](ThirdPartyLicenses/Wasmer/ATTRIBUTIONS.md)
+
+### Unity builtin shaders
+- [license.txt](ThirdPartyLicenses/UnityBuiltinShaders/license.txt)

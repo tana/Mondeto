@@ -87,6 +87,11 @@ public class SyncBehaviour : MonoBehaviour
 
             return gameObj;
         });
+        RegisterObjectTag("text", obj => {
+            var gameObj = new GameObject();
+            gameObj.AddComponent<TextSync>().Initialize(obj);
+            return gameObj;
+        });
 
         // Tags that uses already existing GameObject
         RegisterComponentTag("physics", (obj, gameObj) => {

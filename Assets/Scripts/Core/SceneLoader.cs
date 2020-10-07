@@ -136,6 +136,8 @@ public class SceneLoader
                 return new Primitive<int> { Value = intValue };
             else if (float.TryParse(scalar.Value, out var floatValue))
                 return new Primitive<float> { Value = floatValue };
+            else if (TryParseBool(scalar.Value, out var boolValue))
+                return new Primitive<bool> { Value = boolValue };
             else
                 return new Primitive<string> { Value = scalar.Value };
         }
@@ -149,6 +151,27 @@ public class SceneLoader
         {
             ThrowError(yaml, "Invalid value");
             return null;    // dummy (because this line is not recognized as unreachable)
+        }
+    }
+
+    bool TryParseBool(string str, out bool val)
+    {
+        // According to YAML spec 1.2 ( https://yaml.org/spec/1.2/spec.html ),
+        // boolean values are "true" or "false".
+        if (str == "true")
+        {
+            val = true;
+            return true;
+        }
+        else if (str == "false")
+        {
+            val = false;
+            return true;
+        }
+        else
+        {
+            val = default;
+            return false;
         }
     }
 
@@ -217,6 +240,12 @@ public class SceneLoader
             case Primitive<float> floatValue:
             {
                 var node = new YamlScalarNode(floatValue.Value.ToString());
+                node.Style = YamlDotNet.Core.ScalarStyle.Plain;
+                return node;
+            }
+            case Primitive<bool> boolValue:
+            {
+                var node = new YamlScalarNode(boolValue.Value ? "true" : "false");
                 node.Style = YamlDotNet.Core.ScalarStyle.Plain;
                 return node;
             }

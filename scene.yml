@@ -103,3 +103,11 @@ objects:
     testString: "test"
     tags: [cube, material, collider]
     codes: [!load_file "wasm/test.wasm"]
+  # Text test
+  - position: !vec [-2, 3, 3]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.3, 0.3, 0.3]
+    text: "Hello! <b>Bold</b> 漢字 Σ Д"
+    useRichText: true
+    fontSize: 36
+    tags: [text]
