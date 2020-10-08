@@ -74,3 +74,7 @@ There are some modified files (paths are relative to root directory of UnityChan
 
 ### Unity builtin shaders
 - [license.txt](ThirdPartyLicenses/UnityBuiltinShaders/license.txt)
+
+### MIME type database from Apache HTTP Server (`mime.types`)
+- Public domain. Please see the beginning of the file (`conf/mime.types`).
+- Some new types were added at the end of the file.
