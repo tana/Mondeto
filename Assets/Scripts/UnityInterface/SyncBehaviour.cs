@@ -107,6 +107,9 @@ public class SyncBehaviour : MonoBehaviour
         RegisterComponentTag("constantVelocity", (obj, gameObj) => {
             gameObj.AddComponent<ConstantVelocity>().Initialize(obj);
         });
+        RegisterComponentTag("audioPlayer", (obj, gameObj) => {
+            gameObj.AddComponent<AudioPlayer>().Initialize(obj);
+        });
 
         if (IsServer)
         {

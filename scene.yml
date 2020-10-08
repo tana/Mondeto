@@ -111,3 +111,10 @@ objects:
     useRichText: true
     fontSize: 36
     tags: [text]
+  # Audio test
+  - position: !vec [-2, 1, 1]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.3, 0.3, 0.3]
+    audioFile: !load_file "scene_data/beam.wav"
+    audioVolume: 0.3
+    tags: [cube, audioPlayer]

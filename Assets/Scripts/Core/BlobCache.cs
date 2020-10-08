@@ -43,7 +43,7 @@ class BlobCache
         }
     }
 
-    string HandleToPath(BlobHandle handle)
+    public string HandleToPath(BlobHandle handle)
     {
         StringBuilder sb = new StringBuilder();
         foreach (byte b in handle.Hash)
