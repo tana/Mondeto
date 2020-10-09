@@ -30,12 +30,25 @@ class BlobCache
 
     public Blob? Find(BlobHandle handle)
     {
+        string mimeType = GetMimeType(handle);
+        string path = HandleToPath(handle);
+        if (mimeType != null && File.Exists(path))
+        {
+            return new Blob(File.ReadAllBytes(path), mimeType);
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    public string GetMimeType(BlobHandle handle)
+    {
         string path = HandleToPath(handle);
         string infoPath = path + ".info";
-        if (File.Exists(infoPath) && File.Exists(path))
+        if (File.Exists(infoPath))
         {
-            string mimeType = File.ReadAllText(infoPath);
-            return new Blob(File.ReadAllBytes(path), mimeType);
+            return File.ReadAllText(infoPath);
         }
         else
         {

@@ -27,14 +27,40 @@ public class AudioPlayer : MonoBehaviour
     {
         if (obj.TryGetField("audioFile", out BlobHandle blobHandle))
         {
-            string path = await obj.Node.GetBlobTempFile(blobHandle);
+            (string path, string mimeType) = await obj.Node.GetBlobTempFile(blobHandle);
             string fullPath = System.IO.Path.GetFullPath(path);
+
             // Use file URI scheme to load audio file at runtime
             // See: https://stackoverflow.com/questions/30852691/loading-mp3-files-at-runtime-in-unity
             //  (although we use UnityWebRequest instead of deprecated WWW class)
             // See: https://docs.unity3d.com/ja/2019.4/ScriptReference/Networking.UnityWebRequestMultimedia.GetAudioClip.html
-            UnityWebRequest request = UnityWebRequestMultimedia.GetAudioClip("file://" + fullPath, AudioType.WAV);
+
+            // Convert MIME type to Unity AudioType
+            AudioType audioType;
+            switch (mimeType)
+            {
+                // See ../../config/mime.types
+                case "audio/x-wav":
+                    audioType = AudioType.WAV;
+                    break;
+                case "audio/mpeg":
+                    audioType = AudioType.MPEG;
+                    break;
+                case "audio/ogg":
+                    audioType = AudioType.OGGVORBIS;
+                    break;
+                case "audio/x-aiff":
+                    audioType = AudioType.AIFF;
+                    break;
+                default:
+                    obj.WriteErrorLog("AudioPlayer", "Unknown audio file type: " + mimeType);
+                    return; // Error
+            }
+
+            // Load
+            UnityWebRequest request = UnityWebRequestMultimedia.GetAudioClip("file://" + fullPath, audioType);
             await request.SendWebRequest();
+
             if (request.isDone)
             {
                 AudioClip clip = DownloadHandlerAudioClip.GetContent(request);

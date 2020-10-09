@@ -230,10 +230,10 @@ public abstract class SyncNode : IDisposable
         return await BlobStorage.Read(handle);
     }
 
-    public async Task<string> GetBlobTempFile(BlobHandle handle)
+    public async Task<(string path, string mimeType)> GetBlobTempFile(BlobHandle handle)
     {
         await ReadBlob(handle);
-        return BlobCache.HandleToPath(handle);
+        return (BlobCache.HandleToPath(handle), BlobCache.GetMimeType(handle));
     }
 
     protected void SendBlob(uint nodeId, BlobHandle handle, Blob blob)
