@@ -18,6 +18,10 @@ public class AudioPlayer : MonoBehaviour
 
         obj.RegisterFieldUpdateHandler("audioFile", HandleFileUpdate);
         obj.RegisterFieldUpdateHandler("audioVolume", HandleUpdate);
+        obj.RegisterFieldUpdateHandler("audioPlaying", HandleUpdate);
+        obj.RegisterFieldUpdateHandler("audioLoop", HandleUpdate);
+
+        obj.BeforeSync += OnBeforeSync;
 
         HandleFileUpdate();
         HandleUpdate();
@@ -65,8 +69,6 @@ public class AudioPlayer : MonoBehaviour
             {
                 AudioClip clip = DownloadHandlerAudioClip.GetContent(request);
                 audioSource.clip = clip;
-                audioSource.loop = true;
-                audioSource.Play();
             }
         }
     }
@@ -77,11 +79,40 @@ public class AudioPlayer : MonoBehaviour
         {
             audioSource.volume = audioVolume;
         }
+
+        if (obj.TryGetFieldPrimitive("audioPlaying", out bool audioPlaying))
+        {
+            if (audioPlaying && !audioSource.isPlaying)
+            {
+                audioSource.Play();
+            }
+            if (!audioPlaying && audioSource.isPlaying)
+            {
+                audioSource.Stop();
+            }
+        }
+
+        if (obj.TryGetFieldPrimitive("audioLoop", out bool audioLoop))
+        {
+            audioSource.loop = true;
+        }
+    }
+
+    void OnBeforeSync(SyncObject sender, float dt)
+    {
+        if (GetComponent<ObjectSync>().IsOriginal)
+        {
+            obj.SetField("audioPlaying", new Primitive<bool>(audioSource.isPlaying));
+        }
     }
 
     public void OnDestroy()
     {
         obj.DeleteFieldUpdateHandler("audioFile", HandleFileUpdate);
+        obj.DeleteFieldUpdateHandler("audioVolume", HandleUpdate);
+        obj.DeleteFieldUpdateHandler("audioPlaying", HandleUpdate);
+        obj.DeleteFieldUpdateHandler("audioLoop", HandleUpdate);
+        obj.BeforeSync -= OnBeforeSync;
         Destroy(audioSource);
     }
 }

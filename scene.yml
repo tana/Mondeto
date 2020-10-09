@@ -117,4 +117,6 @@ objects:
     scale: !vec [0.3, 0.3, 0.3]
     audioFile: !load_file "scene_data/beam.wav"
     audioVolume: 0.3
+    audioPlaying: true
+    audioLoop: true
     tags: [cube, audioPlayer]
