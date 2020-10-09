@@ -80,21 +80,21 @@ public class AudioPlayer : MonoBehaviour
             audioSource.volume = audioVolume;
         }
 
-        if (obj.TryGetFieldPrimitive("audioPlaying", out bool audioPlaying))
+        if (obj.TryGetFieldPrimitive("audioPlaying", out int audioPlaying))
         {
-            if (audioPlaying && !audioSource.isPlaying)
+            if ((audioPlaying != 0) && !audioSource.isPlaying)
             {
                 audioSource.Play();
             }
-            if (!audioPlaying && audioSource.isPlaying)
+            if (!(audioPlaying != 0) && audioSource.isPlaying)
             {
                 audioSource.Stop();
             }
         }
 
-        if (obj.TryGetFieldPrimitive("audioLoop", out bool audioLoop))
+        if (obj.TryGetFieldPrimitive("audioLoop", out int audioLoop))
         {
-            audioSource.loop = true;
+            audioSource.loop = (audioLoop != 0);
         }
     }
 
@@ -102,7 +102,7 @@ public class AudioPlayer : MonoBehaviour
     {
         if (GetComponent<ObjectSync>().IsOriginal)
         {
-            obj.SetField("audioPlaying", new Primitive<bool>(audioSource.isPlaying));
+            obj.SetField("audioPlaying", new Primitive<int>(audioSource.isPlaying ? 1 : 0));
         }
     }
 

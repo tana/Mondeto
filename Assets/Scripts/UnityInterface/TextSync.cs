@@ -30,9 +30,9 @@ public class TextSync : MonoBehaviour
         {
             textMesh.fontSize = fontSize;
         }
-        if (obj.TryGetFieldPrimitive("useRichText", out bool useRichText))
+        if (obj.TryGetFieldPrimitive("useRichText", out int useRichText))
         {
-            textMesh.richText = useRichText;
+            textMesh.richText = (useRichText != 0);
         }
     }
 

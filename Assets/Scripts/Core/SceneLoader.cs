@@ -141,7 +141,7 @@ public class SceneLoader
             else if (float.TryParse(scalar.Value, out var floatValue))
                 return new Primitive<float> { Value = floatValue };
             else if (TryParseBool(scalar.Value, out var boolValue))
-                return new Primitive<bool> { Value = boolValue };
+                return new Primitive<int> { Value = boolValue ? 1 : 0 };
             else
                 return new Primitive<string> { Value = scalar.Value };
         }
