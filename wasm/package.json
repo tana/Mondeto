@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "description": "",
   "scripts": {
-    "build": "npx asc test.ts --runtime half -o test.wasm -t test.wat"
+    "build": "npx asc test.ts --runtime half -o test.wasm"
   },
   "author": "Satoshi Tanaka",
   "license": "MIT",

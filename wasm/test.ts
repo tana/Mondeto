@@ -2,7 +2,7 @@
 // See https://www.assemblyscript.org/exports-and-imports.html#anatomy-of-a-module
 import "wasi"
 
-import { getField, getQuat, setField, make_vec, Vec, Quat, makeQuat } from "./mondeto"
+import { getField, getQuat, setField, make_vec, Vec, Quat, makeQuat, make_int } from "./mondeto"
 
 export function init(): void {
     trace("init");
@@ -19,6 +19,8 @@ export function handle_clickStart(sender: u32): void {
     } else {
         setField("color", make_vec(1.0, 1.0, 1.0));
     }
+
+    setField("audioPlaying", make_int(1));
 }
 
 export function handle_clickEnd(sender: u32): void {

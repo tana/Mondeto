@@ -93,15 +93,16 @@ objects:
     launchVelocity: !vec [0, 0, 40]
     launchAngularVelocity: !vec [0, 0, 0]
     tags: [cube, material, collider, objectMoveButton]
-  # WASM test
+  # WASM and audio test
   - position: !vec [1, 1, 1]
     rotation: !euler [0, 0, 0]
     scale: !vec [0.3, 0.3, 0.3]
     color: !vec [1, 1, 1]
-    testInt: 1234
-    testFloat: 3.14
-    testString: "test"
-    tags: [cube, material, collider]
+    audioFile: !load_file "scene_data/beam.wav"
+    audioVolume: 0.3
+    audioPlaying: false
+    audioLoop: false
+    tags: [cube, material, collider, audioPlayer]
     codes: [!load_file "wasm/test.wasm"]
   # Text test
   - position: !vec [-2, 3, 3]
@@ -111,12 +112,3 @@ objects:
     useRichText: true
     fontSize: 36
     tags: [text]
-  # Audio test
-  - position: !vec [-2, 1, 1]
-    rotation: !euler [0, 0, 0]
-    scale: !vec [0.3, 0.3, 0.3]
-    audioFile: !load_file "scene_data/beam.wav"
-    audioVolume: 0.3
-    audioPlaying: true
-    audioLoop: true
-    tags: [cube, audioPlayer]
