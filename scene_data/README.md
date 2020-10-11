@@ -8,5 +8,7 @@
     - Self-made using Blender (`halfpipe.blend`).
 - `racket.glb`
     - Self-made using Blender (`racket.blend`).
+- `raygun.glb`
+    - Self-made using Blender (`raygun.blend`).
 - `beam.wav`
     - Self-made.

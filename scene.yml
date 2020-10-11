@@ -93,17 +93,6 @@ objects:
     launchVelocity: !vec [0, 0, 40]
     launchAngularVelocity: !vec [0, 0, 0]
     tags: [cube, material, collider, objectMoveButton]
-  # WASM and audio test
-  - position: !vec [1, 1, 1]
-    rotation: !euler [0, 0, 0]
-    scale: !vec [0.3, 0.3, 0.3]
-    color: !vec [1, 1, 1]
-    audioFile: !load_file "scene_data/beam.wav"
-    audioVolume: 0.3
-    audioPlaying: false
-    audioLoop: false
-    tags: [cube, material, collider, audioPlayer]
-    codes: [!load_file "wasm/test.wasm"]
   # Text test
   - position: !vec [-2, 3, 3]
     rotation: !euler [0, 0, 0]
@@ -112,3 +101,14 @@ objects:
     useRichText: true
     fontSize: 36
     tags: [text]
+  # ------- Shooting game -------
+  # Raygun
+  - position: !vec [1, 1, 1]
+    rotation: !euler [0, 0, 0]
+    model: !load_file "scene_data/raygun.glb"
+    audioFile: !load_file "scene_data/beam.wav"
+    audioVolume: 0.3
+    audioPlaying: false
+    audioLoop: false
+    tags: [model, collider, grabbable, audioPlayer]
+    codes: [!load_file "wasm/raygun.wasm"]
