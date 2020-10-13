@@ -14,6 +14,8 @@ export enum TypeCode
 
 // Declarations for imported functions
 // https://www.assemblyscript.org/exports-and-imports.html#imports
+export declare function request_new_object(): void;
+export declare function get_new_object(): i64;
 export declare function get_field(name_ptr: usize, name_len: usize): i64;
 export declare function set_field(name_ptr: usize, name_len: usize, value_id: u32): void;
 export declare function object_get_field(obj_id: u32, name_ptr: usize, name_len: usize): i64;

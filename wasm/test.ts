@@ -2,7 +2,7 @@
 // See https://www.assemblyscript.org/exports-and-imports.html#anatomy-of-a-module
 import "wasi"
 
-import { getField, getQuat, setField, make_vec, Vec, Quat, makeQuat, make_int } from "./mondeto"
+import { getField, getQuat, setField, make_vec, Vec, Quat, makeQuat, make_int, get_new_object, objectSetField, request_new_object } from "./mondeto"
 
 export function init(): void {
     trace("init");
@@ -21,6 +21,8 @@ export function handle_clickStart(sender: u32): void {
     }
 
     setField("audioPlaying", make_int(1));
+
+    request_new_object(); // Create new object
 }
 
 export function handle_clickEnd(sender: u32): void {
@@ -33,4 +35,14 @@ export function update(dt: f32): void {
     const rotation = getQuat(getField("rotation") as u32);
     const newRotation = Quat.fromAngleAxis(2 * Mathf.PI * 0.25 * dt, new Vec(1, 1, 1)) * rotation;
     setField("rotation", makeQuat(newRotation));
+
+    // Check if new object is ready
+    const newObjResult = get_new_object();
+    if (newObjResult >= 0) {   // New object is ready
+        trace("new object created");
+        const objId = newObjResult as u32;
+        // Set fields of new object
+        objectSetField(objId, "position", make_vec(0.0, 5.0, 5.0));
+        // TODO:
+    }
 }

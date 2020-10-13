@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
@@ -13,10 +14,15 @@ public class ObjectWasmRunner : WasmRunner
 
     Queue<(Logger.LogType, string, string)> logQueue = new Queue<(Logger.LogType, string, string)>();
 
+    ConcurrentQueue<uint> createdObjects = new ConcurrentQueue<uint>();
+
     const int Success = 0, Failure = -1;
 
     public ObjectWasmRunner(SyncObject obj)
     {
+        // Object manipulation functions
+        AddImportFunction("mondeto", "request_new_object", (Action<InstanceContext>)RequestNewObject);
+        AddImportFunction("mondeto", "get_new_object", (Func<InstanceContext, long>)GetNewObject);
         // Field manipulation functions
         AddImportFunction("mondeto", "get_field", (Func<InstanceContext, int, int, long>)GetField);
         AddImportFunction("mondeto", "set_field", (Action<InstanceContext, int, int, int>)SetField);
@@ -100,6 +106,28 @@ public class ObjectWasmRunner : WasmRunner
         CallWasmFunc("update", dt);
     }
 
+    // void request_new_object()
+    void RequestNewObject(InstanceContext ctx)
+    {
+        Object.Node.CreateObject().ContinueWith(task => {
+            uint objId = task.Result;
+            createdObjects.Enqueue(objId);
+        });
+    }
+
+    // i64 get_new_object()
+    long GetNewObject(InstanceContext ctx)
+    {
+        if (createdObjects.TryDequeue(out uint objId))
+        {
+            return objId;
+        }
+        else
+        {
+            return -1;  // new object is not ready
+        }
+    }
+
     // i64 get_field(i32 name_ptr, i32 name_len)
     long GetField(InstanceContext ctx, int namePtr, int nameLen)
     {
@@ -125,7 +153,7 @@ public class ObjectWasmRunner : WasmRunner
     {
         Memory memory = ctx.GetMemory(0);
 
-        if (Object.Node.Objects.ContainsKey((uint)objId))
+        if (!Object.Node.Objects.ContainsKey((uint)objId))
         {
             return -1;  // object not found
         }
@@ -156,11 +184,11 @@ public class ObjectWasmRunner : WasmRunner
     {
         Memory memory = ctx.GetMemory(0);
 
-        if (Object.Node.Objects.ContainsKey((uint)objId))
+        if (!Object.Node.Objects.ContainsKey((uint)objId))
         {
             return Failure;  // object not found
         }
-        if (IsValueIdValid((uint)valueId))
+        if (!IsValueIdValid((uint)valueId))
         {
             return Failure; // invalid value id
         }
