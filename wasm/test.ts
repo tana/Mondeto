@@ -2,10 +2,11 @@
 // See https://www.assemblyscript.org/exports-and-imports.html#anatomy-of-a-module
 import "wasi"
 
-import { getField, getQuat, setField, make_vec, Vec, Quat, makeQuat, make_int, get_new_object, objectSetField, request_new_object, make_sequence, makeSequence, makeString } from "./mondeto"
+import { getField, getQuat, setField, make_vec, Vec, Quat, makeQuat, make_int, get_new_object, objectSetField, request_new_object, make_sequence, makeSequence, makeString, get_object_id, object_is_original } from "./mondeto"
 
 export function init(): void {
     trace("init");
+    trace("object ID = " + get_object_id().toString());
 }
 
 var state: boolean = false;
@@ -22,7 +23,10 @@ export function handle_clickStart(sender: u32): void {
 
     setField("audioPlaying", make_int(1));
 
-    request_new_object(); // Create new object
+    // If this object is original (running on original node)
+    if (object_is_original(get_object_id())) {
+        request_new_object(); // Create new object
+    }
 }
 
 export function handle_clickEnd(sender: u32): void {

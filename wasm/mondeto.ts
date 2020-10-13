@@ -14,12 +14,17 @@ export enum TypeCode
 
 // Declarations for imported functions
 // https://www.assemblyscript.org/exports-and-imports.html#imports
+// Object manipulation
 export declare function request_new_object(): void;
 export declare function get_new_object(): i64;
+export declare function get_object_id(): u32;
+export declare function object_is_original(obj_id: u32): i32;
+// Field manipulation
 export declare function get_field(name_ptr: usize, name_len: usize): i64;
 export declare function set_field(name_ptr: usize, name_len: usize, value_id: u32): void;
 export declare function object_get_field(obj_id: u32, name_ptr: usize, name_len: usize): i64;
 export declare function object_set_field(obj_id: u32, name_ptr: usize, name_len: usize, value_id: u32): i32;
+// IValue-related
 export declare function get_type(value_id: u32): TypeCode;
 export declare function get_vec(value_id: u32, x_ptr: usize, y_ptr: usize, z_ptr: usize): void;
 export declare function get_quat(value_id: u32, w_ptr: usize, x_ptr: usize, y_ptr: usize, z_ptr: usize): void;

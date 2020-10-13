@@ -23,6 +23,8 @@ public class ObjectWasmRunner : WasmRunner
         // Object manipulation functions
         AddImportFunction("mondeto", "request_new_object", (Action<InstanceContext>)RequestNewObject);
         AddImportFunction("mondeto", "get_new_object", (Func<InstanceContext, long>)GetNewObject);
+        AddImportFunction("mondeto", "get_object_id", (Func<InstanceContext, int>)GetObjectId);
+        AddImportFunction("mondeto", "object_is_original", (Func<InstanceContext, int, int>)ObjectIsOriginal);
         // Field manipulation functions
         AddImportFunction("mondeto", "get_field", (Func<InstanceContext, int, int, long>)GetField);
         AddImportFunction("mondeto", "set_field", (Action<InstanceContext, int, int, int>)SetField);
@@ -126,6 +128,25 @@ public class ObjectWasmRunner : WasmRunner
         else
         {
             return -1;  // new object is not ready
+        }
+    }
+
+    // i32 get_object_id()
+    int GetObjectId(InstanceContext ctx)
+    {
+        return (int)Object.Id;
+    }
+
+    // i32 object_is_original(i32 obj_id)
+    int ObjectIsOriginal(InstanceContext ctx, int objId)
+    {
+        if (Object.Node.Objects.TryGetValue((uint)objId, out SyncObject obj))
+        {
+            return (obj.OriginalNodeId == Object.Node.NodeId) ? 1 : 0;
+        }
+        else
+        {
+            return 0;   // object not found TODO: should throw an exception?
         }
     }
 
