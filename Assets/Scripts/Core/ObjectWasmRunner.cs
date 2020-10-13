@@ -13,11 +13,15 @@ public class ObjectWasmRunner : WasmRunner
 
     Queue<(Logger.LogType, string, string)> logQueue = new Queue<(Logger.LogType, string, string)>();
 
+    const int Success = 0, Failure = -1;
+
     public ObjectWasmRunner(SyncObject obj)
     {
         // Field manipulation functions
         AddImportFunction("mondeto", "get_field", (Func<InstanceContext, int, int, long>)GetField);
         AddImportFunction("mondeto", "set_field", (Action<InstanceContext, int, int, int>)SetField);
+        AddImportFunction("mondeto", "object_get_field", (Func<InstanceContext, int, int, int, long>)ObjectGetField);
+        AddImportFunction("mondeto", "object_set_field", (Func<InstanceContext, int, int, int, int, int>)ObjectSetField);
         // IValue-related functions
         AddImportFunction("mondeto", "get_type", (Func<InstanceContext, int, int>)GetValueType);
         AddImportFunction("mondeto", "get_vec", (Action<InstanceContext, int, int, int, int>)GetVec);
@@ -79,6 +83,11 @@ public class ObjectWasmRunner : WasmRunner
         return valueList[(int)valueId];
     }
 
+    bool IsValueIdValid(uint valueId)
+    {
+        return valueId < valueList.Count;
+    }
+
     protected override void AfterCall()
     {
         base.AfterCall();
@@ -111,6 +120,28 @@ public class ObjectWasmRunner : WasmRunner
         }
     }
 
+    // i64 object_get_field(i32 obj_id, i32 name_ptr, i32 name_len)
+    long ObjectGetField(InstanceContext ctx, int objId, int namePtr, int nameLen)
+    {
+        Memory memory = ctx.GetMemory(0);
+
+        if (Object.Node.Objects.ContainsKey((uint)objId))
+        {
+            return -1;  // object not found
+        }
+
+        string name = ReadStringFromWasm(memory, namePtr, nameLen);
+        if (Object.Node.Objects[(uint)objId].TryGetField<IValue>(name, out IValue value))
+        {
+            return RegisterValue(value);
+        }
+        else
+        {
+            return -1;  // field not found
+        }
+    }
+
+    // void set_field(i32 name_ptr, i32 name_len, i32 value_id)
     void SetField(InstanceContext ctx, int namePtr, int nameLen, int valueId)
     {
         Memory memory = ctx.GetMemory(0);
@@ -118,6 +149,25 @@ public class ObjectWasmRunner : WasmRunner
         string name = ReadStringFromWasm(memory, namePtr, nameLen);
         // TODO: error check
         Object.SetField(name, FindValue((uint)valueId));
+    }
+    
+    // i32 object_set_field(i32 obj_id, i32 name_ptr, i32 name_len, i32 value_id)
+    int ObjectSetField(InstanceContext ctx, int objId, int namePtr, int nameLen, int valueId)
+    {
+        Memory memory = ctx.GetMemory(0);
+
+        if (Object.Node.Objects.ContainsKey((uint)objId))
+        {
+            return Failure;  // object not found
+        }
+        if (IsValueIdValid((uint)valueId))
+        {
+            return Failure; // invalid value id
+        }
+
+        string name = ReadStringFromWasm(memory, namePtr, nameLen);
+        Object.Node.Objects[(uint)objId].SetField(name, FindValue((uint)valueId));
+        return Success;
     }
 
     // i32 get_type(i32 value_id)
