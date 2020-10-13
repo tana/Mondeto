@@ -2,7 +2,7 @@
 // See https://www.assemblyscript.org/exports-and-imports.html#anatomy-of-a-module
 import "wasi"
 
-import { getField, getQuat, setField, make_vec, Vec, Quat, makeQuat, make_int, get_new_object, objectSetField, request_new_object } from "./mondeto"
+import { getField, getQuat, setField, make_vec, Vec, Quat, makeQuat, make_int, get_new_object, objectSetField, request_new_object, make_sequence, makeSequence, makeString } from "./mondeto"
 
 export function init(): void {
     trace("init");
@@ -43,6 +43,8 @@ export function update(dt: f32): void {
         const objId = newObjResult as u32;
         // Set fields of new object
         objectSetField(objId, "position", make_vec(0.0, 5.0, 5.0));
-        // TODO:
+        objectSetField(objId, "tags", makeSequence([
+            makeString("sphere"), makeString("collider"), makeString("physics")
+        ]));
     }
 }

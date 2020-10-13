@@ -36,6 +36,7 @@ export declare function make_double(value: f64): u32;
 export declare function make_vec(x: f32, y: f32, z: f32): u32;
 export declare function make_quat(w: f32, x: f32, y: f32, z: f32): u32;
 export declare function make_string(ptr: usize, len: usize): u32;
+export declare function make_sequence(elems_ptr: usize, elems_len: usize): u32;
 
 // Wrappers
 export class Vec {
@@ -185,4 +186,10 @@ export function getQuat(valueID: u32): Quat {
 
 export function makeQuat(q: Quat): u32 {
     return make_quat(q.w, q.x, q.y, q.z);
+}
+
+export function makeSequence(elems: u32[]): u32 {
+    // AssemblyScript array contains an ArrayBuffer
+    // See: https://www.assemblyscript.org/memory.html#internals
+    return make_sequence(changetype<usize>(elems.buffer), elems.length);
 }

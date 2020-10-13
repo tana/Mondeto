@@ -45,6 +45,7 @@ public class ObjectWasmRunner : WasmRunner
         AddImportFunction("mondeto", "make_vec", (Func<InstanceContext, float, float, float, int>)MakeVec);
         AddImportFunction("mondeto", "make_quat", (Func<InstanceContext, float, float, float, float, int>)MakeQuat);
         AddImportFunction("mondeto", "make_string", (Func<InstanceContext, int, int, int>)MakeString);
+        AddImportFunction("mondeto", "make_sequence", (Func<InstanceContext, int, int, int>)MakeSequence);
 
         Object = obj;
 
@@ -296,6 +297,22 @@ public class ObjectWasmRunner : WasmRunner
         string str = ReadStringFromWasm(memory, ptr, len);
 
         return (int)RegisterValue(new Primitive<string>(str));
+    }
+
+    // i32 make_sequence(i32 elems_ptr, i32 elems_len)
+    int MakeSequence(InstanceContext ctx, int elemsPtr, int elemsLen)
+    {
+        Memory memory = ctx.GetMemory(0);
+        
+        // boundary check
+        if (elemsPtr < 0 || elemsLen + sizeof(int) * elemsLen >= memory.DataLength) throw new Exception();  // TODO: change exception type
+        // read value ID array (read as int[] because Marshal.Copy does not support uint[])
+        var valueIds = new int[elemsLen];
+        Marshal.Copy(WasmToIntPtr(memory, elemsPtr), valueIds, 0, elemsLen);
+
+        // TODO: error handling of invalid value ID
+        List<IValue> elems = valueIds.Select(vid => FindValue((uint)vid)).ToList();
+        return (int)RegisterValue(new Sequence(elems));
     }
 
     public override void WriteLog(Logger.LogType type, string component, string message)
