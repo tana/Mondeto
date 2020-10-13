@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
@@ -13,11 +14,22 @@ public class ObjectWasmRunner : WasmRunner
 
     Queue<(Logger.LogType, string, string)> logQueue = new Queue<(Logger.LogType, string, string)>();
 
+    ConcurrentQueue<uint> createdObjects = new ConcurrentQueue<uint>();
+
+    const int Success = 0, Failure = -1;
+
     public ObjectWasmRunner(SyncObject obj)
     {
+        // Object manipulation functions
+        AddImportFunction("mondeto", "request_new_object", (Action<InstanceContext>)RequestNewObject);
+        AddImportFunction("mondeto", "get_new_object", (Func<InstanceContext, long>)GetNewObject);
+        AddImportFunction("mondeto", "get_object_id", (Func<InstanceContext, int>)GetObjectId);
+        AddImportFunction("mondeto", "object_is_original", (Func<InstanceContext, int, int>)ObjectIsOriginal);
         // Field manipulation functions
         AddImportFunction("mondeto", "get_field", (Func<InstanceContext, int, int, long>)GetField);
         AddImportFunction("mondeto", "set_field", (Action<InstanceContext, int, int, int>)SetField);
+        AddImportFunction("mondeto", "object_get_field", (Func<InstanceContext, int, int, int, long>)ObjectGetField);
+        AddImportFunction("mondeto", "object_set_field", (Func<InstanceContext, int, int, int, int, int>)ObjectSetField);
         // IValue-related functions
         AddImportFunction("mondeto", "get_type", (Func<InstanceContext, int, int>)GetValueType);
         AddImportFunction("mondeto", "get_vec", (Action<InstanceContext, int, int, int, int>)GetVec);
@@ -35,6 +47,7 @@ public class ObjectWasmRunner : WasmRunner
         AddImportFunction("mondeto", "make_vec", (Func<InstanceContext, float, float, float, int>)MakeVec);
         AddImportFunction("mondeto", "make_quat", (Func<InstanceContext, float, float, float, float, int>)MakeQuat);
         AddImportFunction("mondeto", "make_string", (Func<InstanceContext, int, int, int>)MakeString);
+        AddImportFunction("mondeto", "make_sequence", (Func<InstanceContext, int, int, int>)MakeSequence);
 
         Object = obj;
 
@@ -79,6 +92,11 @@ public class ObjectWasmRunner : WasmRunner
         return valueList[(int)valueId];
     }
 
+    bool IsValueIdValid(uint valueId)
+    {
+        return valueId < valueList.Count;
+    }
+
     protected override void AfterCall()
     {
         base.AfterCall();
@@ -89,6 +107,47 @@ public class ObjectWasmRunner : WasmRunner
     void CallUpdateFunction(SyncObject obj, float dt)
     {
         CallWasmFunc("update", dt);
+    }
+
+    // void request_new_object()
+    void RequestNewObject(InstanceContext ctx)
+    {
+        Object.Node.CreateObject().ContinueWith(task => {
+            uint objId = task.Result;
+            createdObjects.Enqueue(objId);
+        });
+    }
+
+    // i64 get_new_object()
+    long GetNewObject(InstanceContext ctx)
+    {
+        if (createdObjects.TryDequeue(out uint objId))
+        {
+            return objId;
+        }
+        else
+        {
+            return -1;  // new object is not ready
+        }
+    }
+
+    // i32 get_object_id()
+    int GetObjectId(InstanceContext ctx)
+    {
+        return (int)Object.Id;
+    }
+
+    // i32 object_is_original(i32 obj_id)
+    int ObjectIsOriginal(InstanceContext ctx, int objId)
+    {
+        if (Object.Node.Objects.TryGetValue((uint)objId, out SyncObject obj))
+        {
+            return (obj.OriginalNodeId == Object.Node.NodeId) ? 1 : 0;
+        }
+        else
+        {
+            return 0;   // object not found TODO: should throw an exception?
+        }
     }
 
     // i64 get_field(i32 name_ptr, i32 name_len)
@@ -111,6 +170,28 @@ public class ObjectWasmRunner : WasmRunner
         }
     }
 
+    // i64 object_get_field(i32 obj_id, i32 name_ptr, i32 name_len)
+    long ObjectGetField(InstanceContext ctx, int objId, int namePtr, int nameLen)
+    {
+        Memory memory = ctx.GetMemory(0);
+
+        if (!Object.Node.Objects.ContainsKey((uint)objId))
+        {
+            return -1;  // object not found
+        }
+
+        string name = ReadStringFromWasm(memory, namePtr, nameLen);
+        if (Object.Node.Objects[(uint)objId].TryGetField<IValue>(name, out IValue value))
+        {
+            return RegisterValue(value);
+        }
+        else
+        {
+            return -1;  // field not found
+        }
+    }
+
+    // void set_field(i32 name_ptr, i32 name_len, i32 value_id)
     void SetField(InstanceContext ctx, int namePtr, int nameLen, int valueId)
     {
         Memory memory = ctx.GetMemory(0);
@@ -118,6 +199,25 @@ public class ObjectWasmRunner : WasmRunner
         string name = ReadStringFromWasm(memory, namePtr, nameLen);
         // TODO: error check
         Object.SetField(name, FindValue((uint)valueId));
+    }
+    
+    // i32 object_set_field(i32 obj_id, i32 name_ptr, i32 name_len, i32 value_id)
+    int ObjectSetField(InstanceContext ctx, int objId, int namePtr, int nameLen, int valueId)
+    {
+        Memory memory = ctx.GetMemory(0);
+
+        if (!Object.Node.Objects.ContainsKey((uint)objId))
+        {
+            return Failure;  // object not found
+        }
+        if (!IsValueIdValid((uint)valueId))
+        {
+            return Failure; // invalid value id
+        }
+
+        string name = ReadStringFromWasm(memory, namePtr, nameLen);
+        Object.Node.Objects[(uint)objId].SetField(name, FindValue((uint)valueId));
+        return Success;
     }
 
     // i32 get_type(i32 value_id)
@@ -218,6 +318,22 @@ public class ObjectWasmRunner : WasmRunner
         string str = ReadStringFromWasm(memory, ptr, len);
 
         return (int)RegisterValue(new Primitive<string>(str));
+    }
+
+    // i32 make_sequence(i32 elems_ptr, i32 elems_len)
+    int MakeSequence(InstanceContext ctx, int elemsPtr, int elemsLen)
+    {
+        Memory memory = ctx.GetMemory(0);
+        
+        // boundary check
+        if (elemsPtr < 0 || elemsLen + sizeof(int) * elemsLen >= memory.DataLength) throw new Exception();  // TODO: change exception type
+        // read value ID array (read as int[] because Marshal.Copy does not support uint[])
+        var valueIds = new int[elemsLen];
+        Marshal.Copy(WasmToIntPtr(memory, elemsPtr), valueIds, 0, elemsLen);
+
+        // TODO: error handling of invalid value ID
+        List<IValue> elems = valueIds.Select(vid => FindValue((uint)vid)).ToList();
+        return (int)RegisterValue(new Sequence(elems));
     }
 
     public override void WriteLog(Logger.LogType type, string component, string message)

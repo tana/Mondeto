@@ -14,8 +14,17 @@ export enum TypeCode
 
 // Declarations for imported functions
 // https://www.assemblyscript.org/exports-and-imports.html#imports
+// Object manipulation
+export declare function request_new_object(): void;
+export declare function get_new_object(): i64;
+export declare function get_object_id(): u32;
+export declare function object_is_original(obj_id: u32): i32;
+// Field manipulation
 export declare function get_field(name_ptr: usize, name_len: usize): i64;
 export declare function set_field(name_ptr: usize, name_len: usize, value_id: u32): void;
+export declare function object_get_field(obj_id: u32, name_ptr: usize, name_len: usize): i64;
+export declare function object_set_field(obj_id: u32, name_ptr: usize, name_len: usize, value_id: u32): i32;
+// IValue-related
 export declare function get_type(value_id: u32): TypeCode;
 export declare function get_vec(value_id: u32, x_ptr: usize, y_ptr: usize, z_ptr: usize): void;
 export declare function get_quat(value_id: u32, w_ptr: usize, x_ptr: usize, y_ptr: usize, z_ptr: usize): void;
@@ -32,6 +41,7 @@ export declare function make_double(value: f64): u32;
 export declare function make_vec(x: f32, y: f32, z: f32): u32;
 export declare function make_quat(w: f32, x: f32, y: f32, z: f32): u32;
 export declare function make_string(ptr: usize, len: usize): u32;
+export declare function make_sequence(elems_ptr: usize, elems_len: usize): u32;
 
 // Wrappers
 export class Vec {
@@ -120,6 +130,22 @@ export function setField(name: string, valueID: u32): void {
     set_field(changetype<usize>(buf), buf.byteLength, valueID);
 }
 
+export function objectGetField(objId: u32, name: string): i64 {
+    // https://www.assemblyscript.org/stdlib/string.html#encoding-api
+    const buf = String.UTF8.encode(name);
+    // https://www.assemblyscript.org/runtime.html#interface
+    // https://www.assemblyscript.org/stdlib/arraybuffer.html#constructor
+    return object_get_field(objId, changetype<usize>(buf), buf.byteLength);
+}
+
+export function objectSetField(objId: u32, name: string, valueID: u32): i32 {
+    // https://www.assemblyscript.org/stdlib/string.html#encoding-api
+    const buf = String.UTF8.encode(name);
+    // https://www.assemblyscript.org/runtime.html#interface
+    // https://www.assemblyscript.org/stdlib/arraybuffer.html#constructor
+    return object_set_field(objId, changetype<usize>(buf), buf.byteLength, valueID);
+}
+
 export function getString(valueID: u32): string {
     const len = get_string_length(valueID);
     const buf = new ArrayBuffer(len as i32);
@@ -165,4 +191,10 @@ export function getQuat(valueID: u32): Quat {
 
 export function makeQuat(q: Quat): u32 {
     return make_quat(q.w, q.x, q.y, q.z);
+}
+
+export function makeSequence(elems: u32[]): u32 {
+    // AssemblyScript array contains an ArrayBuffer
+    // See: https://www.assemblyscript.org/memory.html#internals
+    return make_sequence(changetype<usize>(elems.buffer), elems.length);
 }
