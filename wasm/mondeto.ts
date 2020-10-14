@@ -114,13 +114,24 @@ export class Quat {
     //  https://www.assemblyscript.org/peculiarities.html#operator-overloads
 
     @operator("*")
-    static __op(a: Quat, b: Quat): Quat {
+    static __opMultiply(a: Quat, b: Quat): Quat {
         return new Quat(
             a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z,
             a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
             a.w * b.y + a.y * b.w + a.z * b.x - a.x * b.z,
             a.w * b.z + a.z * b.w + a.x * b.y - a.y * b.x
         );
+    }
+
+    // rotate a vector
+    rotateVec(v: Vec): Vec {
+        const vQuat = new Quat(0, v.x, v.y, v.z);
+        const after = this * vQuat * this.conjugate();
+        return new Vec(after.x, after.y, after.z);
+    }
+
+    conjugate(): Quat {
+        return new Quat(this.w, -this.x, -this.y, -this.z);
     }
 
     // angle is in radians

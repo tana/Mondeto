@@ -104,7 +104,7 @@ objects:
   # ------- Shooting game -------
   # Raygun
   - position: !vec [1, 1, 1]
-    rotation: !euler [0, 0, 0]
+    rotation: !euler [0, 90, 0]
     model: !load_file "scene_data/raygun.glb"
     audioFile: !load_file "scene_data/beam.wav"
     audioVolume: 0.3
