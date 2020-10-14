@@ -112,3 +112,4 @@ objects:
     audioLoop: false
     tags: [model, collider, grabbable, audioPlayer]
     codes: [!load_file "wasm/raygun.wasm"]
+    bulletCode: !load_file "wasm/bullet.wasm"

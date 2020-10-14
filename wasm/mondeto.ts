@@ -67,6 +67,28 @@ export class Vec {
         const mag = this.magnitude();
         return new Vec(this.x / mag, this.y / mag, this.z / mag);
     }
+
+    multiply(a: f32): Vec {
+        return new Vec(this.x * a, this.y * a, this.z * a);
+    }
+
+    // Operator overloads
+    //  https://www.assemblyscript.org/peculiarities.html#operator-overloads
+
+    @operator("+")
+    static __opPlus(a: Vec, b: Vec): Vec {
+        return new Vec(a.x + b.x, a.y + b.y, a.z + b.z);
+    }
+
+    @operator("-")
+    static __opMinus(a: Vec, b: Vec): Vec {
+        return new Vec(a.x - b.x, a.y - b.y, a.z - b.z);
+    }
+
+    @operator.prefix("-")
+    static __opPrefixPlus(a: Vec): Vec {
+        return new Vec(-a.x, -a.y, -a.z);
+    }
 }
 
 export class Quat {
@@ -187,6 +209,10 @@ export function getQuat(valueID: u32): Quat {
     get_quat(valueID, ptr + wOffset, ptr + xOffset, ptr + yOffset, ptr + zOffset);
 
     return quat;
+}
+
+export function makeVec(v: Vec): u32 {
+    return make_vec(v.x, v.y, v.z);
 }
 
 export function makeQuat(q: Quat): u32 {

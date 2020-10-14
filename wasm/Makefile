@@ -1,9 +1,11 @@
 .PHONY: shooting-game
 
-shooting-game: raygun.wasm
+shooting-game: raygun.wasm bullet.wasm
 
 ASFLAGS = --runtime half
 %.wasm: %.ts
 	npx asc $< $(ASFLAGS) -o $@
 
 raygun.wasm: raygun.ts mondeto.ts
+
+bullet.wasm: bullet.ts mondeto.ts

@@ -1,2 +1,2 @@
 # WebAssembly scripting samples
-It uses AssemblyScript. Please run `npm run build` to build.
+It uses AssemblyScript. Please run `npm run build` and `make` to build.
