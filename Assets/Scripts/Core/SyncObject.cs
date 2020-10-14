@@ -57,8 +57,6 @@ public class SyncObject
             Elements = new List<IValue> {
             }
         });
-
-        RegisterFieldUpdateHandler("codes", OnCodesUpdated);    // TODO: dispose
     }
 
     // Update field value and refresh last updated time.
@@ -240,10 +238,7 @@ public class SyncObject
                 // TODO: handle deleted tags?
             }
         }
-    }
 
-    void OnCodesUpdated()
-    {
         if (GetField("codes") is Sequence codesSeq)
         {
             foreach (var elem in codesSeq.Elements)
