@@ -42,6 +42,8 @@ export declare function make_vec(x: f32, y: f32, z: f32): u32;
 export declare function make_quat(w: f32, x: f32, y: f32, z: f32): u32;
 export declare function make_string(ptr: usize, len: usize): u32;
 export declare function make_sequence(elems_ptr: usize, elems_len: usize): u32;
+// Other
+export declare function get_world_coordinate(obj_id: u32, vx_ptr: usize, vy_ptr: usize, vz_ptr: usize, qw_ptr: usize, qx_ptr: usize, qy_ptr: usize, qz_ptr: usize): i32;
 
 // Wrappers
 export class Vec {
@@ -49,7 +51,7 @@ export class Vec {
     y: f32;
     z: f32;
 
-    constructor(x: f32, y: f32, z: f32) {
+    constructor(x: f32 = 0.0, y: f32 = 0.0, z: f32 = 0.0) {
         this.x = x;
         this.y = y;
         this.z = z;
@@ -147,6 +149,17 @@ export class Quat {
     }
 }
 
+// Pair of a Vec and a Quat.
+export class Transform {
+    position: Vec;
+    rotation: Quat;
+
+    constructor(pos: Vec, rot: Quat) {
+        this.position = pos;
+        this.rotation = rot;
+    }
+}
+
 export function getField(name: string): i64 {
     // https://www.assemblyscript.org/stdlib/string.html#encoding-api
     const buf = String.UTF8.encode(name);
@@ -234,4 +247,30 @@ export function makeSequence(elems: u32[]): u32 {
     // AssemblyScript array contains an ArrayBuffer
     // See: https://www.assemblyscript.org/memory.html#internals
     return make_sequence(changetype<usize>(elems.buffer), elems.length);
+}
+
+export function getWorldCoordinate(objID: u32): Transform | null {
+    const vec = new Vec(), quat = new Quat();
+
+    // https://www.assemblyscript.org/environment.html#sizes-and-alignments
+    // https://www.assemblyscript.org/interoperability.html#class-layout
+    const vecPtr = changetype<usize>(vec);
+    const vxOffset = offsetof<Vec>("x");
+    const vyOffset = offsetof<Vec>("y");
+    const vzOffset = offsetof<Vec>("z");
+    const quatPtr = changetype<usize>(quat);
+    const qwOffset = offsetof<Quat>("w");
+    const qxOffset = offsetof<Quat>("x");
+    const qyOffset = offsetof<Quat>("y");
+    const qzOffset = offsetof<Quat>("z");
+    const ret = get_world_coordinate(
+        objID,
+        vecPtr + vxOffset, vecPtr + vyOffset, vecPtr + vzOffset,
+        quatPtr + qwOffset, quatPtr + qxOffset, quatPtr + qyOffset, quatPtr + qzOffset
+    );
+    if (ret == 0) {
+        return new Transform(vec, quat);
+    } else {
+        return null;
+    }
 }

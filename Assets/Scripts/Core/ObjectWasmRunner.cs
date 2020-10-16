@@ -48,6 +48,8 @@ public class ObjectWasmRunner : WasmRunner
         AddImportFunction("mondeto", "make_quat", (Func<InstanceContext, float, float, float, float, int>)MakeQuat);
         AddImportFunction("mondeto", "make_string", (Func<InstanceContext, int, int, int>)MakeString);
         AddImportFunction("mondeto", "make_sequence", (Func<InstanceContext, int, int, int>)MakeSequence);
+        // Other functions
+        AddImportFunction("mondeto", "get_world_coordinate", (Func<InstanceContext, int, int, int, int, int, int, int, int, int>)GetWorldCoordinate);
 
         Object = obj;
 
@@ -232,12 +234,8 @@ public class ObjectWasmRunner : WasmRunner
     {
         Memory memory = ctx.GetMemory(0);
 
-        // TODO: error check and boundary check
         var vec = (Vec)FindValue((uint)valueId);
-        var xyz = new float[] { vec.X, vec.Y, vec.Z };
-        Marshal.Copy(xyz, 0, WasmToIntPtr(memory, xPtr), 1);
-        Marshal.Copy(xyz, 1, WasmToIntPtr(memory, yPtr), 1);
-        Marshal.Copy(xyz, 2, WasmToIntPtr(memory, zPtr), 1);
+        WriteVecToWasm(vec, memory, xPtr, yPtr, zPtr);
     }
 
     // void get_quat(i32 value_id, i32 w_ptr, i32 x_ptr, i32 y_ptr, i32 z_ptr)
@@ -245,13 +243,8 @@ public class ObjectWasmRunner : WasmRunner
     {
         Memory memory = ctx.GetMemory(0);
 
-        // TODO: error check and boundary check
         var quat = (Quat)FindValue((uint)valueId);
-        var wxyz = new float[] { quat.W, quat.X, quat.Y, quat.Z };
-        Marshal.Copy(wxyz, 0, WasmToIntPtr(memory, wPtr), 1);
-        Marshal.Copy(wxyz, 1, WasmToIntPtr(memory, xPtr), 1);
-        Marshal.Copy(wxyz, 2, WasmToIntPtr(memory, yPtr), 1);
-        Marshal.Copy(wxyz, 3, WasmToIntPtr(memory, zPtr), 1);
+        WriteQuatToWasm(quat, memory, wPtr, xPtr, yPtr, zPtr);
     }
 
     // i32 get_int(i32 value_id)
@@ -334,6 +327,59 @@ public class ObjectWasmRunner : WasmRunner
         // TODO: error handling of invalid value ID
         List<IValue> elems = valueIds.Select(vid => FindValue((uint)vid)).ToList();
         return (int)RegisterValue(new Sequence(elems));
+    }
+
+    // i32 get_world_coordinate(i32 obj_id, i32 vx_ptr, i32 vy_ptr, i32 vz_ptr, i32 qw_ptr, i32 qx_ptr, i32 qy_ptr, i32 qz_ptr)
+    int GetWorldCoordinate(InstanceContext ctx, int objId, int vxPtr, int vyPtr, int vzPtr, int qwPtr, int qxPtr, int qyPtr, int qzPtr)
+    {
+        // Check object ID
+        if (!Object.Node.Objects.ContainsKey((uint)objId)) return Failure;
+
+        Memory memory = ctx.GetMemory(0);
+
+        Vec worldPos;
+        Quat worldRot;
+        if (Object.CalcWorldCoord(out worldPos, out worldRot))
+        {
+            WriteVecToWasm(worldPos, memory, vxPtr, vyPtr, vzPtr);
+            WriteQuatToWasm(worldRot, memory, qwPtr, qxPtr, qyPtr, qzPtr);
+
+            return Success;
+        }
+        else
+        {
+            return Failure;
+        }
+    }
+
+    bool WriteVecToWasm(Vec vec, Memory memory, int xPtr, int yPtr, int zPtr)
+    {
+        if (!(CheckWasmPtr(memory, xPtr) && CheckWasmPtr(memory, yPtr) && CheckWasmPtr(memory, zPtr)))
+        {
+            return false;
+        }
+
+        var xyz = new float[] { vec.X, vec.Y, vec.Z };
+        Marshal.Copy(xyz, 0, WasmToIntPtr(memory, xPtr), 1);
+        Marshal.Copy(xyz, 1, WasmToIntPtr(memory, yPtr), 1);
+        Marshal.Copy(xyz, 2, WasmToIntPtr(memory, zPtr), 1);
+        return true;
+    }
+
+    bool WriteQuatToWasm(Quat quat, Memory memory, int wPtr, int xPtr, int yPtr, int zPtr)
+    {
+        if (!(CheckWasmPtr(memory, wPtr) && CheckWasmPtr(memory, xPtr) && CheckWasmPtr(memory, yPtr) && CheckWasmPtr(memory, zPtr)))
+        {
+            return false;
+        }
+
+        var wxyz = new float[] { quat.W, quat.X, quat.Y, quat.Z };
+        Marshal.Copy(wxyz, 0, WasmToIntPtr(memory, wPtr), 1);
+        Marshal.Copy(wxyz, 1, WasmToIntPtr(memory, xPtr), 1);
+        Marshal.Copy(wxyz, 2, WasmToIntPtr(memory, yPtr), 1);
+        Marshal.Copy(wxyz, 3, WasmToIntPtr(memory, zPtr), 1);
+
+        return true;
     }
 
     public override void WriteLog(Logger.LogType type, string component, string message)

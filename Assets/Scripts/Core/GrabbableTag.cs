@@ -20,7 +20,7 @@ public class GrabbableTag
         // Calculate coordinate of this object relative to sender
         Vec relPos;
         Quat relRot;
-        if (!CalcRelativeCoord(obj, node.Objects[sender], out relPos, out relRot))
+        if (!obj.CalcRelativeCoord(node.Objects[sender], out relPos, out relRot))
         {
             // When calculation failed
             relPos = new Vec();
@@ -42,7 +42,7 @@ public class GrabbableTag
         // Calculate current world coordinate of this object
         Vec worldPos;
         Quat worldRot;
-        if (!CalcWorldCoord(obj, out worldPos, out worldRot))
+        if (!obj.CalcWorldCoord(out worldPos, out worldRot))
         {
             // When world coordinate calculation failed
             worldPos = new Vec();
@@ -57,67 +57,5 @@ public class GrabbableTag
         obj.SetField("rotation", worldRot);
 
         obj.WriteDebugLog("grabbable", $"Ungrabbed by object {sender}");
-    }
-
-    // Calculate world coordinate of an object
-    // Note: when return value is false (failed), position and rotation will be null (because these are reference type)
-    bool CalcWorldCoord(SyncObject obj, out Vec position, out Quat rotation, int depth = 0)
-    {
-        if (obj.TryGetField("position", out Vec pos) && obj.TryGetField("rotation", out Quat rot))
-        {
-            if (obj.TryGetField("parent", out ObjectRef parent))
-            {
-                // Recursively calculate world coord of parent
-                // (with recursion depth limit)
-                if (depth < 20 && CalcWorldCoord(node.Objects[parent.Id], out Vec parentPos, out Quat parentRot, depth + 1))
-                {
-                    position = parentPos + parentRot * pos;
-                    rotation = parentRot * rot;
-                    return true;
-                }
-                else
-                {
-                    position = default;
-                    rotation = default;
-                    return false;
-                }
-            }
-            else
-            {
-                // No parent
-                position = pos;
-                rotation = rot;
-                return true;
-            }
-        }
-        else
-        {
-            position = default;
-            rotation = default;
-            return false;
-        }
-    }
-
-    // Calculate coordinate of obj relative to refObj
-    // Note: when return value is false (failed), position and rotation will be null (because these are reference type)
-    bool CalcRelativeCoord(SyncObject obj, SyncObject refObj, out Vec position, out Quat rotation)
-    {
-        position = default;
-        rotation = default;
-
-        // Calculate world coordinate of obj
-        Vec worldPos;
-        Quat worldRot;
-        if (!CalcWorldCoord(obj, out worldPos, out worldRot)) return false;
-
-        // Calculate world coordinate of refObj
-        Vec refWorldPos;
-        Quat refWorldRot;
-        if (!CalcWorldCoord(refObj, out refWorldPos, out refWorldRot)) return false;
-
-        // Calculate relative coordinate
-        position = refWorldRot.Conjugate() * (worldPos - refWorldPos);
-        rotation = refWorldRot.Conjugate() * worldRot;
-        return true;
     }
 }

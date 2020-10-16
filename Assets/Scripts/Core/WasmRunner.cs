@@ -258,6 +258,12 @@ public class WasmRunner : IDisposable
         return memory.Data + wasmPtr;
     }
 
+    // Boundary check of WASM pointer
+    protected bool CheckWasmPtr(Memory memory, int wasmPtr)
+    {
+        return (0 <= wasmPtr) && (wasmPtr < memory.DataLength);
+    }
+
     // WASI ciovec
     //  https://github.com/WebAssembly/WASI/blob/master/phases/snapshot/docs.md#-ciovec-struct
     // Big-endian environment is not supported.
