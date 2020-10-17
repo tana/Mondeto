@@ -19,6 +19,7 @@ export declare function request_new_object(): void;
 export declare function get_new_object(): i64;
 export declare function get_object_id(): u32;
 export declare function object_is_original(obj_id: u32): i32;
+export declare function delete_self(): void;
 // Field manipulation
 export declare function get_field(name_ptr: usize, name_len: usize): i64;
 export declare function set_field(name_ptr: usize, name_len: usize, value_id: u32): void;

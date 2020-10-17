@@ -25,6 +25,7 @@ public class ObjectWasmRunner : WasmRunner
         AddImportFunction("mondeto", "get_new_object", (Func<InstanceContext, long>)GetNewObject);
         AddImportFunction("mondeto", "get_object_id", (Func<InstanceContext, int>)GetObjectId);
         AddImportFunction("mondeto", "object_is_original", (Func<InstanceContext, int, int>)ObjectIsOriginal);
+        AddImportFunction("mondeto", "delete_self", (Action<InstanceContext>)DeleteSelf);
         // Field manipulation functions
         AddImportFunction("mondeto", "get_field", (Func<InstanceContext, int, int, long>)GetField);
         AddImportFunction("mondeto", "set_field", (Action<InstanceContext, int, int, int>)SetField);
@@ -150,6 +151,12 @@ public class ObjectWasmRunner : WasmRunner
         {
             return 0;   // object not found TODO: should throw an exception?
         }
+    }
+
+    // void delete_self()
+    void DeleteSelf(InstanceContext ctx)
+    {
+        Object.Node.DeleteObject(Object.Id);
     }
 
     // i64 get_field(i32 name_ptr, i32 name_len)
