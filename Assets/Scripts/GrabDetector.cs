@@ -9,17 +9,18 @@ public class GrabDetector : MonoBehaviour
 
     SphereCollider col;
 
-    public void Start()
+    public void Setup(SyncObject syncObj)
     {
         // To detect collision with static colliders, kinematic Rigidbody is needed
         //  (See https://docs.unity3d.com/ja/2019.4/Manual/CollidersOverview.html )
-        var rb = gameObject.AddComponent<Rigidbody>();
-        rb.isKinematic = true;
+        // Therefore, the object have to be non-tangible.
+        syncObj.SetField("isTangible", new Primitive<int>(0));
 
-        if (GetComponent<Collider>() != null) return;
+        if (GetComponent<ColliderSync>() == null) return;
         col = gameObject.AddComponent<SphereCollider>();
         col.isTrigger = true;
         col.radius = 0.3f;  // FIXME: setting
+        GetComponent<ColliderSync>().AddCollider(col);
     }
 
     void OnTriggerEnter(Collider other)

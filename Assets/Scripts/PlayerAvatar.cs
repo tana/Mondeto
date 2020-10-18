@@ -218,12 +218,12 @@ public class PlayerAvatar : MonoBehaviour
         if (leftHandObj != null)
         {
             leftHandGameObj = syncBehaviour.GameObjects[leftHandObj.Id];
-            SetHandCollider(leftHandGameObj);
+            SetHandCollider(leftHandGameObj, leftHandObj);
         }
         if (rightHandObj != null)
         {
             rightHandGameObj = syncBehaviour.GameObjects[rightHandObj.Id];
-            SetHandCollider(rightHandGameObj);
+            SetHandCollider(rightHandGameObj, rightHandObj);
         }
     }
 
@@ -273,10 +273,11 @@ public class PlayerAvatar : MonoBehaviour
         rightGripDetector.ButtonUp += (bd) => UngrabObject(rightHandGameObj);
     }
 
-    void SetHandCollider(GameObject handGameObj)
+    void SetHandCollider(GameObject handGameObj, SyncObject obj)
     {
         if (handGameObj.GetComponent<GrabDetector>() != null) return;
         handGameObj.AddComponent<GrabDetector>();
+        handGameObj.GetComponent<GrabDetector>().Setup(obj);
     }
 
     ObjectSync FindMouseClickedObject()

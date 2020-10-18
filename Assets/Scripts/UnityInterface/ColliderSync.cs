@@ -61,6 +61,12 @@ public class ColliderSync : MonoBehaviour
         HandleUpdate();
     }
 
+    public void AddCollider(Collider collider)
+    {
+        collider.sharedMaterial = material;
+        RegisterCollider(collider);
+    }
+
     public void OnCollisionEnter(Collision collision)
     {
         SendEventToGameObject(collision.gameObject, "collisionStart", new IValue[0]);
