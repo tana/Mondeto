@@ -11,6 +11,9 @@ public class ColliderSync : MonoBehaviour
 
     SyncObject obj;
 
+    bool isTangible = false;
+    bool isStatic = false;
+
     public void Initialize(SyncObject obj)
     {
         this.obj = obj;
@@ -20,13 +23,13 @@ public class ColliderSync : MonoBehaviour
         {
             var collider = gameObject.AddComponent<BoxCollider>();
             collider.sharedMaterial = material;
-            addedColliders.Add(collider);
+            RegisterCollider(collider);
         }
         else if (obj.HasTag("sphere"))
         {
             var collider = gameObject.AddComponent<SphereCollider>();
             collider.sharedMaterial = material;
-            addedColliders.Add(collider);
+            RegisterCollider(collider);
         }
         else if (obj.HasTag("model"))
         {
@@ -37,7 +40,7 @@ public class ColliderSync : MonoBehaviour
             // For primitives that use MeshCollider
             var collider = gameObject.AddComponent<MeshCollider>();
             collider.sharedMaterial = material;
-            addedColliders.Add(collider);
+            RegisterCollider(collider);
         }
         else if (GetComponent<Collider>() != null)
         {
@@ -47,11 +50,13 @@ public class ColliderSync : MonoBehaviour
             //  To ignore this collider, "GetComponent<Collider() != null" has to be the last of else-if.
             var collider = GetComponent<Collider>();
             collider.sharedMaterial = material;
-            addedColliders.Add(GetComponent<Collider>());
+            RegisterCollider(collider);
         }
 
         obj.RegisterFieldUpdateHandler("friction", HandleUpdate);
         obj.RegisterFieldUpdateHandler("restitution", HandleUpdate);
+        obj.RegisterFieldUpdateHandler("isTangible", HandleUpdate);
+        obj.RegisterFieldUpdateHandler("isStatic", HandleUpdate);
 
         HandleUpdate();
     }
@@ -100,7 +105,27 @@ public class ColliderSync : MonoBehaviour
             var collider = go.AddComponent<MeshCollider>();
             collider.sharedMaterial = material;
             addedColliders.Add(collider);
+            RegisterCollider(collider);
         }
+    }
+
+    void RegisterCollider(Collider collider)
+    {
+        SetTrigger(collider);
+        addedColliders.Add(collider);
+    }
+
+    void SetTrigger(Collider collider)
+    {
+        // FIXME: Non-convex MeshCollider cannot be a trigger collider
+        // See: https://forum.unity.com/threads/how-to-enable-trigger-on-a-mesh-collider.347428/#post-2248431
+        if (collider is MeshCollider meshCollider)
+        {
+            // FIXME:
+            //meshCollider.convex = !isTangible;
+            return;
+        }
+        collider.isTrigger = !isTangible;
     }
 
     void HandleUpdate()
@@ -129,11 +154,44 @@ public class ColliderSync : MonoBehaviour
         {
             material.bounciness = restitution;
         }
+
+        if (obj.TryGetFieldPrimitive("isTangible", out int isTangibleInt))
+        {
+            isTangible = isTangibleInt != 0;
+            foreach (var collider in addedColliders)
+            {
+                SetTrigger(collider);
+            }
+        }
+
+        /*
+        if (obj.TryGetFieldPrimitive("isStatic", out int isStaticInt))
+        {
+            isStatic = isStaticInt != 0;
+        }
+        */
+        // Currently, isStatic is disabled because it is not correctly working
+        // (does not work for trigger and non-trigger collision?)
+        isStatic = false;
+        var rb = GetComponent<Rigidbody>();
+        if (isStatic && rb != null && rb.isKinematic == true)  // static
+        {
+            Destroy(rb);
+        }
+        else if (!isStatic && rb == null)  // moving
+        {
+            rb = gameObject.AddComponent<Rigidbody>();
+            rb.isKinematic = true;
+        }
+        // If a rigidbody is already attached (probably physics tag is present),
+        // do not set isKinematic (not to disturb physics)
     }
 
     public void OnDestroy()
     {
         obj.DeleteFieldUpdateHandler("friction", HandleUpdate);
         obj.DeleteFieldUpdateHandler("restitution", HandleUpdate);
+        obj.DeleteFieldUpdateHandler("isTangible", HandleUpdate);
+        obj.DeleteFieldUpdateHandler("isStatic", HandleUpdate);
     }
 }

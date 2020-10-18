@@ -25,7 +25,7 @@ public class WasmRunner : IDisposable
     Dictionary<(string, string), Delegate> importDelegates = new Dictionary<(string, string), Delegate>();
 
     Stopwatch stopwatch = new Stopwatch();
-    const long TimeLimitMilliseconds = 10;
+    const long TimeLimitMilliseconds = 1000;    // Temporarily increased to avoid crash
 
     public WasmRunner()
     {

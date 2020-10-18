@@ -10,11 +10,19 @@ public class RigidbodySync : MonoBehaviour
     public void Initialize(SyncObject obj)
     {
         this.obj = obj;
-        var rb = gameObject.AddComponent<Rigidbody>();
+        if (GetComponent<Rigidbody>() == null)
+        {
+            gameObject.AddComponent<Rigidbody>();
+        }
+        var rb = GetComponent<Rigidbody>();
+        rb.isKinematic = false;
+
         obj.BeforeSync += OnBeforeSync;
         obj.RegisterFieldUpdateHandler("mass", HandleMassUpdate);
         obj.RegisterFieldUpdateHandler("velocity", HandleUpdate);
         obj.RegisterFieldUpdateHandler("angularVelocity", HandleUpdate);
+
+        obj.SetField("isTangible", new Primitive<int>(1));  // physics object is always tangible
 
         HandleMassUpdate();
         HandleUpdate();
