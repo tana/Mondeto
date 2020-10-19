@@ -12,8 +12,6 @@ public class ObjectWasmRunner : WasmRunner
 
     public List<IValue> valueList = new List<IValue>();
 
-    Queue<(Logger.LogType, string, string)> logQueue = new Queue<(Logger.LogType, string, string)>();
-
     ConcurrentQueue<uint> createdObjects = new ConcurrentQueue<uint>();
 
     const int Success = 0, Failure = -1;
@@ -55,8 +53,6 @@ public class ObjectWasmRunner : WasmRunner
         AddImportFunction("mondeto", "get_world_coordinate", (Func<InstanceContext, int, int, int, int, int, int, int, int, int>)GetWorldCoordinate);
 
         Object = obj;
-
-        Object.AfterSync += OutputLogs;
     }
 
     public void RegisterHandlers()
@@ -111,15 +107,7 @@ public class ObjectWasmRunner : WasmRunner
 
     void CallUpdateFunction(SyncObject obj, float dt)
     {
-        try
-        {
-            CallWasmFunc("update", dt);
-        }
-        catch (InvalidOperationException e)
-        {
-            OutputLogs(obj, 0); // Ensure log is printed even if CallWasmFunc fails
-            obj.WriteErrorLog("ObjectWasmRunner", e.ToString());
-        }
+        CallWasmFunc("update", dt);
     }
 
     // void request_new_object()
@@ -355,8 +343,6 @@ public class ObjectWasmRunner : WasmRunner
             // TODO: error handling of invalid value ID
             IValue[] args = argValueIds.Select(vid => FindValue(vid)).ToArray();
 
-            WriteLog(Logger.LogType.Debug, "ObjectWasmRunner", $"{receiver} {name} {args}");
-            // FIXME: これが内部でWriteLogしているのでWASMがtrapする
             receiver.SendEvent(name, Object.Id, args, localOnly != 0);
 
             return Success;
@@ -432,16 +418,7 @@ public class ObjectWasmRunner : WasmRunner
 
     public override void WriteLog(Logger.LogType type, string component, string message)
     {
-        logQueue.Enqueue((type, component, message));
-    }
-
-    void OutputLogs(SyncObject obj, float dt)
-    {
-        while (logQueue.Count > 0)
-        {
-            var (type, component, message) = logQueue.Dequeue();
-            obj.WriteLog(type, component, message);
-        }
+        Object.WriteLog(type, component, message);
     }
 
     string ReadStringFromWasm(Memory memory, int ptr, int len)
@@ -458,6 +435,5 @@ public class ObjectWasmRunner : WasmRunner
     public override void Dispose()
     {
         base.Dispose();
-        Object.AfterSync -= OutputLogs;
     }
 }

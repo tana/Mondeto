@@ -35,9 +35,6 @@ public class Logger
 
     public static void Write(LogType type, string component, string msg)
     {
-        string line = $"[{LogTypeToString(type)}] {component}: {msg}";
-        Console.WriteLine(line);
-
         OnLog?.Invoke(type, component, msg);
     }
     
