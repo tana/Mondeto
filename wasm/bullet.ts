@@ -17,6 +17,6 @@ export function update(dt: f32): void {
 export function handle_collisionStart(sender: u32): void {
     if (object_is_original(get_object_id())) {
         sendEvent(sender, "bulletHit", [], true);
-        //delete_self();
+        delete_self();
     }
 }

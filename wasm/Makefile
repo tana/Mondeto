@@ -1,6 +1,6 @@
 .PHONY: shooting-game
 
-shooting-game: raygun.wasm bullet.wasm
+shooting-game: raygun.wasm bullet.wasm target.wasm
 
 ASFLAGS = --runtime half
 %.wasm: %.ts
@@ -9,3 +9,5 @@ ASFLAGS = --runtime half
 raygun.wasm: raygun.ts mondeto.ts
 
 bullet.wasm: bullet.ts mondeto.ts
+
+target.wasm: target.ts mondeto.ts
