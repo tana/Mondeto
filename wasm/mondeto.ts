@@ -43,6 +43,8 @@ export declare function make_vec(x: f32, y: f32, z: f32): u32;
 export declare function make_quat(w: f32, x: f32, y: f32, z: f32): u32;
 export declare function make_string(ptr: usize, len: usize): u32;
 export declare function make_sequence(elems_ptr: usize, elems_len: usize): u32;
+// Event-related
+export declare function send_event(receiver_id: u32, name_ptr: usize, name_len: usize, args_ptr: usize, args_len: usize, local_only: i32): i32;
 // Other
 export declare function get_world_coordinate(obj_id: u32, vx_ptr: usize, vy_ptr: usize, vz_ptr: usize, qw_ptr: usize, qx_ptr: usize, qy_ptr: usize, qz_ptr: usize): i32;
 
@@ -274,4 +276,20 @@ export function getWorldCoordinate(objID: u32): Transform | null {
     } else {
         return null;
     }
+}
+
+export function sendEvent(receiverID: u32, name: string, args: u32[], localOnly: boolean = false): i32 {
+    // https://www.assemblyscript.org/stdlib/string.html#encoding-api
+    const buf = String.UTF8.encode(name);
+    // https://www.assemblyscript.org/runtime.html#interface
+    // https://www.assemblyscript.org/stdlib/arraybuffer.html#constructor
+    const namePtr = changetype<usize>(buf);
+    const nameLen = buf.byteLength;
+
+    // AssemblyScript array contains an ArrayBuffer
+    // See: https://www.assemblyscript.org/memory.html#internals
+    const argsPtr = changetype<usize>(args.buffer);
+    const argsLen = args.length;
+
+    return send_event(receiverID, namePtr, nameLen, argsPtr, argsLen, localOnly ? 1 : 0);
 }

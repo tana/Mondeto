@@ -49,6 +49,8 @@ public class ObjectWasmRunner : WasmRunner
         AddImportFunction("mondeto", "make_quat", (Func<InstanceContext, float, float, float, float, int>)MakeQuat);
         AddImportFunction("mondeto", "make_string", (Func<InstanceContext, int, int, int>)MakeString);
         AddImportFunction("mondeto", "make_sequence", (Func<InstanceContext, int, int, int>)MakeSequence);
+        // Event-related functions
+        AddImportFunction("mondeto", "send_event", (Func<InstanceContext, int, int, int, int, int, int, int>)SendEvent);
         // Other functions
         AddImportFunction("mondeto", "get_world_coordinate", (Func<InstanceContext, int, int, int, int, int, int, int, int, int>)GetWorldCoordinate);
 
@@ -109,7 +111,15 @@ public class ObjectWasmRunner : WasmRunner
 
     void CallUpdateFunction(SyncObject obj, float dt)
     {
-        CallWasmFunc("update", dt);
+        try
+        {
+            CallWasmFunc("update", dt);
+        }
+        catch (InvalidOperationException e)
+        {
+            OutputLogs(obj, 0); // Ensure log is printed even if CallWasmFunc fails
+            obj.WriteErrorLog("ObjectWasmRunner", e.ToString());
+        }
     }
 
     // void request_new_object()
@@ -325,15 +335,36 @@ public class ObjectWasmRunner : WasmRunner
     {
         Memory memory = ctx.GetMemory(0);
         
-        // boundary check
-        if (elemsPtr < 0 || elemsLen + sizeof(int) * elemsLen >= memory.DataLength) throw new Exception();  // TODO: change exception type
-        // read value ID array (read as int[] because Marshal.Copy does not support uint[])
-        var valueIds = new int[elemsLen];
-        Marshal.Copy(WasmToIntPtr(memory, elemsPtr), valueIds, 0, elemsLen);
+        // read value ID array
+        uint[] valueIds = ReadUIntArrayFromWasm(memory, elemsPtr, elemsLen);
 
         // TODO: error handling of invalid value ID
-        List<IValue> elems = valueIds.Select(vid => FindValue((uint)vid)).ToList();
+        List<IValue> elems = valueIds.Select(vid => FindValue(vid)).ToList();
         return (int)RegisterValue(new Sequence(elems));
+    }
+    
+    // i32 send_event(i32 receiver_id, i32 name_ptr, i32 name_len, i32 args_ptr, i32 args_len, i32 local_only)
+    int SendEvent(InstanceContext ctx, int receiverId, int namePtr, int nameLen, int argsPtr, int argsLen, int localOnly)
+    {
+        if (Object.Node.Objects.TryGetValue((uint)receiverId, out SyncObject receiver))
+        {
+            Memory memory = ctx.GetMemory(0);
+            string name = ReadStringFromWasm(memory, namePtr, nameLen);
+            uint[] argValueIds = ReadUIntArrayFromWasm(memory, argsPtr, argsLen);
+
+            // TODO: error handling of invalid value ID
+            IValue[] args = argValueIds.Select(vid => FindValue(vid)).ToArray();
+
+            WriteLog(Logger.LogType.Debug, "ObjectWasmRunner", $"{receiver} {name} {args}");
+            // FIXME: これが内部でWriteLogしているのでWASMがtrapする
+            receiver.SendEvent(name, Object.Id, args, localOnly != 0);
+
+            return Success;
+        }
+        else
+        {
+            return Failure; // Cannot find receiving object
+        }
     }
 
     // i32 get_world_coordinate(i32 obj_id, i32 vx_ptr, i32 vy_ptr, i32 vz_ptr, i32 qw_ptr, i32 qx_ptr, i32 qy_ptr, i32 qz_ptr)
@@ -387,6 +418,16 @@ public class ObjectWasmRunner : WasmRunner
         Marshal.Copy(wxyz, 3, WasmToIntPtr(memory, zPtr), 1);
 
         return true;
+    }
+
+    uint[] ReadUIntArrayFromWasm(Memory memory, int elemsPtr, int elemsLen)
+    {
+        // boundary check
+        if (elemsPtr < 0 || elemsLen + sizeof(int) * elemsLen >= memory.DataLength) throw new Exception();  // TODO: change exception type
+        // read array (read as int[] because Marshal.Copy does not support uint[])
+        var intArray = new int[elemsLen];
+        Marshal.Copy(WasmToIntPtr(memory, elemsPtr), intArray, 0, elemsLen);
+        return intArray.Select(intValue => (uint)intValue).ToArray();
     }
 
     public override void WriteLog(Logger.LogType type, string component, string message)
