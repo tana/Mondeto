@@ -70,7 +70,7 @@ public class ObjectWasmRunner : WasmRunner
             // Register as a handler
             // TODO: unregister
             Object.RegisterEventHandler(eventName, (sender, args) => {
-                CallWasmFunc(funcName, (int)sender);
+                CallWasmFuncWithExceptionHandling(funcName, (int)sender);
             });
         }
 
@@ -108,7 +108,19 @@ public class ObjectWasmRunner : WasmRunner
 
     void CallUpdateFunction(SyncObject obj, float dt)
     {
-        CallWasmFunc("update", dt);
+        CallWasmFuncWithExceptionHandling("update", dt);
+    }
+
+    void CallWasmFuncWithExceptionHandling(string name, params object[] args)   // TODO: rename
+    {
+        try
+        {
+            CallWasmFunc(name, args);
+        }
+        catch (Exception e)
+        {
+            Object.WriteErrorLog("ObjectWasmRunner", e.ToString());
+        }
     }
 
     // void request_new_object()
