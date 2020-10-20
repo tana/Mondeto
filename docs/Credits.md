@@ -65,13 +65,6 @@ There are some modified files (paths are relative to root directory of UnityChan
 ### WebAssembly for .NET
 - [LICENSE](ThirdPartyLicenses/dotnet-webassembly/LICENSE)
 
-### WasmerSharp
-- [LICENSE](ThirdPartyLicenses/WasmerSharp/LICENSE)
-
-### Wasmer
-- [LICENSE](ThirdPartyLicenses/Wasmer/LICENSE)
-- [ATTRIBUTIONS.md](ThirdPartyLicenses/Wasmer/ATTRIBUTIONS.md)
-
 ### Unity builtin shaders
 - [license.txt](ThirdPartyLicenses/UnityBuiltinShaders/license.txt)
 
