@@ -198,23 +198,29 @@ public class WasmRunner : IDisposable
 
         var stream = new MemoryStream();
 
-        unsafe
+        int ioVecSize = Marshal.SizeOf<WasiCIoVec>();
+
+        // Check boundary of WASM memory
+        if (ptrIoVecs + numIoVecs * ioVecSize >= Instance.Exports.memory.Size)
         {
-            // Check boundary of WASM memory
-            if (ptrIoVecs + numIoVecs * sizeof(WasiCIoVec) >= Instance.Exports.memory.Size)
+            throw new Exception();  // TODO:
+        }
+
+        for (int i = 0; i < numIoVecs; i++)
+        {
+            IntPtr ptr = WasmToIntPtr(Instance.Exports.memory, ptrIoVecs) + ioVecSize * i;
+            var vec = Marshal.PtrToStructure<WasiCIoVec>(ptr);
+
+            int size = vec.Size;
+            // boundary check
+            if (vec.Buf + vec.Size >= Instance.Exports.memory.Size)
             {
                 throw new Exception();  // TODO:
             }
-
-            var vecs = (WasiCIoVec*)WasmToIntPtr(Instance.Exports.memory, ptrIoVecs);
-            for (int i = 0; i < numIoVecs; i++)
-            {
-                int size = vecs[i].Size;
-                byte[] array = new byte[size];
-                Marshal.Copy(WasmToIntPtr(Instance.Exports.memory, vecs[i].Buf), array, 0, size);
-                stream.Write(array, 0, size);
-                bytesWritten += size;
-            }
+            byte[] array = new byte[size];
+            Marshal.Copy(WasmToIntPtr(Instance.Exports.memory, vec.Buf), array, 0, size);
+            stream.Write(array, 0, size);
+            bytesWritten += size;
         }
 
         Marshal.WriteInt32(WasmToIntPtr(Instance.Exports.memory, ptrNWritten), bytesWritten);
