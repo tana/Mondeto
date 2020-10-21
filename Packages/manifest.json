@@ -3,12 +3,14 @@
     {
       "name": "Microsoft Mixed Reality",
       "url": "https://pkgs.dev.azure.com/aipmr/MixedReality-Unity-Packages/_packaging/Unity-packages/npm/registry/",
-      "scopes": ["com.microsoft.mixedreality"]
+      "scopes": [
+        "com.microsoft.mixedreality"
+      ]
     }
   ],
   "dependencies": {
-    "com.microsoft.mixedreality.webrtc": "2.0.0",
     "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
+    "com.microsoft.mixedreality.webrtc": "2.0.0",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",
     "com.unity.ads": "3.4.7",
@@ -16,8 +18,6 @@
     "com.unity.collab-proxy": "1.2.16",
     "com.unity.ide.rider": "1.1.4",
     "com.unity.ide.vscode": "1.2.1",
-    "com.unity.probuilder": "4.2.3",
-    "com.unity.progrids": "3.0.3-preview.6",
     "com.unity.purchasing": "2.0.6",
     "com.unity.test-framework": "1.1.14",
     "com.unity.textmeshpro": "2.0.1",

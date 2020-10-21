@@ -17,7 +17,7 @@ public class SceneLoader
     {
         this.node = node;
 
-        typeEstimator = new MimeTypeEstimator("config/mime.types");
+        typeEstimator = new MimeTypeEstimator(Settings.Instance.MimeTypesPath);
     }
 
     public async Task Load(TextReader reader)
@@ -199,7 +199,7 @@ public class SceneLoader
     private BlobHandle YamlHandleLoadFile(YamlNode yaml)
     {
         // TODO: explicit mime type i.e. !load_file ["foo.jpg", "image/jpeg"]
-        string path = YamlExpect<YamlScalarNode>(yaml).Value;
+        string path = Settings.Instance.SceneRoot + "/" +  YamlExpect<YamlScalarNode>(yaml).Value;
         string mimeType = typeEstimator.EstimateFromFilename(path);
         byte[] data = File.ReadAllBytes(path);
 

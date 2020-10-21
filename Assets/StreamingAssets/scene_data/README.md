@@ -1,0 +1,10 @@
+- `slope-and-stage.glb`
+    - Self-made using Blender (`../../../blender/slope-and-stage.blend`).
+- `halfpipe.glb`
+    - Self-made using Blender (`../../../blender/halfpipe.blend`).
+- `racket.glb`
+    - Self-made using Blender (`../../../blender/racket.blend`).
+- `raygun.glb`
+    - Self-made using Blender (`../../../blender/raygun.blend`).
+- `beam.wav`, `explosion.wav`
+    - Self-made.
