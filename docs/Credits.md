@@ -45,11 +45,6 @@ The license files (in English and Japanese, full and summarized versions) are in
 There are some modified files (paths are relative to root directory of UnityChan asset).
 - `Animators/UnityChanLocomotions_IK.controller`: Based on `Animators/UnityChanLocomotions.controller`, but IK Pass is enabled.
 
-### Airplane (glb model)
-- [Airplane](https://poly.google.com/view/8VysVKMXN2J)
-- Author is [Poly by Google](https://poly.google.com/user/4aEd8rQgKu2) and licensed under [CC-BY](https://creativecommons.org/licenses/by/3.0/legalcode).
-- Downloaded in OBJ format then converted into GLB using Blender.
-
 ### System.Threading.Channels
 - [LICENSE.txt](ThirdPartyLicenses/System.Threading.Channels/LICENSE.txt)
 - [THIRD-PARTY-NOTICES.txt](ThirdPartyLicenses/System.Threading.Channels/THIRD-PARTY-NOTICES.txt)

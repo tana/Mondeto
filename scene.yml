@@ -36,11 +36,6 @@ objects:
     color: !vec [1, 0, 0]
     mass: 10.0  # ".0" is necessary to indicate it is float
     tags: [sphere, material, collider, physics]
-  # GLB loading
-  - position: !vec [-4, 1, 3]
-    rotation: !euler [0, 0, 0]
-    tags: [model, collider]
-    model: !load_file "scene_data/PUSHILIN_Plane.glb"
   # Object hierarchy test (small, non-colliding ball as a child of the red ball)
   - parent: !ref redBall
     position: !vec [0, 1, 0]
