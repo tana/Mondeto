@@ -8,7 +8,7 @@
       "hash": "93df9d76937338ed482da14c043cb5d97a0978cb"
     },
     "com.microsoft.mixedreality.webrtc": {
-      "version": "2.0.0",
+      "version": "2.0.2",
       "depth": 0,
       "source": "registry",
       "dependencies": {},
