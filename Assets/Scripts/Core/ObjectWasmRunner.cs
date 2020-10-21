@@ -40,6 +40,7 @@ public class ObjectWasmRunner : WasmRunner
         AddImportFunction("mondeto", "read_double", (Func<int, double>)ReadPrimitive<double>);
         AddImportFunction("mondeto", "get_string_length", (Func<int, int>)GetStringLength);
         AddImportFunction("mondeto", "read_string", (Func<int, int, int, int>)ReadString);
+        AddImportFunction("mondeto", "read_object_ref", (Func<int, int>)ReadObjectRef);
         AddImportFunction("mondeto", "make_int", (Func<int, int>)MakePrimitive<int>);
         AddImportFunction("mondeto", "make_long", (Func<long, int>)MakePrimitive<long>);
         AddImportFunction("mondeto", "make_float", (Func<float, int>)MakePrimitive<float>);
@@ -48,6 +49,7 @@ public class ObjectWasmRunner : WasmRunner
         AddImportFunction("mondeto", "make_quat", (Func<float, float, float, float, int>)MakeQuat);
         AddImportFunction("mondeto", "make_string", (Func<int, int, int>)MakeString);
         AddImportFunction("mondeto", "make_sequence", (Func<int, int, int>)MakeSequence);
+        AddImportFunction("mondeto", "make_object_ref", (Func<int, int>)MakeObjectRef);
         // Event-related functions
         AddImportFunction("mondeto", "send_event", (Func<int, int, int, int, int, int, int>)SendEvent);
         // Other functions
@@ -281,6 +283,13 @@ public class ObjectWasmRunner : WasmRunner
         return len;
     }
 
+    // i32 read_object_ref(i32 value_id)
+    int ReadObjectRef(int valueId)
+    {
+        var val = (ObjectRef)FindValue((uint)valueId);
+        return (int)val.Id;
+    }
+
     // i32 make_int(i32 value)
     // i32 make_long(i64 value)
     // i32 make_float(f32 value)
@@ -322,6 +331,12 @@ public class ObjectWasmRunner : WasmRunner
         // TODO: error handling of invalid value ID
         List<IValue> elems = valueIds.Select(vid => FindValue(vid)).ToList();
         return (int)RegisterValue(new Sequence(elems));
+    }
+
+    // i32 make_object_ref(i32 obj_id)
+    int MakeObjectRef(int objId)
+    {
+        return (int)RegisterValue(new ObjectRef { Id = (uint)objId });
     }
     
     // i32 send_event(i32 receiver_id, i32 name_ptr, i32 name_len, i32 args_ptr, i32 args_len, i32 local_only)
