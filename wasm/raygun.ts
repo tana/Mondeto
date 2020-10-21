@@ -1,6 +1,6 @@
 import "wasi"
 
-import { getField, getQuat, getWorldCoordinate, get_new_object, get_object_id, makeQuat, makeSequence, makeString, makeVec, make_int, make_vec, objectSetField, object_is_original, request_new_object, setField, Vec } from "./mondeto"
+import { getField, readQuat, getWorldCoordinate, get_new_object, get_object_id, makeQuat, makeSequence, makeString, makeVec, make_int, make_vec, objectSetField, object_is_original, request_new_object, setField, Vec } from "./mondeto"
 
 export function init(): void {
     // TODO: this trace causes crash, probably because a bug in ObjectWasmRunner.

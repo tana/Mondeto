@@ -27,14 +27,14 @@ export declare function object_get_field(obj_id: u32, name_ptr: usize, name_len:
 export declare function object_set_field(obj_id: u32, name_ptr: usize, name_len: usize, value_id: u32): i32;
 // IValue-related
 export declare function get_type(value_id: u32): TypeCode;
-export declare function get_vec(value_id: u32, x_ptr: usize, y_ptr: usize, z_ptr: usize): void;
-export declare function get_quat(value_id: u32, w_ptr: usize, x_ptr: usize, y_ptr: usize, z_ptr: usize): void;
-export declare function get_int(value_id: u32): i32;
-export declare function get_long(value_id: u32): i64;
-export declare function get_float(value_id: u32): f32;
-export declare function get_double(value_id: u32): f64;
+export declare function read_vec(value_id: u32, x_ptr: usize, y_ptr: usize, z_ptr: usize): void;
+export declare function read_quat(value_id: u32, w_ptr: usize, x_ptr: usize, y_ptr: usize, z_ptr: usize): void;
+export declare function read_int(value_id: u32): i32;
+export declare function read_long(value_id: u32): i64;
+export declare function read_float(value_id: u32): f32;
+export declare function read_double(value_id: u32): f64;
 export declare function get_string_length(value_id: u32): usize;
-export declare function get_string(value_id: u32, ptr: usize, max_len: usize): i32;
+export declare function read_string(value_id: u32, ptr: usize, max_len: usize): i32;
 export declare function make_int(value: i32): u32;
 export declare function make_long(value: i64): u32;
 export declare function make_float(value: f32): u32;
@@ -195,10 +195,10 @@ export function objectSetField(objId: u32, name: string, valueID: u32): i32 {
     return object_set_field(objId, changetype<usize>(buf), buf.byteLength, valueID);
 }
 
-export function getString(valueID: u32): string {
+export function readString(valueID: u32): string {
     const len = get_string_length(valueID);
     const buf = new ArrayBuffer(len as i32);
-    get_string(valueID, changetype<usize>(buf), buf.byteLength);
+    read_string(valueID, changetype<usize>(buf), buf.byteLength);
     // https://www.assemblyscript.org/stdlib/string.html#encoding-api
     return String.UTF8.decode(buf, false);
 }
@@ -211,7 +211,7 @@ export function makeString(str: string): u32 {
     return make_string(changetype<usize>(buf), buf.byteLength);
 }
 
-export function getVec(valueID: u32): Vec {
+export function readVec(valueID: u32): Vec {
     const vec = new Vec(0, 0, 0);
     // https://www.assemblyscript.org/environment.html#sizes-and-alignments
     // https://www.assemblyscript.org/interoperability.html#class-layout
@@ -219,12 +219,12 @@ export function getVec(valueID: u32): Vec {
     const xOffset = offsetof<Vec>("x");
     const yOffset = offsetof<Vec>("y");
     const zOffset = offsetof<Vec>("z");
-    get_vec(valueID, ptr + xOffset, ptr + yOffset, ptr + zOffset);
+    read_vec(valueID, ptr + xOffset, ptr + yOffset, ptr + zOffset);
 
     return vec;
 }
 
-export function getQuat(valueID: u32): Quat {
+export function readQuat(valueID: u32): Quat {
     const quat = new Quat();
     // https://www.assemblyscript.org/environment.html#sizes-and-alignments
     // https://www.assemblyscript.org/interoperability.html#class-layout
@@ -233,7 +233,7 @@ export function getQuat(valueID: u32): Quat {
     const xOffset = offsetof<Quat>("x");
     const yOffset = offsetof<Quat>("y");
     const zOffset = offsetof<Quat>("z");
-    get_quat(valueID, ptr + wOffset, ptr + xOffset, ptr + yOffset, ptr + zOffset);
+    read_quat(valueID, ptr + wOffset, ptr + xOffset, ptr + yOffset, ptr + zOffset);
 
     return quat;
 }

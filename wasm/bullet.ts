@@ -1,6 +1,6 @@
 import "wasi"
 
-import { delete_self, getField, getVec, get_object_id, makeVec, object_is_original, sendEvent, setField } from "./mondeto"
+import { delete_self, getField, readVec, get_object_id, makeVec, object_is_original, sendEvent, setField } from "./mondeto"
 
 var lifetime: f32 = 2.0;
 
@@ -14,9 +14,9 @@ export function update(dt: f32): void {
         delete_self();  // Disappear in 2 seconds
     }
 
-    const velocity = getVec(getField("velocity") as u32);
+    const velocity = readVec(getField("velocity") as u32);
     // Fly at constant velocity
-    let position = getVec(getField("position") as u32);
+    let position = readVec(getField("position") as u32);
     position += velocity.multiply(dt);
     setField("position", makeVec(position));
 }

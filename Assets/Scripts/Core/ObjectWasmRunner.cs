@@ -32,14 +32,14 @@ public class ObjectWasmRunner : WasmRunner
         AddImportFunction("mondeto", "object_set_field", (Func<int, int, int, int, int>)ObjectSetField);
         // IValue-related functions
         AddImportFunction("mondeto", "get_type", (Func<int, int>)GetValueType);
-        AddImportFunction("mondeto", "get_vec", (Action<int, int, int, int>)GetVec);
-        AddImportFunction("mondeto", "get_quat", (Action<int, int, int, int, int>)GetQuat);
-        AddImportFunction("mondeto", "get_int", (Func<int, int>)GetPrimitive<int>);
-        AddImportFunction("mondeto", "get_long", (Func<int, long>)GetPrimitive<long>);
-        AddImportFunction("mondeto", "get_float", (Func<int, float>)GetPrimitive<float>);
-        AddImportFunction("mondeto", "get_double", (Func<int, double>)GetPrimitive<double>);
+        AddImportFunction("mondeto", "read_vec", (Action<int, int, int, int>)ReadVec);
+        AddImportFunction("mondeto", "read_quat", (Action<int, int, int, int, int>)ReadQuat);
+        AddImportFunction("mondeto", "read_int", (Func<int, int>)ReadPrimitive<int>);
+        AddImportFunction("mondeto", "read_long", (Func<int, long>)ReadPrimitive<long>);
+        AddImportFunction("mondeto", "read_float", (Func<int, float>)ReadPrimitive<float>);
+        AddImportFunction("mondeto", "read_double", (Func<int, double>)ReadPrimitive<double>);
         AddImportFunction("mondeto", "get_string_length", (Func<int, int>)GetStringLength);
-        AddImportFunction("mondeto", "get_string", (Func<int, int, int, int>)GetString);
+        AddImportFunction("mondeto", "read_string", (Func<int, int, int, int>)ReadString);
         AddImportFunction("mondeto", "make_int", (Func<int, int>)MakePrimitive<int>);
         AddImportFunction("mondeto", "make_long", (Func<long, int>)MakePrimitive<long>);
         AddImportFunction("mondeto", "make_float", (Func<float, int>)MakePrimitive<float>);
@@ -237,25 +237,25 @@ public class ObjectWasmRunner : WasmRunner
         return (int)FindValue((uint)valueId).Type;
     }
 
-    // void get_vec(i32 value_id, i32 x_ptr, i32 y_ptr, i32 z_ptr)
-    void GetVec(int valueId, int xPtr, int yPtr, int zPtr)
+    // void read_vec(i32 value_id, i32 x_ptr, i32 y_ptr, i32 z_ptr)
+    void ReadVec(int valueId, int xPtr, int yPtr, int zPtr)
     {
         var vec = (Vec)FindValue((uint)valueId);
         WriteVecToWasm(vec, Instance.Exports.memory, xPtr, yPtr, zPtr);
     }
 
-    // void get_quat(i32 value_id, i32 w_ptr, i32 x_ptr, i32 y_ptr, i32 z_ptr)
-    void GetQuat(int valueId, int wPtr, int xPtr, int yPtr, int zPtr)
+    // void read_quat(i32 value_id, i32 w_ptr, i32 x_ptr, i32 y_ptr, i32 z_ptr)
+    void ReadQuat(int valueId, int wPtr, int xPtr, int yPtr, int zPtr)
     {
         var quat = (Quat)FindValue((uint)valueId);
         WriteQuatToWasm(quat, Instance.Exports.memory, wPtr, xPtr, yPtr, zPtr);
     }
 
-    // i32 get_int(i32 value_id)
-    // i64 get_long(i32 value_id)
-    // f32 get_float(i32 value_id)
-    // f64 get_double(i32 value_id)
-    T GetPrimitive<T>(int valueId)
+    // i32 reaed_int(i32 value_id)
+    // i64 reaed_long(i32 value_id)
+    // f32 reaed_float(i32 value_id)
+    // f64 reaed_double(i32 value_id)
+    T ReadPrimitive<T>(int valueId)
     {
         // TODO: error check
         var val = (Primitive<T>)FindValue((uint)valueId);
@@ -269,8 +269,8 @@ public class ObjectWasmRunner : WasmRunner
         return Encoding.UTF8.GetByteCount(val.Value);
     }
 
-    // i32 get_string(i32 value_id, i32 ptr, i32 max_len)
-    int GetString(int valueId, int ptr, int maxLen)
+    // i32 read_string(i32 value_id, i32 ptr, i32 max_len)
+    int ReadString(int valueId, int ptr, int maxLen)
     {
         var val = (Primitive<string>)FindValue((uint)valueId);
         byte[] bytes = Encoding.UTF8.GetBytes(val.Value);

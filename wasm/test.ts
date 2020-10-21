@@ -2,7 +2,7 @@
 // See https://www.assemblyscript.org/exports-and-imports.html#anatomy-of-a-module
 import "wasi"
 
-import { getField, getQuat, setField, make_vec, Vec, Quat, makeQuat, make_int, get_new_object, objectSetField, request_new_object, make_sequence, makeSequence, makeString, get_object_id, object_is_original } from "./mondeto"
+import { getField, readQuat, setField, make_vec, Vec, Quat, makeQuat, make_int, get_new_object, objectSetField, request_new_object, make_sequence, makeSequence, makeString, get_object_id, object_is_original } from "./mondeto"
 
 export function init(): void {
     trace("init");
@@ -36,7 +36,7 @@ export function handle_clickEnd(sender: u32): void {
 // Called every frame
 // Parameter dt is time difference in seconds.
 export function update(dt: f32): void {
-    const rotation = getQuat(getField("rotation") as u32);
+    const rotation = readQuat(getField("rotation") as u32);
     const newRotation = Quat.fromAngleAxis(2 * Mathf.PI * 0.25 * dt, new Vec(1, 1, 1)) * rotation;
     setField("rotation", makeQuat(newRotation));
 
