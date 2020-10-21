@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.IO;
 using UnityEngine;
 
 public class SyncBehaviour : MonoBehaviour
@@ -15,8 +16,6 @@ public class SyncBehaviour : MonoBehaviour
 
     // For adding objects not defined in YAML (e.g. player avatar)
     public GameObject[] OriginalObjects = new GameObject[0];
-
-    public string SceneYamlPath = "scene.yml";
 
     // For FPS measurement
     float countStartTime = -1;
@@ -36,6 +35,12 @@ public class SyncBehaviour : MonoBehaviour
     // Start is called before the first frame update
     async void Start()
     {
+        // Set directory settings
+        Settings.Instance.AvatarPath = Application.streamingAssetsPath + "/avatar.vrm";
+        Settings.Instance.MimeTypesPath = Application.streamingAssetsPath + "/config/mime.types";
+        Settings.Instance.SceneRoot = Application.streamingAssetsPath;
+        Settings.Instance.TempDirectory = Application.temporaryCachePath;
+
         // Tags that create new GameObject
         RegisterObjectTag("player", obj => Instantiate(PlayerPrefab));
         // primitives
@@ -130,7 +135,7 @@ public class SyncBehaviour : MonoBehaviour
         {
             // Load scene from YAML
             var loader = new SceneLoader(Node);
-            await loader.Load(new System.IO.StreamReader(SceneYamlPath));
+            await loader.Load(new System.IO.StreamReader(Settings.Instance.SceneRoot + "/scene.yml"));
         }
 
         // Add objects defined in Unity scene, such as player avatar
