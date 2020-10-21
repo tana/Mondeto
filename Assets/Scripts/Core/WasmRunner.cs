@@ -5,20 +5,18 @@ using System.Text;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
-using WasmerSharp;
+using WebAssembly;
+using WebAssembly.Runtime;
 
-// A class for compiling and running WASM using WasmerSharp
-// For usage of WasmerSharp library:
-//  https://migueldeicaza.github.io/WasmerSharp/articles/intro.html
-// However, dotnet-webassembly library is also used.
+// A class for compiling and running WASM using dotnet-webassembly
 //  https://github.com/RyanLamansky/dotnet-webassembly
 public class WasmRunner : IDisposable
 {
     public bool IsReady { get; private set; }
 
-    protected WebAssembly.Module module;
+    protected Module Module;
 
-    protected Instance instance;
+    protected Instance<Exports> Instance;
 
     List<byte> outBuf = new List<byte>();
 
@@ -27,28 +25,30 @@ public class WasmRunner : IDisposable
     Stopwatch stopwatch = new Stopwatch();
     const long TimeLimitMilliseconds = 1000;    // Temporarily increased to avoid crash
 
+    // Similar to WASI, the WASM linear memory have to be exported
+    //  https://github.com/WebAssembly/WASI/blob/master/design/application-abi.md
+    public abstract class Exports
+    {
+        // Exported memory can be used as a property
+        //  https://github.com/RyanLamansky/dotnet-webassembly/blob/8c60c4a657d9caf616f1926acf10adbf26a0980b/WebAssembly.Tests/MemoryReadTestBase.cs#L27
+        public abstract UnmanagedMemory memory { get; }
+    }
+
     public WasmRunner()
     {
-        // Prepare external (C#) functions
+        // Prepare external (C#) functExports.ions
         // Time limiting function
-        AddImportFunction("mondeto", "check_time", (Func<InstanceContext, int>)CheckTime);
+        AddImportFunction("mondeto", "check_time", (Func<int>)CheckTime);
         // WASI-compatible output for printf debugging
-        AddImportFunction("wasi_snapshot_preview1", "fd_write", (Func<InstanceContext, int, int, int, int, int>)WasiFdWrite);
+        AddImportFunction("wasi_snapshot_preview1", "fd_write", (Func<int, int, int, int, int>)WasiFdWrite);
         // WASI-compatible exit for AssemblyScript
-        AddImportFunction("wasi_snapshot_preview1", "proc_exit", (Action<InstanceContext, int>)WasiProcExit);
+        AddImportFunction("wasi_snapshot_preview1", "proc_exit", (Action<int>)WasiProcExit);
     }
 
     // Add imported (C#) function
     // Note: this method must be called before Load.
     protected void AddImportFunction(string module, string name, Delegate func)
     {
-        // WasmerSharp uses Marshal.GetFunctionPointerForDelegate.
-        //  ( https://github.com/migueldeicaza/WasmerSharp/blob/0f168586501cd9a22800c1b447f2625d0dbfbea3/WasmerSharp/Wasmer.cs#L1164 )
-        // When passing delegates to native codes using GetFunctionPointerForDelegate,
-        // it is necessary to store delegates in somewhere (other than in ImportFunction) in order to prevent deletion by GC.
-        // See:
-        //  https://docs.microsoft.com/en-us/dotnet/api/system.runtime.interopservices.marshal.getfunctionpointerfordelegate?view=netcore-3.1
-        //  https://stackoverflow.com/a/4907039
         importDelegates[(module, name)] = func;
     }
 
@@ -57,11 +57,12 @@ public class WasmRunner : IDisposable
         // Analyze WASM using dotnet-webassembly
         using (var stream = new MemoryStream(wasmBinary))
         {
-            module = WebAssembly.Module.ReadFromBinary(stream);
+            Module = WebAssembly.Module.ReadFromBinary(stream);
         }
 
         // Patch the module to allow time-limiting
-        WasmPatcher.PatchModule(module);
+        WasmPatcher.PatchModule(Module);
+        /*
         // Get patched WASM binary
         byte[] newBinary;
         using (var stream = new MemoryStream())
@@ -70,22 +71,32 @@ public class WasmRunner : IDisposable
             newBinary = stream.ToArray();
         }
 
-        /*
         using (var stream = new FileStream("patched.wasm", FileMode.Create))
         {
             module.WriteToBinary(stream);
         }
         */
 
-        // Imports are specified as an array
-        //  https://migueldeicaza.github.io/WasmerSharp/api/WasmerSharp/WasmerSharp.Instance.html
-        var imports = importDelegates.Select(pair => {
-            var (module, name) = pair.Key;
-            return new Import(module, name, new ImportFunction(pair.Value));
-        }).ToArray();
+        // Imported (C#) functions are specified as an dictionary of dictionaries
+        //  https://github.com/RyanLamansky/dotnet-webassembly/blob/8c60c4a657d9caf616f1926acf10adbf26a0980b/WebAssembly.Tests/FunctionImportTests.cs#L50-L52
+        //  https://github.com/RyanLamansky/dotnet-webassembly/blob/e827504c22d2695908de7dee0413d1a82f76aadd/WebAssembly/Runtime/ImportDictionary.cs#L10
+        var imports = new ImportDictionary();
+        foreach (var pair in importDelegates)
+        {
+            var (moduleName, funcName) = pair.Key;
+            var func = pair.Value;
 
-        // Load WASM from binary
-        instance = new Instance(newBinary, imports);
+            if (!imports.ContainsKey(moduleName))
+            {
+                imports[moduleName] = new Dictionary<string, RuntimeImport>();
+            }
+            imports[moduleName][funcName] = new FunctionImport(func);
+        }
+
+        // Compile WASM and create an instance
+        //  https://github.com/RyanLamansky/dotnet-webassembly/blob/8c60c4a657d9caf616f1926acf10adbf26a0980b/README.md#sample-create-and-execute-a-webassembly-file-in-memory
+        var instanceCreator = Module.Compile<Exports>();
+        Instance = instanceCreator(imports);
 
         WriteLog(Logger.LogType.Debug, "WasmRunner", "WASM instance created");
     }
@@ -121,42 +132,26 @@ public class WasmRunner : IDisposable
 
     protected WebAssembly.Export FindExport(string name, WebAssembly.ExternalKind kind)
     {
-        return module.Exports.FirstOrDefault(export => export.Name == name && export.Kind == kind);
+        return Module.Exports.FirstOrDefault(export => export.Name == name && export.Kind == kind);
     }
 
     protected void CallWasmFunc(string name, params object[] args)
     {
         if (!IsReady) throw new InvalidOperationException("WasmRunner is not ready");
 
-        // Convert C# objects to Wasmer values
-        //  https://migueldeicaza.github.io/WasmerSharp/api/WasmerSharp/WasmerSharp.WasmerValue.html
-        var wasmerArgs = args.Select<object, WasmerValue>(val => {
-            switch (val)
-            {
-                case int intVal:
-                    return intVal;
-                case long longVal:
-                    return longVal;
-                case float floatVal:
-                    return floatVal;
-                case double doubleVal:
-                    return doubleVal;
-                default:
-                    return 0;   // TODO:
-            }
-        }).ToArray();
-
         stopwatch.Reset();
         stopwatch.Start();
 
-        var results = new WasmerValue[1];
-        // Return value is success/failure of a call and error is stored in instance.LastError
-        // See: https://migueldeicaza.github.io/WasmerSharp/api/WasmerSharp/WasmerSharp.Instance.html#WasmerSharp_Instance_Call_System_String_WasmerSharp_WasmerValue___WasmerSharp_WasmerValue___
-        if (!instance.Call(name, wasmerArgs, results))
-        {
-            WriteLog(Logger.LogType.Debug, "WasmRunner", instance.LastError);
-            IsReady = false;
-        }
+        // Although dynamic can be used (as explained in the following URLs), we use reflections to call functions more dynamically.
+        //  https://github.com/RyanLamansky/dotnet-webassembly/blob/8c60c4a657d9caf616f1926acf10adbf26a0980b/README.md#sample-create-and-execute-a-webassembly-file-in-memory
+        //  https://github.com/RyanLamansky/dotnet-webassembly/blob/2683120c0df708404b44b89281e5843decb7347b/WebAssembly.Tests/CompilerTests.cs#L61
+        // Note (for understanding API of dotnet-webassembly):
+        //  In comments, there are some references to dotnet-webassembly test codes (WebAssembly.Tests).
+        //  These test codes use ToInstance that is not present in library (used only in their tests).
+        //      See: https://github.com/RyanLamansky/dotnet-webassembly/blob/6a19dd5816865ef06c5beb056384d11ef216ace9/WebAssembly.Tests/ModuleExtensions.cs#L85
+
+        var methodInfo = Instance.Exports.GetType().GetMethod(name, args.Select(arg => arg.GetType()).ToArray());
+        methodInfo.Invoke(Instance.Exports, args);
 
         stopwatch.Stop();
 
@@ -165,7 +160,7 @@ public class WasmRunner : IDisposable
 
     protected virtual void AfterCall() {}
 
-    int CheckTime(InstanceContext ctx)
+    int CheckTime()
     {
         if (stopwatch.ElapsedMilliseconds > TimeLimitMilliseconds)
         {
@@ -183,7 +178,7 @@ public class WasmRunner : IDisposable
     //  https://github.com/WebAssembly/WASI/blob/master/phases/snapshot/witx/wasi_snapshot_preview1.witx
     //  https://github.com/WebAssembly/WASI/blob/master/phases/snapshot/witx/typenames.witx
     //  https://github.com/bytecodealliance/wasmtime/blob/main/docs/WASI-tutorial.md#web-assembly-text-example
-    int WasiFdWrite(InstanceContext ctx, int fd, int ptrIoVecs, int numIoVecs, int ptrNWritten)
+    int WasiFdWrite(int fd, int ptrIoVecs, int numIoVecs, int ptrNWritten)
     {
         // It seems WASI uses STDIN=0, STDOUT=1, and STDERR=2
         //  https://github.com/WebAssembly/wasi-libc/blob/5a7ba74c1959691d79580a1c3f4d94bca94bab8e/libc-top-half/musl/include/unistd.h#L10-L12
@@ -195,33 +190,33 @@ public class WasmRunner : IDisposable
         int bytesWritten = 0;
 
         var stream = new MemoryStream();
-        
-        // Get memory from InstanceContext
-        //  https://migueldeicaza.github.io/WasmerSharp/api/WasmerSharp/WasmerSharp.InstanceContext.html
-        Memory memory = ctx.GetMemory(0);
 
-        unsafe
+        int ioVecSize = Marshal.SizeOf<WasiCIoVec>();
+
+        // Check boundary of WASM memory
+        if (ptrIoVecs + numIoVecs * ioVecSize >= Instance.Exports.memory.Size)
         {
-            // Check boundary of WASM memory
-            // Memory size (bytes) is acquired from DataLength
-            //  See: https://migueldeicaza.github.io/WasmerSharp/api/WasmerSharp/WasmerSharp.Memory.html
-            if (ptrIoVecs + numIoVecs * sizeof(WasiCIoVec) >= memory.DataLength)
+            throw new Exception();  // TODO:
+        }
+
+        for (int i = 0; i < numIoVecs; i++)
+        {
+            IntPtr ptr = WasmToIntPtr(Instance.Exports.memory, ptrIoVecs) + ioVecSize * i;
+            var vec = Marshal.PtrToStructure<WasiCIoVec>(ptr);
+
+            int size = vec.Size;
+            // boundary check
+            if (vec.Buf + vec.Size >= Instance.Exports.memory.Size)
             {
                 throw new Exception();  // TODO:
             }
-
-            var vecs = (WasiCIoVec*)WasmToIntPtr(memory, ptrIoVecs);
-            for (int i = 0; i < numIoVecs; i++)
-            {
-                int size = vecs[i].Size;
-                byte[] array = new byte[size];
-                Marshal.Copy(WasmToIntPtr(memory, vecs[i].Buf), array, 0, size);
-                stream.Write(array, 0, size);
-                bytesWritten += size;
-            }
+            byte[] array = new byte[size];
+            Marshal.Copy(WasmToIntPtr(Instance.Exports.memory, vec.Buf), array, 0, size);
+            stream.Write(array, 0, size);
+            bytesWritten += size;
         }
 
-        Marshal.WriteInt32(WasmToIntPtr(memory, ptrNWritten), bytesWritten);
+        Marshal.WriteInt32(WasmToIntPtr(Instance.Exports.memory, ptrNWritten), bytesWritten);
 
         stream.Position = 0;
         int byteInt;
@@ -246,22 +241,20 @@ public class WasmRunner : IDisposable
     // WASI-compatible proc_exit
     //  https://github.com/WebAssembly/WASI/blob/master/phases/snapshot/docs.md#-proc_exitrval-exitcode
     //  https://github.com/WebAssembly/WASI/blob/master/phases/snapshot/docs.md#-exitcode-u32
-    void WasiProcExit(InstanceContext ctx, int exitCode)
+    void WasiProcExit(int exitCode)
     {
         IsReady = false;
     }
 
-    protected IntPtr WasmToIntPtr(Memory memory, int wasmPtr)
+    protected IntPtr WasmToIntPtr(UnmanagedMemory memory, int wasmPtr)
     {
-        // Memory is accessed using IntPtr
-        //  https://migueldeicaza.github.io/WasmerSharp/api/WasmerSharp/WasmerSharp.Memory.html
-        return memory.Data + wasmPtr;
+        return memory.Start + wasmPtr;
     }
 
     // Boundary check of WASM pointer
-    protected bool CheckWasmPtr(Memory memory, int wasmPtr)
+    protected bool CheckWasmPtr(UnmanagedMemory memory, int wasmPtr)
     {
-        return (0 <= wasmPtr) && (wasmPtr < memory.DataLength);
+        return (0 <= wasmPtr) && (wasmPtr < memory.Size);
     }
 
     // WASI ciovec
@@ -278,7 +271,7 @@ public class WasmRunner : IDisposable
 
     public virtual void Dispose()
     {
-        instance.Dispose();
+        Instance.Dispose();
     }
 
     public virtual void WriteLog(Logger.LogType type, string component, string message)
