@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+using System.Linq;
 using System.IO;
+using System.IO.Compression;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -26,11 +26,54 @@ public class StartupController : MonoBehaviour
             SceneManager.LoadScene("WalkServer");
         }
 
-        Settings.Instance.AvatarPath = Application.streamingAssetsPath + "/avatar.vrm";
+        // Data directory settings
+        if (Application.platform == RuntimePlatform.Android)
+        {
+            // On Android (including Quest), streaming assets are inside the JAR file.
+            //  See: https://docs.unity3d.com/ja/2019.4/Manual/StreamingAssets.html
+            string extractedDir = Application.temporaryCachePath + "/assets";
+            if (!Directory.Exists(extractedDir))
+            {
+                // Extract from JAR if not already extracted
+                ExtractZipPartially(Application.dataPath, "assets/", extractedDir);
+            }
+
+            Settings.Instance.AvatarPath = extractedDir + "/avatar.vrm";
+            Settings.Instance.MimeTypesPath = extractedDir + "/config/mime.types";
+            Settings.Instance.SceneRoot = extractedDir;
+        }
+        else
+        {
+            Settings.Instance.AvatarPath = Application.streamingAssetsPath + "/avatar.vrm";
+            Settings.Instance.MimeTypesPath = Application.streamingAssetsPath + "/config/mime.types";
+            Settings.Instance.SceneRoot = Application.streamingAssetsPath;
+        }
+        Settings.Instance.TempDirectory = Application.temporaryCachePath;
 
         LoadSettings();
         OnToggleChanged();
         ShowAvatarInfo();
+    }
+
+    void ExtractZipPartially(string zipPath, string rootWithinZip, string destDir)
+    {
+        // Requires additional assembly reference settings in "csc.rsp" file.
+        //  See: https://forum.unity.com/threads/c-compression-zip-missing.577492/
+        //  See: https://docs.unity3d.com/2019.4/Documentation/Manual/dotnetProfileAssemblies.html
+        using (ZipArchive archive = ZipFile.OpenRead(zipPath))
+        {
+            Debug.Log("Opened zip");
+            // Because ZipArchiveEntry.FullName uses "/" for path separators in recent .NET,
+            // no conversion is needed (probably).
+            //  See: https://docs.microsoft.com/en-us/dotnet/framework/migration-guide/mitigation-ziparchiveentry-fullname-path-separator
+            foreach (ZipArchiveEntry entry in archive.Entries.Where(entry => entry.FullName.StartsWith(rootWithinZip)))
+            {
+                string destPath = destDir + "/" + entry.FullName.Substring(rootWithinZip.Length);
+                Debug.Log("Extracting into " + destPath);
+                Directory.CreateDirectory(Path.GetDirectoryName(destPath));
+                entry.ExtractToFile(destPath);
+            }
+        }
     }
 
     void LoadSettings()
