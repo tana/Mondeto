@@ -160,21 +160,29 @@
       },
       "url": "https://packages.unity.com"
     },
-    "com.vrmc.univrm": {
-      "version": "https://github.com/vrm-c/UniVRM.git?path=/Assets/VRM#v0.56.3",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {
-        "com.vrmc.vrmshaders": "0.56.3"
-      },
-      "hash": "3b68eb7f99bfe78ea9c83ea75511282ef1782f1a"
-    },
-    "com.vrmc.vrmshaders": {
-      "version": "https://github.com/vrm-c/UniVRM.git?path=/Assets/VRMShaders#v0.56.3",
+    "com.vrmc.meshutility": {
+      "version": "https://github.com/vrm-c/UniVRM.git?path=/Assets/MeshUtility#v0.61.1",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "3b68eb7f99bfe78ea9c83ea75511282ef1782f1a"
+      "hash": "7c03033e04b3086014b25cd14cc278fc312358b6"
+    },
+    "com.vrmc.univrm": {
+      "version": "https://github.com/vrm-c/UniVRM.git?path=/Assets/VRM#v0.61.1",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.vrmc.vrmshaders": "0.61.1",
+        "com.vrmc.meshutility": "0.61.1"
+      },
+      "hash": "7c03033e04b3086014b25cd14cc278fc312358b6"
+    },
+    "com.vrmc.vrmshaders": {
+      "version": "https://github.com/vrm-c/UniVRM.git?path=/Assets/VRMShaders#v0.61.1",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "7c03033e04b3086014b25cd14cc278fc312358b6"
     },
     "com.unity.modules.ai": {
       "version": "1.0.0",
