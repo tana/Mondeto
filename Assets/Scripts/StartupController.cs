@@ -38,13 +38,13 @@ public class StartupController : MonoBehaviour
                 ExtractZipPartially(Application.dataPath, "assets/", extractedDir);
             }
 
-            Settings.Instance.AvatarPath = extractedDir + "/avatar.vrm";
+            Settings.Instance.AvatarPath = extractedDir + "/default_avatar.vrm";
             Settings.Instance.MimeTypesPath = extractedDir + "/config/mime.types";
             Settings.Instance.SceneRoot = extractedDir;
         }
         else
         {
-            Settings.Instance.AvatarPath = Application.streamingAssetsPath + "/avatar.vrm";
+            Settings.Instance.AvatarPath = Application.streamingAssetsPath + "/default_avatar.vrm";
             Settings.Instance.MimeTypesPath = Application.streamingAssetsPath + "/config/mime.types";
             Settings.Instance.SceneRoot = Application.streamingAssetsPath;
         }

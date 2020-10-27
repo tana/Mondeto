@@ -38,7 +38,7 @@ public class SyncBehaviour : MonoBehaviour
         if (Application.isEditor)
         {
             // Set directory settings (when running in Unity Editor)
-            Settings.Instance.AvatarPath = Application.streamingAssetsPath + "/avatar.vrm";
+            Settings.Instance.AvatarPath = Application.streamingAssetsPath + "/default_avatar.vrm";
             Settings.Instance.MimeTypesPath = Application.streamingAssetsPath + "/config/mime.types";
             Settings.Instance.SceneRoot = Application.streamingAssetsPath;
             Settings.Instance.TempDirectory = Application.temporaryCachePath;
