@@ -26,7 +26,7 @@ public class StartupController : MonoBehaviour
             SceneManager.LoadScene("WalkServer");
         }
 
-        Settings.Instance.AvatarPath = Application.streamingAssetsPath + "/avatar.vrm";
+        Settings.Instance.AvatarPath = Application.streamingAssetsPath + "/default_avatar.vrm";
 
         LoadSettings();
         OnToggleChanged();
