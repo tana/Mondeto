@@ -173,10 +173,6 @@ public class SyncObject
                 handler(sender, args);
             }
         }
-        else
-        {
-            WriteLog("SyncObject", $"no handler for event {name}");
-        }
     }
 
     public void SendEvent(string name, uint sender, IValue[] args, bool localOnly = false)

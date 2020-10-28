@@ -35,11 +35,14 @@ public class SyncBehaviour : MonoBehaviour
     // Start is called before the first frame update
     async void Start()
     {
-        // Set directory settings
-        Settings.Instance.AvatarPath = Application.streamingAssetsPath + "/default_avatar.vrm";
-        Settings.Instance.MimeTypesPath = Application.streamingAssetsPath + "/config/mime.types";
-        Settings.Instance.SceneRoot = Application.streamingAssetsPath;
-        Settings.Instance.TempDirectory = Application.temporaryCachePath;
+        if (Application.isEditor)
+        {
+            // Set directory settings (when running in Unity Editor)
+            Settings.Instance.AvatarPath = Application.streamingAssetsPath + "/default_avatar.vrm";
+            Settings.Instance.MimeTypesPath = Application.streamingAssetsPath + "/config/mime.types";
+            Settings.Instance.SceneRoot = Application.streamingAssetsPath;
+            Settings.Instance.TempDirectory = Application.temporaryCachePath;
+        }
 
         // Tags that create new GameObject
         RegisterObjectTag("player", obj => Instantiate(PlayerPrefab));

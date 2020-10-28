@@ -12,7 +12,7 @@ using WebAssembly.Runtime;
 //  https://github.com/RyanLamansky/dotnet-webassembly
 public class WasmRunner : IDisposable
 {
-    public bool IsReady { get; private set; }
+    public bool IsReady { get; set; }
 
     protected Module Module;
 

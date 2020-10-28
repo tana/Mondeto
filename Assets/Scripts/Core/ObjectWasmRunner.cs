@@ -115,6 +115,8 @@ public class ObjectWasmRunner : WasmRunner
 
     void CallWasmFuncWithExceptionHandling(string name, params object[] args)   // TODO: rename
     {
+        if (!IsReady) return;
+
         try
         {
             CallWasmFunc(name, args);
@@ -169,6 +171,9 @@ public class ObjectWasmRunner : WasmRunner
     // void delete_self()
     void DeleteSelf()
     {
+        // Stop further WASM execution even if the object is not original
+        IsReady = false;
+
         Object.Node.DeleteObject(Object.Id);
     }
 

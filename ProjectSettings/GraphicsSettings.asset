@@ -3,7 +3,7 @@
 --- !u!30 &1
 GraphicsSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 12
+  serializedVersion: 13
   m_Deferred:
     m_Mode: 1
     m_Shader: {fileID: 69, guid: 0000000000000000f000000000000000, type: 0}
@@ -38,6 +38,15 @@ GraphicsSettings:
   - {fileID: 16000, guid: 0000000000000000f000000000000000, type: 0}
   - {fileID: 16001, guid: 0000000000000000f000000000000000, type: 0}
   - {fileID: 17000, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 4800000, guid: cfa8844b21625e943ac80dc2f6ff416c, type: 3}
+  - {fileID: 4800000, guid: 1a97144e4ad27a04aafd70f7b915cedb, type: 3}
+  - {fileID: 4800000, guid: 8c17b56f4bf084c47872edcb95237e4a, type: 3}
+  - {fileID: 4800000, guid: 4c9ce97af40038f45811fc4b0975a483, type: 3}
+  - {fileID: 4800000, guid: 1a70c9898704e1a4691843883f5101af, type: 3}
+  - {fileID: 4800000, guid: df359ad0838642d4fa0339514fcbbb2d, type: 3}
+  - {fileID: 4800000, guid: 429a3203ab2959741aab76fa2856b450, type: 3}
+  - {fileID: 46, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 16003, guid: 0000000000000000f000000000000000, type: 0}
   m_PreloadedShaders: []
   m_SpritesDefaultMaterial: {fileID: 10754, guid: 0000000000000000f000000000000000,
     type: 0}
@@ -62,3 +71,5 @@ GraphicsSettings:
   m_AlbedoSwatchInfos: []
   m_LightsUseLinearIntensity: 0
   m_LightsUseColorTemperature: 0
+  m_LogWhenShaderIsCompiled: 0
+  m_AllowEnlightenSupportForUpgradedProject: 1
