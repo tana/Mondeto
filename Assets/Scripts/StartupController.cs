@@ -50,6 +50,12 @@ public class StartupController : MonoBehaviour
         }
         Settings.Instance.TempDirectory = Application.temporaryCachePath;
 
+        // Initialize MixedReality-WebRTC on Android
+        if (Application.platform == RuntimePlatform.Android)
+        {
+            Microsoft.MixedReality.WebRTC.Unity.Android.Initialize();
+        }
+
         LoadSettings();
         OnToggleChanged();
         ShowAvatarInfo();
