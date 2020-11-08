@@ -131,7 +131,20 @@ public class SyncBehaviour : MonoBehaviour
         Node.ObjectCreated += OnObjectCreated;
         Node.ObjectDeleted += OnObjectDeleted;
 
-        await Node.Initialize();
+        try
+        {
+            await Node.Initialize();
+        }
+        catch (System.Net.WebSockets.WebSocketException e)
+        {
+            await GameObject.Find("LocalPlayer")?.GetComponent<Menu>()?.ShowDialog(
+                "Network Error",
+                "Cannot connect to the signaling server.\n\n" + e.ToString()
+            );
+            Application.Quit(); // Note: Does not stop in Unity Editor. https://docs.unity3d.com/ja/current/ScriptReference/Application.html
+            return;
+        }
+
         Ready = true;
 
         if (IsServer)

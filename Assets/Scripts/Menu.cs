@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using System.IO;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.XR;
 using UnityEngine.UI;
@@ -8,6 +8,8 @@ using Cysharp.Threading.Tasks;
 public class Menu : MonoBehaviour
 {
     public Canvas MenuCanvas;
+    public GameObject MenuPanel;
+    public GameObject DialogPanel;
     public Text NodeIdText;
     public Toggle MicrophoneToggle;
 
@@ -20,6 +22,7 @@ public class Menu : MonoBehaviour
     const KeyCode DesktopKey = KeyCode.Space;
 
     bool isOpen = false;
+    bool canToggle = true;
 
     InputDevice? controller;
 
@@ -57,14 +60,14 @@ public class Menu : MonoBehaviour
             // Check button down
             if (controller.Value.TryGetFeatureValue(CommonUsages.primaryButton, out bool buttonValue))
             {
-                if (!lastButtonValue && buttonValue) Toggle();
+                if ((!lastButtonValue && buttonValue) && canToggle) Toggle();
                 lastButtonValue = buttonValue;
             }
         }
 
         // For desktop (non-VR)
         // If object specification YAML is being typed in, space key does not close the menu.
-        if (Input.GetKeyDown(DesktopKey) && !ObjectCreationInput.isFocused)
+        if (Input.GetKeyDown(DesktopKey) && canToggle && !ObjectCreationInput.isFocused)
             Toggle();
         
         // Show microphone state
@@ -113,6 +116,27 @@ public class Menu : MonoBehaviour
     {
         var sceneLoader = new SceneLoader(GetComponent<ObjectSync>().Node);
         await sceneLoader.LoadObject(ObjectCreationInput.text);
+    }
+
+    public async Task ShowDialog(string title, string message)
+    {
+        canToggle = false;
+        MenuPanel.SetActive(false);
+        DialogPanel.SetActive(true);
+        Toggle();
+
+        var titleText = DialogPanel.transform.Find("Title")?.GetComponent<Text>();
+        if (titleText != null) titleText.text = title;
+        var messageText = DialogPanel.transform.Find("Message")?.GetComponent<Text>();
+        if (messageText != null) messageText.text = message;
+
+        var okButton = DialogPanel.transform.Find("OKButton")?.GetComponent<Button>();
+        await okButton.OnClickAsync();  // Wait until the OK button is clicked
+
+        Toggle();
+        MenuPanel.SetActive(true);
+        DialogPanel.SetActive(false);
+        canToggle = true;
     }
 
     void OnSyncReady()
