@@ -144,6 +144,15 @@ public class SyncBehaviour : MonoBehaviour
             Application.Quit(); // Note: Does not stop in Unity Editor. https://docs.unity3d.com/ja/current/ScriptReference/Application.html
             return;
         }
+        catch (ConnectionException e)
+        {
+            await GameObject.Find("LocalPlayer")?.GetComponent<Menu>()?.ShowDialog(
+                "Connection Error",
+                e.ToString()
+            );
+            Application.Quit(); // Note: Does not stop in Unity Editor. https://docs.unity3d.com/ja/current/ScriptReference/Application.html
+            return;
+        }
 
         Ready = true;
 

@@ -530,9 +530,3 @@ public class ProtocolUtil
         throw new TimeoutException(msg);
     }
 }
-
-public class ProtocolException : Exception
-{
-    public ProtocolException() : base() {}
-    public ProtocolException(string msg) : base(msg) {}
-}
