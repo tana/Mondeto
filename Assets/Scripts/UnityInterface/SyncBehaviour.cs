@@ -135,11 +135,11 @@ public class SyncBehaviour : MonoBehaviour
         {
             await Node.Initialize();
         }
-        catch (System.Net.WebSockets.WebSocketException e)
+        catch (SignalingException e)
         {
             await GameObject.Find("LocalPlayer")?.GetComponent<Menu>()?.ShowDialog(
-                "Network Error",
-                "Cannot connect to the signaling server.\n\n" + e.ToString()
+                "Signaling Error",
+                e.ToString()
             );
             Application.Quit(); // Note: Does not stop in Unity Editor. https://docs.unity3d.com/ja/current/ScriptReference/Application.html
             return;
