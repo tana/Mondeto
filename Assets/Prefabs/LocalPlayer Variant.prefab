@@ -1068,6 +1068,72 @@ Transform:
   m_Father: {fileID: 1337553581}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1441091474
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5089013582163170}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 288b60a363bf15d4c8e45dbdb11eb2d3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1441091476
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5089013582163170}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3adb0779835a2d54a9942f2ce245bc49, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  InitialTags: player constantVelocity
+  SetInitialTags: 1
+  NetManager: {fileID: 0}
+  IsOriginal: 1
+--- !u!114 &1441091477
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5089013582163170}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a7c496b18b56654990904a81615b1ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  InitialVelocity: 10
+  Gravity: 10
+  Step: 0.3
+  MaxDescent: 10
+  Controller: {fileID: 673454956}
+  ParabolaRenderer: {fileID: 935515054}
+--- !u!114 &349478799524225043
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5089013582163170}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f7f2c13b8b216e45a091da7e637b94d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  MenuCanvas: {fileID: 6832507946549116002}
+  MenuPanel: {fileID: 8670804080384498965}
+  DialogPanel: {fileID: 411649899872720783}
+  NodeIdText: {fileID: 4586257500943324137}
+  MicrophoneToggle: {fileID: 1499879683554376650}
+  ObjectCreationInput: {fileID: 7075010400787005166}
+  LeftLine: {fileID: 673454957}
+  RightLine: {fileID: 49289512}
 --- !u!1 &411649899872720783
 GameObject:
   m_ObjectHideFlags: 0
@@ -2757,72 +2823,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
---- !u!114 &1441091474
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5089013582163170}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 288b60a363bf15d4c8e45dbdb11eb2d3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &1441091476
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5089013582163170}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3adb0779835a2d54a9942f2ce245bc49, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  InitialTags: player constantVelocity
-  SetInitialTags: 1
-  NetManager: {fileID: 0}
-  IsOriginal: 1
---- !u!114 &1441091477
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5089013582163170}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6a7c496b18b56654990904a81615b1ad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  InitialVelocity: 10
-  Gravity: 10
-  Step: 0.3
-  MaxDescent: 10
-  Controller: {fileID: 673454956}
-  ParabolaRenderer: {fileID: 935515054}
---- !u!114 &349478799524225043
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5089013582163170}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1f7f2c13b8b216e45a091da7e637b94d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  MenuCanvas: {fileID: 6832507946549116002}
-  MenuPanel: {fileID: 8670804080384498965}
-  DialogPanel: {fileID: 411649899872720783}
-  NodeIdText: {fileID: 4586257500943324137}
-  MicrophoneToggle: {fileID: 1499879683554376650}
-  ObjectCreationInput: {fileID: 7075010400787005166}
-  LeftLine: {fileID: 673454957}
-  RightLine: {fileID: 49289512}
 --- !u!1 &7798734761553543559
 GameObject:
   m_ObjectHideFlags: 0
