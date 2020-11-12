@@ -120,6 +120,7 @@ public class Menu : MonoBehaviour
 
     public void OnShowCreditsButtonClicked()
     {
+        // FIXME: Probably it does not work in Quest standalone
         Application.OpenURL("file:///" + System.IO.Path.GetFullPath("./credits/Credits.html"));
     }
 
