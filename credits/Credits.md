@@ -43,6 +43,7 @@ The license files (in English and Japanese, full and summarized versions) are in
 ![Unity-Chan license logo](ThirdPartyLicenses/UCL2.0/License%20Logo/Others/png/Light_Frame.png)
 
 There are some modified files (paths are relative to root directory of UnityChan asset).
+
 - `Animators/UnityChanLocomotions_IK.controller`: Based on `Animators/UnityChanLocomotions.controller`, but IK Pass is enabled.
 
 ### System.Threading.Channels
@@ -64,5 +65,12 @@ There are some modified files (paths are relative to root directory of UnityChan
 - [license.txt](ThirdPartyLicenses/UnityBuiltinShaders/license.txt)
 
 ### MIME type database from Apache HTTP Server (`mime.types`)
-- Public domain. Please see the beginning of the file (`conf/mime.types`).
-- Some new types were added at the end of the file.
+Public domain. Quote from the beginning of the `mime.types` file (`Assets/StreamingAssets/confing/mime.types` in source repository):
+
+> ```
+> # This file maps Internet media types to unique file extension(s).
+> # Although created for httpd, this file is used by many software systems
+> # and has been placed in the public domain for unlimited redisribution.
+> ```
+
+Note: some new types were added at the end of the file.
