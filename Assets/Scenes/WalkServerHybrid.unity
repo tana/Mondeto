@@ -224,6 +224,26 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1570342113570676884, guid: 6a290698c0e9cc448a0a16cd554c43bd,
+        type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1570342113570676884, guid: 6a290698c0e9cc448a0a16cd554c43bd,
+        type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1570342113570676884, guid: 6a290698c0e9cc448a0a16cd554c43bd,
+        type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1570342113570676884, guid: 6a290698c0e9cc448a0a16cd554c43bd,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3262670416726807836, guid: 6a290698c0e9cc448a0a16cd554c43bd,
         type: 3}
       propertyPath: m_AnchorMin.y
@@ -290,6 +310,26 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7180470362739215243, guid: 6a290698c0e9cc448a0a16cd554c43bd,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9193169795412160526, guid: 6a290698c0e9cc448a0a16cd554c43bd,
+        type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9193169795412160526, guid: 6a290698c0e9cc448a0a16cd554c43bd,
+        type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9193169795412160526, guid: 6a290698c0e9cc448a0a16cd554c43bd,
+        type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9193169795412160526, guid: 6a290698c0e9cc448a0a16cd554c43bd,
         type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0

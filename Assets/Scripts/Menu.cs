@@ -118,6 +118,11 @@ public class Menu : MonoBehaviour
         await sceneLoader.LoadObject(ObjectCreationInput.text);
     }
 
+    public void OnShowCreditsButtonClicked()
+    {
+        Application.OpenURL("file:///" + System.IO.Path.GetFullPath("./credits/Credits.html"));
+    }
+
     public async Task ShowDialog(string title, string message)
     {
         canToggle = false;
