@@ -40,7 +40,7 @@ public class SyncClient : SyncNode
         }
         else
         {
-            throw new ProtocolException(nameof(NodeIdMessage) + " expected");
+            throw new ConnectionException("Cannot receive a NodeIdMessage");
         }
 
         var cancelSource = new CancellationTokenSource();

@@ -51,6 +51,8 @@ public class Connection : IDisposable
             }
         });
 
+        var tcs = new TaskCompletionSource<bool>();
+
         // Do signaling
         //  https://microsoft.github.io/MixedReality-WebRTC/manual/cs/cs-signaling.html
         //  https://microsoft.github.io/MixedReality-WebRTC/manual/cs/helloworld-cs-signaling-core3.html
@@ -65,6 +67,7 @@ public class Connection : IDisposable
 
         pc.IceStateChanged += (IceConnectionState state) => {
             Logger.Debug("Connection", $"ICE state changed to {state}");
+            // https://microsoft.github.io/MixedReality-WebRTC/versions/release/2.0/api/Microsoft.MixedReality.WebRTC.IceConnectionState.html
             if (state == IceConnectionState.Connected)
             {
                 Connected = true;
@@ -73,6 +76,11 @@ public class Connection : IDisposable
             {
                 Connected = false;
                 OnDisconnect();
+            }
+
+            if (!isServer && state == IceConnectionState.Failed)
+            {
+                tcs.SetException(new ConnectionException("Failed to establish a WebRTC connection"));
             }
         };
 
@@ -168,14 +176,15 @@ public class Connection : IDisposable
 
         //await Task.Delay(5000);
 
-        //var syncTcs = new TaskCompletionSource<bool>();
-        /*
-        var tcs = new TaskCompletionSource<bool>();
-        pc.Connected += () => {
-            tcs.SetResult(true);
-        };
-        await tcs.Task;
-        */
+        if (!isServer)
+        {
+            // FIXME: Waiting pc.Connected not work in server (cannot establish a connection to client)
+            //        In server, should wait until all DataChannels are added?
+            pc.Connected += () => {
+                tcs.SetResult(true);
+            };
+            await tcs.Task;
+        }
     }
 
     // Generic type specification is necessary to specify msg is interface type, not message type itself

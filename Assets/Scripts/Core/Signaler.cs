@@ -38,7 +38,14 @@ public class Signaler : IDisposable
 
     public async Task<uint> ConnectAsync()
     {
-        await ws.ConnectAsync(new Uri(uri), CancellationToken.None);
+        try
+        {
+            await ws.ConnectAsync(new Uri(uri), CancellationToken.None);
+        }
+        catch (WebSocketException e)
+        {
+            throw new SignalingException("Cannot connect to the signaling server.", e);
+        }
 
         processTask = Task.Run(async () => {
             try
@@ -47,7 +54,20 @@ public class Signaler : IDisposable
             }
             catch (Exception e)
             {
-                Logger.Error("Signaler", (isServer ? "Server: " : "Client: ") + e.ToString());
+                var wrapped = (e is SignalingException) ? e : new SignalingException("Exception occured during signaling.", e);
+
+                if (!helloTcs.Task.IsCompleted)
+                {
+                    helloTcs.SetException(wrapped);
+                }
+                else if (!readyTcs.Task.IsCompleted)
+                {
+                    readyTcs.SetException(wrapped);
+                }
+                else
+                {
+                    Logger.Error("Signaler", (isServer ? "Server: " : "Client: ") + e.ToString());
+                }
             }
         });
 
@@ -85,7 +105,11 @@ public class Signaler : IDisposable
 
                 if (isServer && LocalNodeId != 0)
                 {
-                    throw new Exception("Cannot register as the server");
+                    throw new SignalingException("Cannot register as the server");
+                }
+                else if (!isServer && LocalNodeId == 0)
+                {
+                    throw new SignalingException("Cannot register as a client");
                 }
                 helloTcs.SetResult(LocalNodeId);
             }
@@ -104,6 +128,14 @@ public class Signaler : IDisposable
             else if (type == "ice")
             {
                 IceReceived?.Invoke((string)msg["sdpMid"], (int)msg["sdpMLineIndex"], (string)msg["candidate"], nodeId);
+            }
+            else if (type == "error")
+            {
+                throw new SignalingException("Error message received from the signaling server.");  // FIXME: add message field in error message. change in signaling server is needed
+            }
+            else
+            {
+                throw new SignalingException("Invalid message received from the signaling server.");
             }
         }
     }
