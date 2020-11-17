@@ -1,6 +1,8 @@
 # Mondeto
 [![Discord](https://img.shields.io/discord/776494294756360222?label=discord)](https://discord.gg/XKQtmT2XxP)
 
+Languages | English | [日本語](README_ja.md)
+
 An open, flexible, and secure online virtual reality system.
 
 ⚠️ WARNING: UNDER CONSTRUCTION ⚠️
