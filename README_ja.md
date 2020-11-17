@@ -15,7 +15,7 @@ Mondeto currently uses [Unity Engine](https://unity.com/) (version 2019.4.2f1 LT
 
 ## ライセンス
 Mondeto自体は[MIT License](LICENSE)でライセンスされています。
-ただし、様々なライセンスのサードパーティプログラムやデータを利用しています（[docs/Credits.md](docs/Credits.md)を参照）。
+ただし、様々なライセンスのサードパーティプログラムやデータを利用しています（[credits/Credits.md](credits/Credits.md)を参照）。
 
 さらに、本リポジトリは再配布可能なライセンスのもとでサードパーティプログラムやデータのいくつかを含んでいます。
 
