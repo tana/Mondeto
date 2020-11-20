@@ -17,6 +17,14 @@ An open, flexible, and secure online virtual reality system.
     - Oculus headset and controllers (🙇we are working on supporting other headsets🚧)
     - Oculus software installed
 
+## 🚀Usage
+### Client (connecting to existing server)
+1. Download the zip archive and extract it.
+1. Launch the executable `Mondeto.exe`.
+1. Check the `Client` checkbox.
+    - By default, it will connect to the server provided by the developer. However, you can connect to other servers by setting the `Signaler` URL.
+1. Press `Start` to connect.
+
 ## ✉️Contacts
 If you have any questions, please ask [on the Discord chat](https://discord.gg/XKQtmT2XxP) or [ask the developer on Twitter](https://twitter.com/tana_ash).
 
