@@ -25,6 +25,8 @@ An open, flexible, and secure online virtual reality system.
     - By default, it will connect to the server provided by the developer. However, you can connect to other servers by setting the `Signaler` URL.
 1. Press `Start` to connect.
 
+For more advanced usage, please refer to [the wiki of this repository](https://github.com/tana/Mondeto/wiki).
+
 ## ✉️Contacts
 If you have any questions, please ask [on the Discord chat](https://discord.gg/XKQtmT2XxP) or [ask the developer on Twitter](https://twitter.com/tana_ash).
 

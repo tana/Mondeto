@@ -25,6 +25,8 @@ Languages | [English](README.md) | 日本語
     - デフォルトでは開発者が用意したサーバにつながるようになっていますが、`Signaler`のURLを変更することで別のサーバにも接続できます。
 1. `Start`ボタンを押すとサーバに接続できます。
 
+より高度な使い方に関しては、[本リポジトリのWiki](https://github.com/tana/Mondeto/wiki)をご参照ください。
+
 ## ✉️連絡先
 ご不明な点がございましたら、[Discordチャット](https://discord.gg/XKQtmT2XxP)または[開発者のTwitter](https://twitter.com/tana_ash)でご質問ください。
 
