@@ -20,6 +20,24 @@ public class StartupController : MonoBehaviour
 
     public void Start()
     {
+        // Parse command line args
+        if (!Application.isEditor)
+        {
+            foreach (string arg in Environment.GetCommandLineArgs().Skip(1))
+            {
+                if (arg.StartsWith("-"))
+                {
+                    continue;  // TODO: option handling
+                }
+                else if (arg.StartsWith("wss://") || arg.StartsWith("ws://"))
+                {
+                    // Set signaler URL if URL is specified as a command line argument
+                    Settings.Instance.SignalerUrlForClient = arg;
+                    Settings.Instance.SignalerUrlForServer = arg;
+                }
+            }
+        }
+
         if (Application.isBatchMode)
         {
             Logger.Log("StartupController", "Running as batch mode. Starting dedicated server scene");
