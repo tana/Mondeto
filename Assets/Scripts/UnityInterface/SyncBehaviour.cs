@@ -32,6 +32,9 @@ public class SyncBehaviour : MonoBehaviour
 
     public GameObject PlayerPrefab;
 
+    // For initial blob loading
+    bool isFirst = true;
+
     // Start is called before the first frame update
     async void Start()
     {
@@ -199,6 +202,21 @@ public class SyncBehaviour : MonoBehaviour
         //if (Time.frameCount % 6 != 0) return;
 
         Node.SyncFrame(Time.fixedDeltaTime);
+
+        if (isFirst)
+        {
+            isFirst = false;
+            var blobs = EnumerateBlobs();
+            Logger.Debug("SyncBehaviour", $"Number of initial blobs = {blobs.Count}");
+            Task.Run(async () => {
+                foreach (var blobHandle in blobs)
+                {
+                    await Node.ReadBlob(blobHandle);
+                }
+            }).ContinueWith(task => {
+                Logger.Debug("SyncBehaviour", "Received all blobs");
+            });
+        }
     }
 
     // Prepare Unity GameObject for new SyncObject
@@ -317,6 +335,24 @@ public class SyncBehaviour : MonoBehaviour
             Node.DeleteObject(id);
             GameObjects.Remove(id);
         }
+    }
+
+    List<BlobHandle> EnumerateBlobs()
+    {
+        var handles = new List<BlobHandle>();
+        foreach (var obj in Node.Objects.Values)
+        {
+            foreach (var field in obj.Fields.Values)
+            {
+                // Currently, BlobHandle inside Sequence is ignored
+                if (field.Value is BlobHandle blobHandle)
+                {
+                    handles.Add(blobHandle);
+                }
+            }
+        }
+
+        return handles;
     }
 
     public void OnDestroy()
