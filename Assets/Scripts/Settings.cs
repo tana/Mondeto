@@ -10,7 +10,7 @@ public class Settings
 
     public string AvatarPath = "Assets/StreamingAssets/default_avatar.vrm";
     public string MimeTypesPath = "Assets/StreamingAssets/config/mime.types";
-    public string SceneRoot = "Assets/StreamingAssets";
+    public string SceneFile = "Assets/StreamingAssets/scene.yml";
 
     public string TempDirectory = "." + Path.DirectorySeparatorChar + "temp_data";
 
