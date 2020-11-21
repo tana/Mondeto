@@ -36,6 +36,7 @@ public class SyncBehaviour : MonoBehaviour
     // For initial blob loading
     bool isFirst = true;
     public GameObject LoadingScreen;
+    const float FadeOutDuration = 1.0f;
 
     // Start is called before the first frame update
     async void Start()
@@ -142,6 +143,7 @@ public class SyncBehaviour : MonoBehaviour
         }
         catch (SignalingException e)
         {
+            await FadeLoadingScreen();
             await GameObject.Find("LocalPlayer")?.GetComponent<Menu>()?.ShowDialog(
                 "Signaling Error",
                 e.ToString()
@@ -151,6 +153,7 @@ public class SyncBehaviour : MonoBehaviour
         }
         catch (ConnectionException e)
         {
+            await FadeLoadingScreen();
             await GameObject.Find("LocalPlayer")?.GetComponent<Menu>()?.ShowDialog(
                 "Connection Error",
                 e.ToString()
@@ -221,8 +224,8 @@ public class SyncBehaviour : MonoBehaviour
             await Node.ReadBlob(blobHandle);
         }
         Logger.Debug("SyncBehaviour", "Received all blobs");
-        await UniTask.Delay(1000); // Fixed delay
-        await FadeLoadingScreen(1.0f);
+        await UniTask.Delay(2500); // Fixed delay
+        await FadeLoadingScreen();
     }
 
     // Prepare Unity GameObject for new SyncObject
@@ -361,15 +364,15 @@ public class SyncBehaviour : MonoBehaviour
         return handles;
     }
 
-    async Task FadeLoadingScreen(float duration)
+    async Task FadeLoadingScreen()
     {
         var renderers = LoadingScreen.GetComponentsInChildren<Renderer>();
 
         float t = 0.0f;
         
-        while (t < duration)
+        while (t < FadeOutDuration)
         {
-            float opacity = 0.5f * (1 + Mathf.Cos(Mathf.PI * t / duration));
+            float opacity = 0.5f * (1 + Mathf.Cos(Mathf.PI * t / FadeOutDuration));
             foreach (Renderer renderer in renderers)
             {
                 renderer.material.SetFloat("_Opacity", opacity);
