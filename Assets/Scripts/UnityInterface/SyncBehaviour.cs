@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.IO;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 
 public class SyncBehaviour : MonoBehaviour
 {
@@ -31,6 +32,11 @@ public class SyncBehaviour : MonoBehaviour
     HashSet<uint> OriginalObjectIds = new HashSet<uint>();
 
     public GameObject PlayerPrefab;
+
+    // For initial blob loading
+    bool isFirst = true;
+    public GameObject LoadingScreen;
+    const float FadeOutDuration = 1.0f;
 
     // Start is called before the first frame update
     async void Start()
@@ -137,6 +143,7 @@ public class SyncBehaviour : MonoBehaviour
         }
         catch (SignalingException e)
         {
+            await FadeLoadingScreen();
             await GameObject.Find("LocalPlayer")?.GetComponent<Menu>()?.ShowDialog(
                 "Signaling Error",
                 e.ToString()
@@ -146,6 +153,7 @@ public class SyncBehaviour : MonoBehaviour
         }
         catch (ConnectionException e)
         {
+            await FadeLoadingScreen();
             await GameObject.Find("LocalPlayer")?.GetComponent<Menu>()?.ShowDialog(
                 "Connection Error",
                 e.ToString()
@@ -199,6 +207,25 @@ public class SyncBehaviour : MonoBehaviour
         //if (Time.frameCount % 6 != 0) return;
 
         Node.SyncFrame(Time.fixedDeltaTime);
+
+        if (isFirst)
+        {
+            isFirst = false;
+            LoadBlobs();
+        }
+    }
+
+    async void LoadBlobs()
+    {
+        var blobs = EnumerateBlobs();
+        Logger.Debug("SyncBehaviour", $"Number of initial blobs = {blobs.Count}");
+        foreach (var blobHandle in blobs)
+        {
+            await Node.ReadBlob(blobHandle);
+        }
+        Logger.Debug("SyncBehaviour", "Received all blobs");
+        await UniTask.Delay(2500); // Fixed delay
+        await FadeLoadingScreen();
     }
 
     // Prepare Unity GameObject for new SyncObject
@@ -317,6 +344,45 @@ public class SyncBehaviour : MonoBehaviour
             Node.DeleteObject(id);
             GameObjects.Remove(id);
         }
+    }
+
+    List<BlobHandle> EnumerateBlobs()
+    {
+        var handles = new List<BlobHandle>();
+        foreach (var obj in Node.Objects.Values)
+        {
+            foreach (var field in obj.Fields.Values)
+            {
+                // Currently, BlobHandle inside Sequence is ignored
+                if (field.Value is BlobHandle blobHandle)
+                {
+                    handles.Add(blobHandle);
+                }
+            }
+        }
+
+        return handles;
+    }
+
+    async Task FadeLoadingScreen()
+    {
+        var renderers = LoadingScreen.GetComponentsInChildren<Renderer>();
+
+        float t = 0.0f;
+        
+        while (t < FadeOutDuration)
+        {
+            float opacity = 0.5f * (1 + Mathf.Cos(Mathf.PI * t / FadeOutDuration));
+            foreach (Renderer renderer in renderers)
+            {
+                renderer.material.SetFloat("_Opacity", opacity);
+            }
+
+            await UniTask.WaitForEndOfFrame();
+            t += Time.deltaTime;
+        }
+
+        LoadingScreen.SetActive(false);
     }
 
     public void OnDestroy()
