@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.IO;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 
 public class SyncBehaviour : MonoBehaviour
 {
@@ -34,6 +35,7 @@ public class SyncBehaviour : MonoBehaviour
 
     // For initial blob loading
     bool isFirst = true;
+    public GameObject LoadingScreen;
 
     // Start is called before the first frame update
     async void Start()
@@ -206,17 +208,21 @@ public class SyncBehaviour : MonoBehaviour
         if (isFirst)
         {
             isFirst = false;
-            var blobs = EnumerateBlobs();
-            Logger.Debug("SyncBehaviour", $"Number of initial blobs = {blobs.Count}");
-            Task.Run(async () => {
-                foreach (var blobHandle in blobs)
-                {
-                    await Node.ReadBlob(blobHandle);
-                }
-            }).ContinueWith(task => {
-                Logger.Debug("SyncBehaviour", "Received all blobs");
-            });
+            LoadBlobs();
         }
+    }
+
+    async void LoadBlobs()
+    {
+        var blobs = EnumerateBlobs();
+        Logger.Debug("SyncBehaviour", $"Number of initial blobs = {blobs.Count}");
+        foreach (var blobHandle in blobs)
+        {
+            await Node.ReadBlob(blobHandle);
+        }
+        Logger.Debug("SyncBehaviour", "Received all blobs");
+        await UniTask.Delay(1000); // Fixed delay
+        await FadeLoadingScreen(1.0f);
     }
 
     // Prepare Unity GameObject for new SyncObject
@@ -353,6 +359,27 @@ public class SyncBehaviour : MonoBehaviour
         }
 
         return handles;
+    }
+
+    async Task FadeLoadingScreen(float duration)
+    {
+        var renderers = LoadingScreen.GetComponentsInChildren<Renderer>();
+
+        float t = 0.0f;
+        
+        while (t < duration)
+        {
+            float opacity = 0.5f * (1 + Mathf.Cos(Mathf.PI * t / duration));
+            foreach (Renderer renderer in renderers)
+            {
+                renderer.material.SetFloat("_Opacity", opacity);
+            }
+
+            await UniTask.WaitForEndOfFrame();
+            t += Time.deltaTime;
+        }
+
+        LoadingScreen.SetActive(false);
     }
 
     public void OnDestroy()
