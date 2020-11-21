@@ -40,7 +40,7 @@ public class SyncBehaviour : MonoBehaviour
             // Set directory settings (when running in Unity Editor)
             Settings.Instance.AvatarPath = Application.streamingAssetsPath + "/default_avatar.vrm";
             Settings.Instance.MimeTypesPath = Application.streamingAssetsPath + "/config/mime.types";
-            Settings.Instance.SceneRoot = Application.streamingAssetsPath;
+            Settings.Instance.SceneFile = Application.streamingAssetsPath + "/scene.yml";
             Settings.Instance.TempDirectory = Application.temporaryCachePath;
         }
 
@@ -160,7 +160,7 @@ public class SyncBehaviour : MonoBehaviour
         {
             // Load scene from YAML
             var loader = new SceneLoader(Node);
-            await loader.Load(new System.IO.StreamReader(Settings.Instance.SceneRoot + "/scene.yml"));
+            await loader.LoadFile(Settings.Instance.SceneFile);
         }
 
         // Add objects defined in Unity scene, such as player avatar

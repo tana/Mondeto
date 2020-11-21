@@ -20,12 +20,6 @@ public class StartupController : MonoBehaviour
 
     public void Start()
     {
-        if (Application.isBatchMode)
-        {
-            Logger.Log("StartupController", "Running as batch mode. Starting dedicated server scene");
-            SceneManager.LoadScene("WalkServer");
-        }
-
         // Data directory settings
         if (Application.platform == RuntimePlatform.Android)
         {
@@ -40,13 +34,13 @@ public class StartupController : MonoBehaviour
 
             Settings.Instance.AvatarPath = extractedDir + "/default_avatar.vrm";
             Settings.Instance.MimeTypesPath = extractedDir + "/config/mime.types";
-            Settings.Instance.SceneRoot = extractedDir;
+            Settings.Instance.SceneFile = extractedDir + "/scene.yml";
         }
         else
         {
             Settings.Instance.AvatarPath = Application.streamingAssetsPath + "/default_avatar.vrm";
             Settings.Instance.MimeTypesPath = Application.streamingAssetsPath + "/config/mime.types";
-            Settings.Instance.SceneRoot = Application.streamingAssetsPath;
+            Settings.Instance.SceneFile = Application.streamingAssetsPath + "/scene.yml";
         }
         Settings.Instance.TempDirectory = Application.temporaryCachePath;
 
@@ -54,6 +48,42 @@ public class StartupController : MonoBehaviour
         if (Application.platform == RuntimePlatform.Android)
         {
             Microsoft.MixedReality.WebRTC.Unity.Android.Initialize();
+        }
+
+        if (!Application.isEditor)
+        {
+            // Parse command line args using state machine
+            string state = "";
+            foreach (string arg in Environment.GetCommandLineArgs().Skip(1))
+            {
+                if (state == "")    // default state
+                {
+                    if (arg.StartsWith("-"))
+                    {
+                        if (arg == "--scene")
+                        {
+                            state = "--scene";
+                        }
+                    }
+                    else if (arg.StartsWith("wss://") || arg.StartsWith("ws://"))
+                    {
+                        // Set signaler URL if URL is specified as a command line argument
+                        Settings.Instance.SignalerUrlForClient = arg;
+                        Settings.Instance.SignalerUrlForServer = arg;
+                    }
+                }
+                else if (state == "--scene")    // after "--scene" flag
+                {
+                    Settings.Instance.SceneFile = Path.GetFullPath(arg);
+                    state = ""; // return to default state
+                }
+            }
+        }
+
+        if (Application.isBatchMode)
+        {
+            Logger.Log("StartupController", "Running as batch mode. Starting dedicated server scene");
+            SceneManager.LoadScene("WalkServer");
         }
 
         LoadSettings();
