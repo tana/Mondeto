@@ -7,8 +7,8 @@ An open, flexible, and secure online virtual reality system.
 
 ## 💡About
 **Mondeto** is an online, multiplayer virtual reality system which has this three features:
-1. 📖**Open:** Mondeto is an open-source software, not a service. **Everybody can setup a server** on their own computer. Also you can modify Mondeto software itself to **connect new hardware with VR worlds**.
-2. 🛠**Flexible:** VR objects can be **programatically controlled** using [WebAssembly](https://webassembly.org/).
+1. 📖**Open:** Mondeto is an open-source software, not a service. **Everybody can setup a server** on their own computer.
+2. 🛠**Flexible:** VR objects can be **programatically controlled** using [WebAssembly](https://webassembly.org/). Also you can modify Mondeto software itself to **connect new hardware with VR worlds**.
 3. 🔒**Secure:** Communications are **encrypted** and WebAssembly codes are safely run inside **sandbox**. Despite being open and flexible, we do not sacrifice security.
 
 ## 💻Requirements
