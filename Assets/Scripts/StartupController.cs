@@ -18,31 +18,46 @@ public class StartupController : MonoBehaviour
 
     public Text AvatarInfo;
 
+    string settingsPath;
+    bool isSettingsValid;
+
     public void Start()
     {
-        // Data directory settings
-        if (Application.platform == RuntimePlatform.Android)
-        {
-            // On Android (including Quest), streaming assets are inside the JAR file.
-            //  See: https://docs.unity3d.com/ja/2019.4/Manual/StreamingAssets.html
-            string extractedDir = Application.temporaryCachePath + "/assets";
-            if (!Directory.Exists(extractedDir))
-            {
-                // Extract from JAR if not already extracted
-                ExtractZipPartially(Application.dataPath, "assets/", extractedDir);
-            }
+        settingsPath = Application.persistentDataPath + Path.DirectorySeparatorChar + "settings.yml";
 
-            Settings.Instance.AvatarPath = extractedDir + "/default_avatar.vrm";
-            Settings.Instance.MimeTypesPath = extractedDir + "/config/mime.types";
-            Settings.Instance.SceneFile = extractedDir + "/scene.yml";
+        if (File.Exists(settingsPath))
+        {
+            isSettingsValid = LoadSettingsFromFile();
         }
         else
         {
-            Settings.Instance.AvatarPath = Application.streamingAssetsPath + "/default_avatar.vrm";
-            Settings.Instance.MimeTypesPath = Application.streamingAssetsPath + "/config/mime.types";
-            Settings.Instance.SceneFile = Application.streamingAssetsPath + "/scene.yml";
+            // If the settings file is not exist (first launch), set default settings
+            // Data directory settings
+            if (Application.platform == RuntimePlatform.Android)
+            {
+                // On Android (including Quest), streaming assets are inside the JAR file.
+                //  See: https://docs.unity3d.com/ja/2019.4/Manual/StreamingAssets.html
+                string extractedDir = Application.temporaryCachePath + "/assets";
+                if (!Directory.Exists(extractedDir))
+                {
+                    // Extract from JAR if not already extracted
+                    ExtractZipPartially(Application.dataPath, "assets/", extractedDir);
+                }
+
+                Settings.Instance.AvatarPath = extractedDir + "/default_avatar.vrm";
+                Settings.Instance.MimeTypesPath = extractedDir + "/config/mime.types";
+                Settings.Instance.SceneFile = extractedDir + "/scene.yml";
+            }
+            else
+            {
+                Settings.Instance.AvatarPath = Application.streamingAssetsPath + "/default_avatar.vrm";
+                Settings.Instance.MimeTypesPath = Application.streamingAssetsPath + "/config/mime.types";
+                Settings.Instance.SceneFile = Application.streamingAssetsPath + "/scene.yml";
+            }
+            Settings.Instance.TempDirectory = Application.temporaryCachePath;
+
+            isSettingsValid = true;
         }
-        Settings.Instance.TempDirectory = Application.temporaryCachePath;
 
         // Initialize MixedReality-WebRTC on Android
         if (Application.platform == RuntimePlatform.Android)
@@ -86,9 +101,35 @@ public class StartupController : MonoBehaviour
             SceneManager.LoadScene("WalkServer");
         }
 
-        LoadSettings();
+        SettingsToGui();
         OnToggleChanged();
         ShowAvatarInfo();
+    }
+
+    // Returns true if succeeded
+    bool LoadSettingsFromFile()
+    {
+        using (var reader = new StreamReader(settingsPath))
+        {
+            try
+            {
+                Settings.Load(reader);
+                return true;
+            }
+            catch (Exception e) // Cannot load settings
+            {
+                Logger.Error("StartupController", "Cannot load settings. " + e.ToString());
+                return false;
+            }
+        }
+    }
+
+    void DumpSettingsToFile()
+    {
+        using (var writer = new StreamWriter(settingsPath))
+        {
+            Settings.Instance.Dump(writer);
+        }
     }
 
     void ExtractZipPartially(string zipPath, string rootWithinZip, string destDir)
@@ -112,14 +153,14 @@ public class StartupController : MonoBehaviour
         }
     }
 
-    void LoadSettings()
+    void SettingsToGui()
     {
         ServerUrlInput.text = Settings.Instance.SignalerUrlForServer;
         ClientUrlInput.text = Settings.Instance.SignalerUrlForClient;
         AvatarInput.text = Settings.Instance.AvatarPath;
     }
 
-    void ChangeSettings()
+    void GuiToSettings()
     {
         Settings.Instance.SignalerUrlForServer = ServerUrlInput.text;
         Settings.Instance.SignalerUrlForClient = ClientUrlInput.text;
@@ -190,7 +231,17 @@ public class StartupController : MonoBehaviour
 
     public void OnStartClicked()
     {
-        ChangeSettings();
+        GuiToSettings();
+
+        if (isSettingsValid)
+        {
+            DumpSettingsToFile();
+        }
+        else
+        {
+            // If the settings file is broken, avoid overwriting to prevent unintended loss of settings
+            Logger.Error("StartupController", "Settings file is broken. New settings were NOT saved.");
+        }
 
         if (ServerToggle.isOn)
         {
