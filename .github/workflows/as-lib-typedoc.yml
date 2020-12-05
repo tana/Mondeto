@@ -37,6 +37,6 @@ jobs:
         uses: crazy-max/ghaction-github-pages@v2.2.0
         if: success()
         with:
-          build_dir: as-lib/docs
+          build_dir: pages/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
