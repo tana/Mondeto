@@ -1,0 +1,14 @@
+{
+  "name": "mondeto-as",
+  "version": "0.0.0",
+  "description": "AssemblyScript library for Mondeto",
+  "scripts": {},
+  "author": "Satoshi Tanaka",
+  "license": "MIT",
+  "devDependencies": {
+    "assemblyscript": "^0.14.11",
+    "typescript": "^4.1.2",
+    "typedoc": "^0.19.2"
+  },
+  "dependencies": {}
+}

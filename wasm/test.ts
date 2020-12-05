@@ -2,7 +2,7 @@
 // See https://www.assemblyscript.org/exports-and-imports.html#anatomy-of-a-module
 import "wasi"
 
-import { getField, readQuat, setField, make_vec, Vec, Quat, makeQuat, make_int, get_new_object, objectSetField, request_new_object, make_sequence, makeSequence, makeString, get_object_id, object_is_original } from "./mondeto"
+import { getField, readQuat, setField, make_vec, Vec, Quat, makeQuat, make_int, get_new_object, objectSetField, request_new_object, make_sequence, makeSequence, makeString, get_object_id, object_is_original } from "mondeto-as"
 
 export function init(): void {
     trace("init");

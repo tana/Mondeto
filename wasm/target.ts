@@ -1,5 +1,5 @@
 import "wasi"
-import { delete_self, make_int, setField } from "./mondeto"
+import { delete_self, make_int, setField } from "mondeto-as"
 
 var exploding: boolean = false;
 var explosionTimer: f32 = 1.5;
