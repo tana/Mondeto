@@ -1,0 +1,40 @@
+# This is a basic workflow to help you get started with Actions
+
+name: as-lib TypeDoc generator
+
+# Controls when the action will run. 
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches: [ main ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  as-lib-typedoc:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      # Setup Node.js
+      - uses: actions/setup-node@v2.1.2
+      - name: typedoc
+        run: |
+          cd as-lib
+          npm ci # Install dependencies (for automated env https://docs.npmjs.com/cli/v6/commands/npm-ci)
+          make docs
+          cd ..
+          mkdir -p pages/as-lib/
+          cp -R as-lib/docs/ pages/as-lib/
+      # Upload to GitHub Pages (Using https://github.com/marketplace/actions/github-pages )
+      - name: GitHub Pages
+        uses: max/ghaction-github-pages@v2.2.0
+        if: success()
+        with:
+          build_dir: as-lib/docs
