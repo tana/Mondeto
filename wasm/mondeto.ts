@@ -15,15 +15,45 @@ export enum TypeCode
 // Declarations for imported functions
 // https://www.assemblyscript.org/exports-and-imports.html#imports
 // Object manipulation
+/** Requests creation of a new object. The new object will be available from {@linkcode get_new_object}. */
 export declare function request_new_object(): void;
+/**
+ * Gets the Object ID of a new object requested by {@linkcode request_new_object}.
+ * @returns Object ID of the new object. Becomes negative if the new object is not ready.
+ */
 export declare function get_new_object(): i64;
+/** Gets the Object ID of the object which the code is attached to. */
 export declare function get_object_id(): u32;
+/** Checks whether the object is original. */
 export declare function object_is_original(obj_id: u32): i32;
+/** Deletes the object which the code is attached to. */
 export declare function delete_self(): void;
 // Field manipulation
+/**
+ * @param name_ptr Pointer to the field name.
+ * @param name_len Length of the field name in bytes.
+ * @returns Value ID. Usually within range of u32, but becomes negative if failed.
+ */
 export declare function get_field(name_ptr: usize, name_len: usize): i64;
+/**
+ * @param name_ptr Pointer to the field name.
+ * @param name_len Length of the field name in bytes.
+ * @param value_id Value ID.
+ */
 export declare function set_field(name_ptr: usize, name_len: usize, value_id: u32): void;
+/**
+ * @param obj_id Object ID.
+ * @param name_ptr Pointer to the field name.
+ * @param name_len Length of the field name in bytes.
+ * @returns Value ID. Usually within range of u32, but becomes negative if failed.
+ */
 export declare function object_get_field(obj_id: u32, name_ptr: usize, name_len: usize): i64;
+/**
+ * @param obj_id Object ID.
+ * @param name_ptr Pointer to the field name.
+ * @param name_len Length of the field name in bytes.
+ * @param value_id Value ID.
+ */
 export declare function object_set_field(obj_id: u32, name_ptr: usize, name_len: usize, value_id: u32): i32;
 // IValue-related
 export declare function get_type(value_id: u32): TypeCode;
@@ -51,6 +81,9 @@ export declare function send_event(receiver_id: u32, name_ptr: usize, name_len: 
 export declare function get_world_coordinate(obj_id: u32, vx_ptr: usize, vy_ptr: usize, vz_ptr: usize, qw_ptr: usize, qx_ptr: usize, qy_ptr: usize, qz_ptr: usize): i32;
 
 // Wrappers
+/**
+ * 3-dimensional vector.
+ */
 export class Vec {
     x: f32;
     y: f32;
@@ -98,6 +131,9 @@ export class Vec {
     }
 }
 
+/**
+ * Quaternion.
+ */
 export class Quat {
     w: f32;
     x: f32;
@@ -130,7 +166,7 @@ export class Quat {
         );
     }
 
-    // rotate a vector
+    /** Rotates a vector. */
     rotateVec(v: Vec): Vec {
         const vQuat = new Quat(0, v.x, v.y, v.z);
         const after = this * vQuat * this.conjugate();
@@ -141,7 +177,11 @@ export class Quat {
         return new Quat(this.w, -this.x, -this.y, -this.z);
     }
 
-    // angle is in radians
+    /**
+     * Create a quaternion from angle-axis form.
+     * @param angle Rotation angle in radians.
+     * @param axis Axis of rotation.
+     */
     static fromAngleAxis(angle: f32, axis: Vec): Quat {
         const normalized = axis.normalize();
         const s = Mathf.sin(angle / 2.0);
@@ -154,7 +194,7 @@ export class Quat {
     }
 }
 
-// Pair of a Vec and a Quat.
+/** Pair of a {@linkcode Vec} and a {@linkcode Quat}. */
 export class Transform {
     position: Vec;
     rotation: Quat;
@@ -165,6 +205,10 @@ export class Transform {
     }
 }
 
+/**
+ * @param name Field name.
+ * @returns Value ID. Usually within range of u32, but becomes negative if failed.
+ */
 export function getField(name: string): i64 {
     // https://www.assemblyscript.org/stdlib/string.html#encoding-api
     const buf = String.UTF8.encode(name);
@@ -181,6 +225,11 @@ export function setField(name: string, valueID: u32): void {
     set_field(changetype<usize>(buf), buf.byteLength, valueID);
 }
 
+/**
+ * @param objId Object ID.
+ * @param name Field name.
+ * @returns Value ID. Usually within range of u32, but becomes negative if failed.
+ */
 export function objectGetField(objId: u32, name: string): i64 {
     // https://www.assemblyscript.org/stdlib/string.html#encoding-api
     const buf = String.UTF8.encode(name);
@@ -254,6 +303,11 @@ export function makeSequence(elems: u32[]): u32 {
     return make_sequence(changetype<usize>(elems.buffer), elems.length);
 }
 
+/**
+ * Calculates the world coordinate of an object.
+ * @param objID Object ID.
+ * @returns A {@linkcode Transform} that represents the calculated world coordinate, or null when failed to calculate.
+ */
 export function getWorldCoordinate(objID: u32): Transform | null {
     const vec = new Vec(), quat = new Quat();
 
@@ -280,6 +334,14 @@ export function getWorldCoordinate(objID: u32): Transform | null {
     }
 }
 
+/**
+ * Sends an event to an object.
+ * @param receiverID Object ID of the receiving object of the event.
+ * @param name Name of the event.
+ * @param args Arguments of the event. Array of Value IDs.
+ * @param localOnly If true, the event is also broadcast to the receiver in another node.
+ * @returns 0 when success. -1 when failure (e.g. receiverID is invalid).
+ */
 export function sendEvent(receiverID: u32, name: string, args: u32[], localOnly: boolean = false): i32 {
     // https://www.assemblyscript.org/stdlib/string.html#encoding-api
     const buf = String.UTF8.encode(name);
