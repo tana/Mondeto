@@ -2,12 +2,13 @@
   "name": "mondeto-wasm-samples",
   "version": "0.0.0",
   "description": "",
-  "scripts": {
-    "build": "npx asc test.ts --runtime half -o test.wasm"
-  },
+  "scripts": {},
   "author": "Satoshi Tanaka",
   "license": "MIT",
   "devDependencies": {
     "assemblyscript": "^0.14.11"
+  },
+  "dependencies": {
+    "mondeto-as": "file:../as-lib"
   }
 }
