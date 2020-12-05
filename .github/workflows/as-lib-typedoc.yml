@@ -38,5 +38,6 @@ jobs:
         if: success()
         with:
           build_dir: pages/
+          jekyll: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
