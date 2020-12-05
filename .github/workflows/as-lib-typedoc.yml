@@ -34,7 +34,9 @@ jobs:
           cp -R as-lib/docs/ pages/as-lib/
       # Upload to GitHub Pages (Using https://github.com/marketplace/actions/github-pages )
       - name: GitHub Pages
-        uses: max/ghaction-github-pages@v2.2.0
+        uses: crazy-max/ghaction-github-pages@v2.2.0
         if: success()
         with:
           build_dir: as-lib/docs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
