@@ -1,5 +1,5 @@
 {
-  "name": "mondeto-wasm-samples",
+  "name": "mondeto-wasm-shooting",
   "version": "0.0.0",
   "description": "",
   "scripts": {},
@@ -9,6 +9,6 @@
     "assemblyscript": "^0.14.11"
   },
   "dependencies": {
-    "mondeto-as": "file:../as-lib"
+    "mondeto-as": "file:../../as-lib"
   }
 }
