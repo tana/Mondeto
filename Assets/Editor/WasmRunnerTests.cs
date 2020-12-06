@@ -5,8 +5,6 @@ using NUnit.Framework;
 [TestFixture]
 class WasmRunnerTests
 {
-    const string wasmDir = "wasm/";
-
     DummyNode node;
     SyncObject obj;
 
@@ -22,7 +20,7 @@ class WasmRunnerTests
     {
         using (var runner = new ObjectWasmRunner(obj))
         {
-            runner.Load(File.ReadAllBytes(wasmDir + "test.wasm"));
+            runner.Load(File.ReadAllBytes("Assets/StreamingAssets/wasm/raygun.wasm"));
             runner.Initialize();
             Assert.That(runner.IsReady);
         }
@@ -37,7 +35,7 @@ class WasmRunnerTests
     {
         using (var runner = new WasmRunner())
         {
-            runner.Load(File.ReadAllBytes(wasmDir + "infinite_loop_test.wasm"));
+            runner.Load(File.ReadAllBytes("Assets/Editor/infinite_loop_test.wasm"));
             runner.Initialize();
         }
     }
