@@ -67,13 +67,13 @@ public class WasmRunner : IDisposable
         byte[] newBinary;
         using (var stream = new MemoryStream())
         {
-            module.WriteToBinary(stream);
+            Module.WriteToBinary(stream);
             newBinary = stream.ToArray();
         }
 
         using (var stream = new FileStream("patched.wasm", FileMode.Create))
         {
-            module.WriteToBinary(stream);
+            Module.WriteToBinary(stream);
         }
         */
 
@@ -271,7 +271,10 @@ public class WasmRunner : IDisposable
 
     public virtual void Dispose()
     {
-        Instance.Dispose();
+        if (Instance != null)
+        {
+            Instance.Dispose();
+        }
     }
 
     public virtual void WriteLog(Logger.LogType type, string component, string message)

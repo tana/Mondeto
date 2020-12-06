@@ -20,7 +20,7 @@ public class SceneLoader
         this.node = node;
 
         typeEstimator = new MimeTypeEstimator(Settings.Instance.MimeTypesPath);
-        sceneFileDir = Path.GetDirectoryName(Settings.Instance.SceneFile);
+        sceneFileDir = Path.GetDirectoryName(Path.GetFullPath(Settings.Instance.SceneFile));
     }
 
     public Task LoadFile(string path)
@@ -32,8 +32,13 @@ public class SceneLoader
         }
     }
 
-    public async Task Load(TextReader reader)
+    public async Task Load(TextReader reader, string path = null)
     {
+        if (path != null)
+        {
+            sceneFileDir = Path.GetDirectoryName(Path.GetFullPath(path));
+        }
+
         YamlDocument document = ReadYaml(reader);
 
         var root = YamlExpect<YamlMappingNode>(document.RootNode);

@@ -90,7 +90,7 @@ class SceneLoaderTests
     {
         var node = new DummyNode();
         var loader = new SceneLoader(node);
-        loader.Load(new StringReader(blobYaml)).Wait();
+        loader.Load(new StringReader(blobYaml), "blobtest.yml").Wait();
 
         SyncObject obj = node.Objects[0];
         var task = node.ReadBlob((BlobHandle)obj.GetField("blobtest"));
