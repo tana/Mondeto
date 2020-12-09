@@ -1,11 +1,11 @@
 using System;
 
-public class ObjectMoveButtonTag
+public class ObjectMoveButtonTag : SimpleTag
 {
     SyncObject obj;
     SyncNode node;
 
-    public void Initialize(SyncObject syncObject)
+    public override void Setup(SyncObject syncObject)
     {
         obj = syncObject;
         node = obj.Node;
@@ -39,5 +39,10 @@ public class ObjectMoveButtonTag
             else
                 objToMove.SetField("angularVelocity", new Vec(0, 0, 0));
         }
+    }
+
+    public override void Cleanup(SyncObject syncObject)
+    {
+        obj.DeleteEventHandler("collisionStart", OnCollisionStart);
     }
 }

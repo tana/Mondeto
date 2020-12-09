@@ -1,11 +1,11 @@
 using System;
 
-public class GrabbableTag
+public class GrabbableTag : SimpleTag
 {
     SyncObject obj;
     SyncNode node;
 
-    public void Initialize(SyncObject syncObject)
+    public override void Setup(SyncObject syncObject)
     {
         obj = syncObject;
         node = obj.Node;
@@ -57,5 +57,11 @@ public class GrabbableTag
         obj.SetField("rotation", worldRot);
 
         obj.WriteDebugLog("grabbable", $"Ungrabbed by object {sender}");
+    }
+
+    public override void Cleanup(SyncObject syncObject)
+    {
+        obj.DeleteEventHandler("grab", OnGrab);
+        obj.DeleteEventHandler("ungrab", OnUngrab);
     }
 }

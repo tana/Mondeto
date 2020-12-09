@@ -49,6 +49,15 @@ public abstract class SyncNode : IDisposable
     public delegate void ObjectDeletedHandler(uint objId);
     public event ObjectDeletedHandler ObjectDeleted;
 
+    private Dictionary<string, Func<SyncObject, ITag>> TagCreators = new Dictionary<string, Func<SyncObject, ITag>>();
+
+    public SyncNode()
+    {
+        // Register simple (Unity-independent) tags
+        RegisterTag("grabbable", _ => new GrabbableTag());
+        RegisterTag("objectMoveButton", _ => new ObjectMoveButtonTag());
+    }
+
     // TODO naming
     public void SyncFrame(float dt)
     {
@@ -400,6 +409,13 @@ public abstract class SyncNode : IDisposable
     protected void InvokeObjectCreated(uint objId) => ObjectCreated?.Invoke(objId);
 
     protected void InvokeObjectDeleted(uint objId) => ObjectDeleted?.Invoke(objId);
+
+    public void RegisterTag(string name, Func<SyncObject, ITag> creator)
+    {
+        TagCreators[name] = creator;
+    }
+
+    public ITag CreateTag(string name, SyncObject obj) => TagCreators[name](obj);
 
     public abstract void Dispose();
 }

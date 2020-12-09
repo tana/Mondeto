@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ColliderSync : MonoBehaviour
+public class ColliderSync : MonoBehaviour, ITag
 {
     // Because parameter setting did not work correctly with GetComponent<Collider> in ApplyState,
     // the collider is stored right after creating with AddComponent<XxxCollider> .
@@ -14,7 +14,7 @@ public class ColliderSync : MonoBehaviour
     bool isTangible = false;
     bool isStatic = false;
 
-    public void Initialize(SyncObject obj)
+    public void Setup(SyncObject obj)
     {
         this.obj = obj;
         material = new PhysicMaterial();
@@ -191,6 +191,11 @@ public class ColliderSync : MonoBehaviour
         }
         // If a rigidbody is already attached (probably physics tag is present),
         // do not set isKinematic (not to disturb physics)
+    }
+
+    public void Cleanup(SyncObject obj)
+    {
+        Destroy(this);
     }
 
     public void OnDestroy()

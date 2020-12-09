@@ -10,7 +10,7 @@ using Cysharp.Threading.Tasks;
 
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(WalkAnimation))]
-public class PlayerAvatar : MonoBehaviour
+public class PlayerAvatar : MonoBehaviour, ITag
 {
     // Locomotion-related settings
     public float SpeedCoeff = 1.0f;
@@ -48,6 +48,15 @@ public class PlayerAvatar : MonoBehaviour
     private List<GameObject> headForShadow = new List<GameObject>();
 
     private HashSet<uint> clickedObjects = new HashSet<uint>();
+
+    // TODO:
+    public void Setup(SyncObject syncObject)
+    {
+    }
+    // TODO:
+    public void Cleanup(SyncObject syncObject)
+    {
+    }
 
     void Start()
     {

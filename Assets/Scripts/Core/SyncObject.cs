@@ -24,10 +24,7 @@ public class SyncObject
     public event BeforeAfterSyncDelegate BeforeSync;
     public event BeforeAfterSyncDelegate AfterSync;
 
-    public delegate void TagAddedDelegate(SyncObject sender, string tag);
-    public event TagAddedDelegate TagAdded;
-
-    HashSet<string> tags = new HashSet<string>();
+    Dictionary<string, ITag> tags = new Dictionary<string, ITag>();
 
     Dictionary<BlobHandle, ObjectWasmRunner> codes = new Dictionary<BlobHandle, ObjectWasmRunner>();
 
@@ -134,7 +131,7 @@ public class SyncObject
 
     public bool HasTag(string tag)
     {
-        return tags.Contains(tag);
+        return tags.ContainsKey(tag);
     }
 
     public void SendAudio(float[] data)
@@ -223,13 +220,15 @@ public class SyncObject
             foreach (var elem in tagsSeq.Elements)
             {
                 if (!(elem is Primitive<string>)) continue;
-                string tag = ((Primitive<string>)elem).Value;
+                string tagName = ((Primitive<string>)elem).Value;
                 
-                if (!tags.Contains(tag))
+                if (!tags.ContainsKey(tagName))
                 {
-                    TagAdded?.Invoke(this, tag);
-                    tags.Add(tag);
-                    WriteDebugLog("Object", $"Tag {tag} has been added");
+                    ITag tag = Node.CreateTag(tagName, this);
+                    if (tag == null) continue;  // if error, the creator returns null
+                    tags[tagName] = tag;
+                    tag.Setup(this);
+                    WriteDebugLog("Object", $"Tag {tagName} has been added");
                 }
                 // TODO: handle deleted tags?
             }

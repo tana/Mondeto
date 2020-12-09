@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class RigidbodySync : MonoBehaviour
+public class RigidbodySync : MonoBehaviour, ITag
 {
     bool beforeSync = false;
     SyncObject obj;
 
-    public void Initialize(SyncObject obj)
+    public void Setup(SyncObject obj)
     {
         this.obj = obj;
         if (GetComponent<Rigidbody>() == null)
@@ -57,6 +57,11 @@ public class RigidbodySync : MonoBehaviour
         obj.SetField("angularVelocity", UnityUtil.ToVec(transform.InverseTransformVector(GetComponent<Rigidbody>().angularVelocity)));
 
         beforeSync = false;
+    }
+
+    public void Cleanup(SyncObject obj)
+    {
+        Destroy(this);
     }
 
     void OnDestroy()
