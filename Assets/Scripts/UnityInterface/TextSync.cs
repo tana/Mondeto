@@ -1,11 +1,11 @@
 using UnityEngine;
 
-public class TextSync : MonoBehaviour
+public class TextSync : MonoBehaviour, ITag
 {
     SyncObject obj;
     TextMesh textMesh;
 
-    public void Initialize(SyncObject obj)
+    public void Setup(SyncObject obj)
     {
         this.obj = obj;
         textMesh = gameObject.AddComponent<TextMesh>();
@@ -34,6 +34,10 @@ public class TextSync : MonoBehaviour
         {
             textMesh.richText = (useRichText != 0);
         }
+    }
+
+    public void Cleanup(SyncObject syncObject)
+    {
     }
 
     public void OnDestroy()

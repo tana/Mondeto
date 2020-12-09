@@ -2,13 +2,13 @@ using UnityEngine;
 using UnityEngine.Networking;
 using Cysharp.Threading.Tasks;
 
-public class AudioPlayer : MonoBehaviour
+public class AudioPlayer : MonoBehaviour, ITag
 {
     SyncObject obj;
 
     AudioSource audioSource;
 
-    public void Initialize(SyncObject obj)
+    public void Setup(SyncObject obj)
     {
         this.obj = obj;
 
@@ -104,6 +104,11 @@ public class AudioPlayer : MonoBehaviour
         {
             obj.SetField("audioPlaying", new Primitive<int>(audioSource.isPlaying ? 1 : 0));
         }
+    }
+
+    public void Cleanup(SyncObject obj)
+    {
+        Destroy(this);
     }
 
     public void OnDestroy()

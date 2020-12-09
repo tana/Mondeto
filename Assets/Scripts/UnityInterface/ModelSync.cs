@@ -3,14 +3,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 
-public class ModelSync : MonoBehaviour
+public class ModelSync : MonoBehaviour, ITag
 {
     public delegate void LoadCompleteDelegate(ModelSync ms);
     public event LoadCompleteDelegate LoadComplete;
 
     UniGLTF.ImporterContext ctx;
 
-    public async void Initialize(SyncObject obj)
+    public async void Setup(SyncObject obj)
     {
         // TODO: dynamic model change handling
         if (!obj.HasField("model") || !(obj.GetField("model") is BlobHandle))
@@ -54,6 +54,10 @@ public class ModelSync : MonoBehaviour
         {
             return ctx.Nodes.Select(tf => tf.gameObject).ToList();
         }
+    }
+
+    public void Cleanup(SyncObject syncObject)
+    {
     }
 
     public void OnDestroy()

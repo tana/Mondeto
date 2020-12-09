@@ -2,7 +2,7 @@ using UnityEngine;
 
 // Extrapolate (predict) position and rotation
 // using assumptions that the object moves with constant velocity and angular velocity.
-public class ConstantVelocity : MonoBehaviour
+public class ConstantVelocity : MonoBehaviour, ITag
 {
     private SyncObject obj;
 
@@ -14,7 +14,7 @@ public class ConstantVelocity : MonoBehaviour
     private Vector3 lastPosition = Vector3.zero;
     private Quaternion lastRotation = Quaternion.identity;
 
-    public void Initialize(SyncObject obj)
+    public void Setup(SyncObject obj)
     {
         this.obj = obj;
 
@@ -69,6 +69,11 @@ public class ConstantVelocity : MonoBehaviour
         obj.SetField("angularVelocity", UnityUtil.ToVec(transform.InverseTransformVector(angularVelocity)));
 
         beforeSync = false;
+    }
+
+    public void Cleanup(SyncObject obj)
+    {
+        Destroy(this);
     }
 
     public void OnDestroy()

@@ -23,12 +23,6 @@ public class SyncBehaviour : MonoBehaviour
     int count = 0;
     const int countPeriod = 5000;
 
-    // Object Tag (Tags that create a new GameObject)
-    Dictionary<string, Func<SyncObject, GameObject>> ObjectTagInitializers = new Dictionary<string, Func<SyncObject, GameObject>>();
-
-    // Component Tag (Tags that need a GameObject)
-    Dictionary<string, Action<SyncObject, GameObject>> ComponentTagInitializers = new Dictionary<string, Action<SyncObject, GameObject>>();
-
     HashSet<uint> OriginalObjectIds = new HashSet<uint>();
 
     public GameObject PlayerPrefab;
@@ -50,81 +44,6 @@ public class SyncBehaviour : MonoBehaviour
             Settings.Instance.TempDirectory = Application.temporaryCachePath;
         }
 
-        // Tags that create new GameObject
-        RegisterObjectTag("player", obj => Instantiate(PlayerPrefab));
-        // primitives
-        var primitives = new (string, PrimitiveType)[] {
-            ("cube", PrimitiveType.Cube),
-            ("sphere", PrimitiveType.Sphere),
-            ("plane", PrimitiveType.Plane),
-            ("cylinder", PrimitiveType.Cylinder),
-        };
-        foreach (var (name, primitiveType) in primitives)
-        {
-            RegisterObjectTag(name, obj => {
-                var gameObj = GameObject.CreatePrimitive(primitiveType);
-                Destroy(gameObj.GetComponent<Collider>());
-                return gameObj;
-            });
-        }
-        RegisterObjectTag("model", obj => {
-            var gameObj = new GameObject();
-            gameObj.AddComponent<ModelSync>().Initialize(obj);
-            return gameObj;
-        });
-        RegisterObjectTag("light", obj => {
-            var gameObj = new GameObject();
-            // https://docs.unity3d.com/ja/2019.4/Manual/Lighting.html
-            var light = gameObj.AddComponent<Light>();
-
-            light.shadows = LightShadows.Soft;  // TODO:
-
-            // TODO: real-time sync
-            if (obj.TryGetField("color", out Vec colorVec))
-            {
-                light.color = new Color(colorVec.X, colorVec.Y, colorVec.Z);
-            }
-            // https://docs.unity3d.com/ja/2019.4/Manual/Lighting.html
-            if (obj.TryGetFieldPrimitive("lightType", out string lightType))
-            {
-                switch (lightType)
-                {
-                    case "directional":
-                        light.type = LightType.Directional;
-                        break;
-                    case "point":
-                        light.type = LightType.Point;
-                        break;
-                    // TODO
-                }
-            }
-
-            return gameObj;
-        });
-        RegisterObjectTag("text", obj => {
-            var gameObj = new GameObject();
-            gameObj.AddComponent<TextSync>().Initialize(obj);
-            return gameObj;
-        });
-
-        // Tags that uses already existing GameObject
-        RegisterComponentTag("physics", (obj, gameObj) => {
-            gameObj.AddComponent<RigidbodySync>().Initialize(obj);
-        });
-        RegisterComponentTag("collider", (obj, gameObj) => {
-            gameObj.AddComponent<ColliderSync>().Initialize(obj);
-        });
-        // TODO: think more appropriate name for this tag
-        RegisterComponentTag("material", (obj, gameObj) => {
-            gameObj.AddComponent<MaterialSync>().Initialize(obj);
-        });
-        RegisterComponentTag("constantVelocity", (obj, gameObj) => {
-            gameObj.AddComponent<ConstantVelocity>().Initialize(obj);
-        });
-        RegisterComponentTag("audioPlayer", (obj, gameObj) => {
-            gameObj.AddComponent<AudioPlayer>().Initialize(obj);
-        });
-
         if (IsServer)
         {
             Node = new SyncServer(Settings.Instance.SignalerUrlForServer);
@@ -136,6 +55,8 @@ public class SyncBehaviour : MonoBehaviour
 
         Node.ObjectCreated += OnObjectCreated;
         Node.ObjectDeleted += OnObjectDeleted;
+
+        RegisterTags();
 
         try
         {
@@ -187,6 +108,37 @@ public class SyncBehaviour : MonoBehaviour
         }
     }
 
+    void RegisterTags()
+    {
+        // Tags that create new GameObject
+        RegisterObjectTag<PlayerAvatar>("player", () => Instantiate(PlayerPrefab));
+        // primitives
+        var primitives = new (string, PrimitiveType)[] {
+            ("cube", PrimitiveType.Cube),
+            ("sphere", PrimitiveType.Sphere),
+            ("plane", PrimitiveType.Plane),
+            ("cylinder", PrimitiveType.Cylinder),
+        };
+        foreach (var (name, primitiveType) in primitives)
+        {
+            RegisterObjectTag<PrimitiveTag>(name, () => {
+                var gameObj = GameObject.CreatePrimitive(primitiveType);
+                Destroy(gameObj.GetComponent<Collider>());
+                return gameObj;
+            });
+        }
+        RegisterObjectTag<ModelSync>("model", () => new GameObject());
+        RegisterObjectTag<LightTag>("light", () => new GameObject());
+        RegisterObjectTag<TextSync>("text", () => new GameObject());
+
+        // Tags that uses already existing GameObject
+        RegisterComponentTag<RigidbodySync>("physics");
+        RegisterComponentTag<ColliderSync>("collider");
+        RegisterComponentTag<MaterialSync>("material");
+        RegisterComponentTag<ConstantVelocity>("constantVelocity");
+        RegisterComponentTag<AudioPlayer>("audioPlayer");
+    }
+
     // Update is called once per frame
     void FixedUpdate()
     {
@@ -236,18 +188,22 @@ public class SyncBehaviour : MonoBehaviour
         var gameObj = new GameObject();
         gameObj.transform.SetParent(this.transform);
         SetupObjectSync(gameObj, obj);
-        obj.TagAdded += OnTagAdded;
     }
 
-    void OnTagAdded(SyncObject obj, string tag)
+    public void RegisterObjectTag<T>(string tagName, Func<GameObject> objectCreaetor) where T : MonoBehaviour, ITag
     {
-        if (ObjectTagInitializers.ContainsKey(tag) && !OriginalObjectIds.Contains(obj.Id))
-        {
-            // Because these tags creates a new Unity GameObject,
+        Node.RegisterTag(tagName, obj => {
+            if (OriginalObjectIds.Contains(obj.Id))
+            {
+                return GameObjects[obj.Id].GetComponent<T>();   // TODO: null handling (might happen for constantVelocity of local player?)
+            }
+
+            // Because Object Tags creates a new Unity GameObject,
             // these can be added only once per one SyncObject.
             // This also happens for GameObjects in OriginalObjects that have the above tags in initialTags.
 
-            var gameObj = ObjectTagInitializers[tag](obj);
+            var gameObj = objectCreaetor();
+            T tag = gameObj.GetComponent<T>() ?? gameObj.AddComponent<T>();
             gameObj.transform.SetParent(this.transform);
             if (GameObjects.ContainsKey(obj.Id))
             {
@@ -256,41 +212,24 @@ public class SyncBehaviour : MonoBehaviour
                 ReplaceObject(obj, gameObj);
             }
             SetupObjectSync(gameObj, obj);
-        }
-        else if (ComponentTagInitializers.ContainsKey(tag))
-        {
-            // These tag require GameObject
+
+            return tag;
+        });
+    }
+
+    public void RegisterComponentTag<T>(string tagName) where T : MonoBehaviour, ITag
+    {
+        Node.RegisterTag(tagName, obj => {
+            // A Component Tag requires a GameObject
             if (!GameObjects.ContainsKey(obj.Id))
             {
-                Logger.Log("SyncBehaviour", $"Tag {tag} is ignored because there is no GameObject corresponds to  object {obj.Id}");
-                return;
+                obj.WriteErrorLog("SyncBehaviour", $"Cannot add tag {tagName} because there is no GameObject corresponds to object {obj.Id}");
+                return null;    // failed
             }
 
             var gameObj = GameObjects[obj.Id];
-            ComponentTagInitializers[tag](obj, gameObj);
-        }
-        else if (tag == "grabbable")    // TODO: move to somewhere of core, not in Unity-specific code
-        {
-            (new GrabbableTag()).Initialize(obj);
-        }
-        else if (tag == "objectMoveButton") // TODO: move to somewhere of core, not in Unity-specific code
-        {
-            (new ObjectMoveButtonTag()).Initialize(obj);
-        }
-        else
-        {
-            Logger.Log("SyncBehaviour", "Unknown tag " + tag);
-        }
-    }
-
-    public void RegisterObjectTag(string tagName, Func<SyncObject, GameObject> initializer)
-    {
-        ObjectTagInitializers[tagName] = initializer;
-    }
-
-    public void RegisterComponentTag(string tagName, Action<SyncObject, GameObject> initializer)
-    {
-        ComponentTagInitializers[tagName] = initializer;
+            return gameObj.AddComponent<T>();
+        });
     }
 
     void SetupObjectSync(GameObject gameObj, SyncObject obj)

@@ -1,12 +1,12 @@
 using UnityEngine;
 
-public class MaterialSync : MonoBehaviour
+public class MaterialSync : MonoBehaviour, ITag
 {
     SyncObject obj;
 
     Renderer meshRenderer;
 
-    public void Initialize(SyncObject obj)
+    public void Setup(SyncObject obj)
     {
         this.obj = obj;
         meshRenderer = GetComponent<MeshRenderer>();
@@ -35,6 +35,11 @@ public class MaterialSync : MonoBehaviour
         }
 
         meshRenderer.material.color = color;
+    }
+
+    public void Cleanup(SyncObject obj)
+    {
+        Destroy(this);
     }
 
     public void OnDestroy()
