@@ -30,7 +30,7 @@ Languages | [English](README.md) | 日本語
 より高度な使い方に関しては、[本リポジトリのWiki](https://github.com/tana/Mondeto/wiki)をご参照ください。
 
 ## ✉️連絡先
-ご不明な点がございましたら、[Discordチャット](https://discord.gg/XKQtmT2XxP)または[開発者のTwitter](https://twitter.com/tana_ash)でご質問ください。
+ご不明な点がございましたら、[GitHub Discussions](https://github.com/tana/Mondeto/discussions)、[Discordチャット](https://discord.gg/XKQtmT2XxP)または[開発者のTwitter](https://twitter.com/tana_ash)でご質問ください。
 
 ## ⚖️ライセンス
 Mondeto自体は[MIT License](LICENSE)でライセンスされています。

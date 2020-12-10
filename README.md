@@ -30,7 +30,7 @@ For controls, please see [this page](https://github.com/tana/Mondeto/wiki/Contro
 For more advanced usage, please refer to [the wiki of this repository](https://github.com/tana/Mondeto/wiki).
 
 ## ✉️Contacts
-If you have any questions, please ask [on the Discord chat](https://discord.gg/XKQtmT2XxP) or [ask the developer on Twitter](https://twitter.com/tana_ash).
+If you have any questions, please ask [on the GitHub Discussions](https://github.com/tana/Mondeto/discussions), ask [on the Discord chat](https://discord.gg/XKQtmT2XxP) or [ask the developer on Twitter](https://twitter.com/tana_ash).
 
 ## ⚖️License
 Mondeto itself is licensed under [MIT License](LICENSE). However, it uses some third-party programs and data that is licensed under various licenses (see [credits/Credits.md](credits/Credits.md)).
