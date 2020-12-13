@@ -74,3 +74,6 @@ Public domain. Quote from the beginning of the `mime.types` file (`Assets/Stream
 > ```
 
 Note: some new types were added at the end of the file.
+
+### Earth image (`earth.jpg`)
+Earth texture image (`Assets/StreamingAssets/scene_data/earth.jpg`) is a resized version of ["June, Blue Marble Next Generation w/ Topography"](https://visibleearth.nasa.gov/images/74368/june-blue-marble-next-generation-w-topography) by NASA (National Aeronautics and Space Administration).
