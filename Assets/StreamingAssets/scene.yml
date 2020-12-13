@@ -34,6 +34,8 @@ objects:
     position: !vec [8, 30, 10]
     rotation: !quat [1, 0, 0, 0]
     color: !vec [1, 0, 0]
+    metallic: 0.0
+    smoothness: 0.7
     mass: 10.0  # ".0" is necessary to indicate it is float
     tags: [sphere, material, collider, physics]
   # Object hierarchy test (small, non-colliding ball as a child of the red ball)
