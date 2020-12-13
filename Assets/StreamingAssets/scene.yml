@@ -114,6 +114,13 @@ objects:
     texture: !load_file "scene_data/earth.jpg"
     shader: unlit
     tags: [sphere, material]
+  # Credit for Earth texture by NASA
+  - position: !vec [-3.6, 0.4, 3]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.1, 0.1, 0.1]
+    text: "Texture image by NASA"
+    fontSize: 12
+    tags: [text]
   # ------- Shooting game -------
   # Raygun
   - position: !vec [1.3, 1, 1]
