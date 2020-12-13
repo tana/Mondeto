@@ -112,6 +112,7 @@ objects:
     size: !vec [1, 1, 1]
     color: !vec [1, 1, 1]
     texture: !load_file "scene_data/earth.jpg"
+    shader: unlit
     tags: [sphere, material]
   # ------- Shooting game -------
   # Raygun

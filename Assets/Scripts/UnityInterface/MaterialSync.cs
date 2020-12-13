@@ -14,9 +14,11 @@ public class MaterialSync : MonoBehaviour, ITag
         obj.RegisterFieldUpdateHandler("color", HandleUpdate);
         obj.RegisterFieldUpdateHandler("alpha", HandleUpdate);
         obj.RegisterFieldUpdateHandler("texture", HandleTextureUpdate);
+        obj.RegisterFieldUpdateHandler("shader", HandleShaderUpdate);
 
         HandleUpdate();
         HandleTextureUpdate();
+        HandleShaderUpdate();
     }
 
     void HandleUpdate()
@@ -54,6 +56,26 @@ public class MaterialSync : MonoBehaviour, ITag
         }
     }
 
+    void HandleShaderUpdate()
+    {
+        if (obj.TryGetFieldPrimitive("shader", out string shader))
+        {
+            string shaderName;
+            switch (shader)
+            {
+                case "unlit":
+                    shaderName = "Unlit/Texture";
+                    break;
+                case "standard":
+                default:
+                    shaderName = "Standard";
+                    break;
+            }
+
+            meshRenderer.material.shader = Shader.Find(shaderName);
+        }
+    }
+
     public void Cleanup(SyncObject obj)
     {
         Destroy(this);
@@ -64,5 +86,6 @@ public class MaterialSync : MonoBehaviour, ITag
         obj.DeleteFieldUpdateHandler("color", HandleUpdate);
         obj.DeleteFieldUpdateHandler("alpha", HandleUpdate);
         obj.DeleteFieldUpdateHandler("texture", HandleTextureUpdate);
+        obj.DeleteFieldUpdateHandler("shader", HandleShaderUpdate);
     }
 }
