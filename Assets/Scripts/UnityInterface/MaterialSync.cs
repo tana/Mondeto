@@ -13,8 +13,10 @@ public class MaterialSync : MonoBehaviour, ITag
 
         obj.RegisterFieldUpdateHandler("color", HandleUpdate);
         obj.RegisterFieldUpdateHandler("alpha", HandleUpdate);
+        obj.RegisterFieldUpdateHandler("texture", HandleTextureUpdate);
 
         HandleUpdate();
+        HandleTextureUpdate();
     }
 
     void HandleUpdate()
@@ -37,6 +39,21 @@ public class MaterialSync : MonoBehaviour, ITag
         meshRenderer.material.color = color;
     }
 
+    async void HandleTextureUpdate()
+    {
+        if (obj.TryGetField("texture", out BlobHandle blobHandle))
+        {
+            Blob blob = await obj.Node.ReadBlob(blobHandle);
+            // Texture size is automatically updated by LoadImage,
+            // so we can specify arbitrary value when creating aTexture2D.
+            //  See: https://docs.unity3d.com/ja/2019.4/ScriptReference/ImageConversion.LoadImage.html
+            var texture = new Texture2D(1, 1);
+            texture.LoadImage(blob.Data);
+            meshRenderer.material.mainTexture = texture;
+            obj.WriteLog("MaterialSync", "Texture loaded");
+        }
+    }
+
     public void Cleanup(SyncObject obj)
     {
         Destroy(this);
@@ -46,5 +63,6 @@ public class MaterialSync : MonoBehaviour, ITag
     {
         obj.DeleteFieldUpdateHandler("color", HandleUpdate);
         obj.DeleteFieldUpdateHandler("alpha", HandleUpdate);
+        obj.DeleteFieldUpdateHandler("texture", HandleTextureUpdate);
     }
 }
