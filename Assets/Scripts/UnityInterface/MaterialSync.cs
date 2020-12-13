@@ -64,7 +64,8 @@ public class MaterialSync : MonoBehaviour, ITag
             switch (shader)
             {
                 case "unlit":
-                    shaderName = "Unlit/Texture";
+                    // Use UniVRM's unlit shader which can be used regardless of textured/untextured or transparent/opaque
+                    shaderName = "UniGLTF/UniUnlit";
                     break;
                 case "standard":
                 default:
