@@ -130,6 +130,7 @@ public class SyncBehaviour : MonoBehaviour
         RegisterObjectTag<ModelSync>("model", () => new GameObject());
         RegisterObjectTag<LightTag>("light", () => new GameObject());
         RegisterObjectTag<TextSync>("text", () => new GameObject());
+        RegisterObjectTag<MeshTag>("mesh", () => new GameObject());
 
         // Tags that uses already existing GameObject
         RegisterComponentTag<RigidbodySync>("physics");

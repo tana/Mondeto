@@ -123,6 +123,24 @@ objects:
     text: "Texture image by NASA"
     fontSize: 12
     tags: [text]
+  # Mesh test
+  - position: !vec [-4.5, 1, 3]
+    rotation: !euler [0, 0, 0]
+    vertices: [
+      !vec [-0.5, -0.5, 0.0], # bottom left
+      !vec [-0.5, 0.5, 0.0],  # top left
+      !vec [0.5, 0.5, 0.0],   # top right
+      !vec [0.5, -0.5, 0.0]   # bottom right
+    ]
+    normals: [
+      !vec [0.0, 0.0, -1.0],
+      !vec [0.0, 0.0, -1.0],
+      !vec [0.0, 0.0, -1.0],
+      !vec [0.0, 0.0, -1.0]
+    ]
+    indices: [0, 1, 2, 0, 2, 3]
+    color: !vec [1, 1, 1]
+    tags: [mesh, material]
   # ------- Shooting game -------
   # Raygun
   - position: !vec [1.3, 1, 1]
