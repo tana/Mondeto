@@ -93,6 +93,11 @@ public class ObjectWasmRunner : WasmRunner
 
     IValue FindValue(uint valueId)
     {
+        // For debug. TODO: move to better error handling
+        if (!IsValueIdValid(valueId))
+        {
+            throw new ArgumentException($"Invalid value ID {valueId} (max={valueList.Count})");
+        }
         return valueList[(int)valueId];
     }
 

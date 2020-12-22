@@ -224,6 +224,12 @@ public class SyncObject
                 
                 if (!tags.ContainsKey(tagName))
                 {
+                    if (!Node.IsTagRegistered(tagName))
+                    {
+                        WriteErrorLog("Object", $"Unknown tag: {tagName}");
+                        continue;
+                    }
+
                     ITag tag = Node.CreateTag(tagName, this);
                     if (tag == null) continue;  // if error, the creator returns null
                     tags[tagName] = tag;

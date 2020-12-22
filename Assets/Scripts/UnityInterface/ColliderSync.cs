@@ -53,6 +53,8 @@ public class ColliderSync : MonoBehaviour, ITag
             RegisterCollider(collider);
         }
 
+        // TODO: support mesh tag
+
         obj.RegisterFieldUpdateHandler("friction", HandleUpdate);
         obj.RegisterFieldUpdateHandler("restitution", HandleUpdate);
         obj.RegisterFieldUpdateHandler("isTangible", HandleUpdate);

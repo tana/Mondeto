@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEngine;
 
 public class UnityUtil
@@ -20,5 +21,19 @@ public class UnityUtil
     public static Quaternion FromQuat(Quat q)
     {
         return new Quaternion(q.X, q.Y, q.Z, q.W);
+    }
+
+    public static Vector3[] VecSequenceToUnity(Sequence seq)
+    {
+        return seq.Elements.Select(
+            elem => (elem is Vec vec) ? UnityUtil.FromVec(vec) : Vector3.zero
+        ).ToArray();
+    }
+
+    public static int[] IntSequenceToUnity(Sequence seq)
+    {
+        return seq.Elements.Select(
+            elem => (elem is Primitive<int> idx) ? idx.Value : 0
+        ).ToArray();
     }
 }
