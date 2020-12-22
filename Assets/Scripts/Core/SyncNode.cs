@@ -417,5 +417,7 @@ public abstract class SyncNode : IDisposable
 
     public ITag CreateTag(string name, SyncObject obj) => TagCreators[name](obj);
 
+    public bool IsTagRegistered(string name) => TagCreators.ContainsKey(name);
+
     public abstract void Dispose();
 }
