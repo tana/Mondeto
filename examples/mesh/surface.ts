@@ -2,18 +2,25 @@ import "wasi";
 import { make_vec, makeSequence, setField, make_int } from "mondeto-as";
 
 const DIV: i32 = 32;
+let vertices: Array<u32>;
+let indices: Array<u32>;
+
+let time: f64 = 0;
 
 export function init(): void {
-    trace("plot start");
+    vertices = new Array<u32>((DIV + 1) * (DIV + 1));
+    indices = new Array<u32>(6 * DIV * DIV);
+}
 
-    const vertices = new Array<u32>((DIV + 1) * (DIV + 1));
-    const indices = new Array<u32>(6 * DIV * DIV);
+export function update(dt: f32): void {
+    time += dt;
+
     // Plot
     for (let i = 0; i <= DIV; i++) {
         const y = 2.0 * i / DIV - 1.0;
         for (let j = 0; j <= DIV; j++) {
             const x = 2.0 * j / DIV - 1.0;
-            const z = func(x, y);
+            const z = func(x, y, time);
 
             // f64 values are cast to f32 (see: https://www.assemblyscript.org/types.html#type-rules )
             vertices[i * (DIV + 1) + j] = make_vec(f32(x), f32(y), f32(-z));
@@ -33,17 +40,10 @@ export function init(): void {
 
     setField("vertices", makeSequence(vertices));
     setField("indices", makeSequence(indices));
-
-    trace("plot done");
-}
-
-export function update(dt: f32): void {
 }
 
 // Function to plot
-function func(x: f64, y: f64): f64 {
-    const r = 10 * Math.sqrt(x * x + y * y);
-    // Sinc function ( https://mathworld.wolfram.com/SincFunction.html )
-    if (r < 0.001) return 1.0;
-    else return Math.sin(r) / r;
+function func(x: f64, y: f64, t: f64): f64 {
+    // 2D wave animation
+    return 0.1 * Math.sin(2 * Math.PI * (t + x + 0.5 * y));
 }
