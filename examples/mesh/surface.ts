@@ -7,7 +7,7 @@ export function init(): void {
     trace("plot start");
 
     const vertices = new Array<u32>((DIV + 1) * (DIV + 1));
-    const indices = new Array<u32>(6 * (DIV + 1) * (DIV + 1));
+    const indices = new Array<u32>(6 * DIV * DIV);
     // Plot
     for (let i = 0; i <= DIV; i++) {
         const y = 2.0 * i / DIV - 1.0;
@@ -19,14 +19,15 @@ export function init(): void {
             vertices[i * (DIV + 1) + j] = make_vec(f32(x), f32(y), f32(-z));
         }
     }
+    let p = 0;
     for (let i = 0; i < DIV; i++) {
         for (let j = 0; j < DIV; j++) {
-            indices[6 * i * j] = make_int(i * (DIV + 1) + j);               // -x -y
-            indices[6 * i * j + 1] = make_int((i + 1) * (DIV + 1) + j);     // -x +y
-            indices[6 * i * j + 2] = make_int((i + 1) * (DIV + 1) + j + 1); // +x +y
-            indices[6 * i * j + 3] = make_int(i * (DIV + 1) + j);           // -x -y
-            indices[6 * i * j + 4] = make_int((i + 1) * (DIV + 1) + j + 1); // +x +y
-            indices[6 * i * j + 5] = make_int(i * (DIV + 1) + j + 1);       // +x -y
+            indices[p++] = make_int(i * (DIV + 1) + j);           // -x -y
+            indices[p++] = make_int((i + 1) * (DIV + 1) + j);     // -x +y
+            indices[p++] = make_int((i + 1) * (DIV + 1) + j + 1); // +x +y
+            indices[p++] = make_int(i * (DIV + 1) + j);           // -x -y
+            indices[p++] = make_int((i + 1) * (DIV + 1) + j + 1); // +x +y
+            indices[p++] = make_int(i * (DIV + 1) + j + 1);       // +x -y
         }
     }
 
