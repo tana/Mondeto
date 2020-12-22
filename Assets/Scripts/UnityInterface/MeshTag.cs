@@ -1,4 +1,3 @@
-using System.Linq;
 using UnityEngine;
 
 // Tag for rendering 3D mesh specified by field value
@@ -52,12 +51,12 @@ public class MeshTag : MonoBehaviour, ITag
             // Modify properties of a Mesh object to dynamically generate mesh from a program
             //  See: https://docs.unity3d.com/ja/2019.4/ScriptReference/Mesh.html
 
-            mesh.vertices = VecSequenceToUnity(verticesSeq);
+            mesh.vertices = UnityUtil.VecSequenceToUnity(verticesSeq);
             if (normalsSeq != null)
             {
-                mesh.normals = VecSequenceToUnity(normalsSeq);
+                mesh.normals = UnityUtil.VecSequenceToUnity(normalsSeq);
             }
-            mesh.triangles = IntSequenceTounity(indicesSeq);
+            mesh.triangles = UnityUtil.IntSequenceToUnity(indicesSeq);
 
             if (normalsSeq == null) // Automatic normal calculation
             {
@@ -70,19 +69,5 @@ public class MeshTag : MonoBehaviour, ITag
     {
         obj.DeleteFieldUpdateHandler("vertices", HandleUpdate);
         obj.DeleteFieldUpdateHandler("indices", HandleUpdate);
-    }
-
-    Vector3[] VecSequenceToUnity(Sequence seq)
-    {
-        return seq.Elements.Select(
-            elem => (elem is Vec vec) ? UnityUtil.FromVec(vec) : Vector3.zero
-        ).ToArray();
-    }
-
-    int[] IntSequenceTounity(Sequence seq)
-    {
-        return seq.Elements.Select(
-            elem => (elem is Primitive<int> idx) ? idx.Value : 0
-        ).ToArray();
     }
 }

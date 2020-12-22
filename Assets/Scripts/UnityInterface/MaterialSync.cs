@@ -4,12 +4,12 @@ public class MaterialSync : MonoBehaviour, ITag
 {
     SyncObject obj;
 
-    Renderer meshRenderer;
+    Renderer theRenderer;
 
     public void Setup(SyncObject obj)
     {
         this.obj = obj;
-        meshRenderer = GetComponent<MeshRenderer>();
+        theRenderer = GetComponent<Renderer>();
 
         obj.RegisterFieldUpdateHandler("color", HandleUpdate);
         obj.RegisterFieldUpdateHandler("alpha", HandleUpdate);
@@ -40,16 +40,16 @@ public class MaterialSync : MonoBehaviour, ITag
             color.a = alpha;
         }
 
-        meshRenderer.material.color = color;
+        theRenderer.material.color = color;
 
         if (obj.TryGetFieldPrimitive("metallic", out float metallic))
         {
-            meshRenderer.material.SetFloat("_Metallic", metallic);
+            theRenderer.material.SetFloat("_Metallic", metallic);
         }
 
         if (obj.TryGetFieldPrimitive("smoothness", out float smoothness))
         {
-            meshRenderer.material.SetFloat("_Glossiness", smoothness);
+            theRenderer.material.SetFloat("_Glossiness", smoothness);
         }
     }
 
@@ -63,7 +63,7 @@ public class MaterialSync : MonoBehaviour, ITag
             //  See: https://docs.unity3d.com/ja/2019.4/ScriptReference/ImageConversion.LoadImage.html
             var texture = new Texture2D(1, 1);
             texture.LoadImage(blob.Data);
-            meshRenderer.material.mainTexture = texture;
+            theRenderer.material.mainTexture = texture;
             obj.WriteLog("MaterialSync", "Texture loaded");
         }
     }
@@ -85,7 +85,7 @@ public class MaterialSync : MonoBehaviour, ITag
                     break;
             }
 
-            meshRenderer.material.shader = Shader.Find(shaderName);
+            theRenderer.material.shader = Shader.Find(shaderName);
         }
     }
 
