@@ -1,5 +1,5 @@
 world:
-  test: testtesttest
+  skyboxTexture: !load_file "scene_data/kloofendal_48d_partly_cloudy_2048x1024.jpg"
 objects:
   # Light
   # Use an angled directional light as the sun
@@ -142,6 +142,13 @@ objects:
     color: !vec [1, 1, 0]
     shader: unlit
     tags: [line, material]
+  # Credit for the skybox image
+  - position: !vec [-5.5, 3, 3]
+    rotation: !euler [-20, 0, 0]
+    scale: !vec [0.1, 0.1, 0.1]
+    text: "Skybox image:\n\"Kloofendal 48d Partly Cloudy\" by Greg Zaal."
+    fontSize: 15
+    tags: [text]
   # ------- Shooting game -------
   # Raygun
   - position: !vec [1.3, 1, 1]
