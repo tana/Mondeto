@@ -42,10 +42,18 @@ public class SceneLoader
         YamlDocument document = ReadYaml(reader);
 
         var root = YamlExpect<YamlMappingNode>(document.RootNode);
+
+        // Load settings of the world object
+        var worldKey = new YamlScalarNode("world");
+        if (root.Children.ContainsKey(worldKey))    // "world" is optional
+        {
+            LoadWorldSettings(root.Children[worldKey]);
+        }
+
+        // Other objects
         var objectsKey = new YamlScalarNode("objects");
         if (!root.Children.ContainsKey(objectsKey)) ThrowError(root, "No entry called objects found");
         var objects = YamlExpect<YamlSequenceNode>(root.Children[objectsKey]);
-
         // Process objects
         foreach (YamlNode elem in objects)
         {
@@ -102,6 +110,48 @@ public class SceneLoader
             IValue val = YamlToValue(pair.Value);
 
             obj.SetField(keyNode.Value, val);
+        }
+    }
+
+    void LoadWorldSettings(YamlNode yamlNode)
+    {
+        var worldNode = YamlExpect<YamlMappingNode>(yamlNode);
+        SyncObject worldObj = node.Objects[SyncNode.WorldObjectId];
+
+        // Some fields are prohibited
+        var prohibitedFields = new HashSet<string> { "parent", "position", "rotation", "velocity", "angularVelocity" };
+
+        foreach (var pair in worldNode)
+        {
+            var keyNode = YamlExpect<YamlScalarNode>(pair.Key);
+            if (keyNode.Value == null) ThrowError(keyNode, "Invalid field name");
+
+            var fieldVal = YamlToValue(pair.Value);
+
+            if (prohibitedFields.Contains(keyNode.Value))   // Prohibited field
+            {
+                Logger.Error("SceneLoader", $"Field {keyNode.Value} is not allowed for the world object");
+            }
+            else if (keyNode.Value == "tags")
+            {
+                if (fieldVal is Sequence tags)
+                {
+                    // Ensure the world object always has "world" tag
+                    var worldTagStr = new Primitive<string>("world");
+                    if (tags.Elements.Contains(worldTagStr))
+                        tags.Elements.Insert(0, worldTagStr);
+                    worldObj.SetField("tags", tags);
+                }
+                else
+                {
+                    // Otherwise (not a Sequence), tag setting is blocked
+                    Logger.Error("SceneLoader", "tags field of the world object must be a sequence");
+                }
+            }
+            else
+            {
+                worldObj.SetField(keyNode.Value, fieldVal);
+            }
         }
     }
 

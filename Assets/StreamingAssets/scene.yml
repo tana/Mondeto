@@ -1,3 +1,5 @@
+world:
+  test: testtesttest
 objects:
   # Light
   # Use an angled directional light as the sun
