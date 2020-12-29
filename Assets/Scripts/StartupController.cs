@@ -18,45 +18,26 @@ public class StartupController : MonoBehaviour
 
     public Text AvatarInfo;
 
-    string settingsPath;
-    bool isSettingsValid;
-
     public void Start()
     {
-        settingsPath = Application.persistentDataPath + Path.DirectorySeparatorChar + "settings.yml";
+        SettingsManager.Instance.InitializeSettings();
 
-        if (File.Exists(settingsPath))
+        // Data directory settings for Android
+        if (Application.platform == RuntimePlatform.Android)
         {
-            isSettingsValid = LoadSettingsFromFile();
-        }
-        else
-        {
-            // If the settings file is not exist (first launch), set default settings
-            // Data directory settings
-            if (Application.platform == RuntimePlatform.Android)
+            // On Android (including Quest), streaming assets are inside the JAR file.
+            //  See: https://docs.unity3d.com/ja/2019.4/Manual/StreamingAssets.html
+            string extractedDir = Application.temporaryCachePath + "/assets";
+            if (!Directory.Exists(extractedDir))
             {
-                // On Android (including Quest), streaming assets are inside the JAR file.
-                //  See: https://docs.unity3d.com/ja/2019.4/Manual/StreamingAssets.html
-                string extractedDir = Application.temporaryCachePath + "/assets";
-                if (!Directory.Exists(extractedDir))
-                {
-                    // Extract from JAR if not already extracted
-                    ExtractZipPartially(Application.dataPath, "assets/", extractedDir);
-                }
-
-                Settings.Instance.AvatarPath = extractedDir + "/default_avatar.vrm";
-                Settings.Instance.MimeTypesPath = extractedDir + "/config/mime.types";
-                Settings.Instance.SceneFile = extractedDir + "/scene.yml";
+                // Extract from JAR if not already extracted
+                ExtractZipPartially(Application.dataPath, "assets/", extractedDir);
             }
-            else
-            {
-                Settings.Instance.AvatarPath = Application.streamingAssetsPath + "/default_avatar.vrm";
-                Settings.Instance.MimeTypesPath = Application.streamingAssetsPath + "/config/mime.types";
-                Settings.Instance.SceneFile = Application.streamingAssetsPath + "/scene.yml";
-            }
-            Settings.Instance.TempDirectory = Application.temporaryCachePath;
 
-            isSettingsValid = true;
+            // On Android, those setings are overridden
+            Settings.Instance.AvatarPath = extractedDir + "/default_avatar.vrm";
+            Settings.Instance.MimeTypesPath = extractedDir + "/config/mime.types";
+            Settings.Instance.SceneFile = extractedDir + "/scene.yml";
         }
 
         // Initialize MixedReality-WebRTC on Android
@@ -104,32 +85,6 @@ public class StartupController : MonoBehaviour
         SettingsToGui();
         OnToggleChanged();
         ShowAvatarInfo();
-    }
-
-    // Returns true if succeeded
-    bool LoadSettingsFromFile()
-    {
-        using (var reader = new StreamReader(settingsPath))
-        {
-            try
-            {
-                Settings.Load(reader);
-                return true;
-            }
-            catch (Exception e) // Cannot load settings
-            {
-                Logger.Error("StartupController", "Cannot load settings. " + e.ToString());
-                return false;
-            }
-        }
-    }
-
-    void DumpSettingsToFile()
-    {
-        using (var writer = new StreamWriter(settingsPath))
-        {
-            Settings.Instance.Dump(writer);
-        }
     }
 
     void ExtractZipPartially(string zipPath, string rootWithinZip, string destDir)
@@ -233,15 +188,7 @@ public class StartupController : MonoBehaviour
     {
         GuiToSettings();
 
-        if (isSettingsValid)
-        {
-            DumpSettingsToFile();
-        }
-        else
-        {
-            // If the settings file is broken, avoid overwriting to prevent unintended loss of settings
-            Logger.Error("StartupController", "Settings file is broken. New settings were NOT saved.");
-        }
+        SettingsManager.Instance.DumpSettings();
 
         if (ServerToggle.isOn)
         {
