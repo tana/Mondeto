@@ -128,10 +128,17 @@ public class PlayerAvatar : MonoBehaviour, ITag
             // Orientation and camera control
             turn = 0.0f;
 
-            if (!firstPerson)
+            Vector2 stick;
+            if (rightController.HasValue &&
+                rightController.Value.TryGetFeatureValue(CommonUsages.primary2DAxis, out stick))
             {
-                // Third person mode (non-VR)
-                Camera cam = ThirdPersonCamera;
+                // VR (HMD) turn control
+                turn = AngularSpeedCoeff * stick.x;
+            }
+            else
+            {
+                // non-VR turn/head control
+                Camera cam = Camera.main;
                 // Use mouse movement during drag (similar to Mozilla Hubs?)
                 // because Unity's cursor lock feature seemed somewhat strange especially in Editor.
                 if (Input.GetKeyDown(KeyCode.Mouse0))
@@ -147,22 +154,6 @@ public class PlayerAvatar : MonoBehaviour, ITag
                     float elevation = AngularSpeedCoeff * mouseDiff.y;
                     if (cam != null)
                         cam.transform.localRotation *= Quaternion.Euler(elevation * Time.deltaTime, 0.0f, 0.0f);
-                }
-                if (Input.GetKeyUp(KeyCode.Mouse0))
-                {
-                    // Reset camera elevation when mouse button is released
-                    if (cam != null)
-                        cam.transform.localRotation = camRotBeforeDrag;
-                }
-            }
-            else
-            {
-                // VR (HMD) turn control
-                Vector2 stick;
-                if (rightController.HasValue &&
-                    rightController.Value.TryGetFeatureValue(CommonUsages.primary2DAxis, out stick))
-                {
-                    turn = AngularSpeedCoeff * stick.x;
                 }
             }
 
@@ -182,9 +173,13 @@ public class PlayerAvatar : MonoBehaviour, ITag
             {
                 lookAt = transform.worldToLocalMatrix * xrCamera.transform.TransformPoint(Vector3.forward);
             }
+            else if (firstPerson)
+            {
+                lookAt = transform.worldToLocalMatrix * Camera.main.transform.TransformPoint(Vector3.forward);
+            }
             else
             {
-                lookAt = Vector3.forward;
+                lookAt = transform.forward;
             }
 
             // Left hand
