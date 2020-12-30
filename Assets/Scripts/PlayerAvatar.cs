@@ -48,6 +48,7 @@ public class PlayerAvatar : MonoBehaviour, ITag
     private List<GameObject> headForShadow = new List<GameObject>();
 
     private HashSet<uint> clickedObjects = new HashSet<uint>();
+    private List<ObjectSync> mouseGrabbedObjects = new List<ObjectSync>();
 
     // TODO:
     public void Setup(SyncObject syncObject)
@@ -210,6 +211,31 @@ public class PlayerAvatar : MonoBehaviour, ITag
             {
                 EndClicking(obj);
             }
+
+            // Grab using mouse secondary button
+            // secondary = 1 (See https://docs.unity3d.com/ja/current/ScriptReference/Input.GetMouseButtonDown.html )
+            if (Input.GetMouseButtonDown(1))
+            {
+                var clickedObj = FindMouseClickedObject();
+                if (clickedObj != null)
+                {
+                    GrabObjectByMouse(obj, clickedObj);
+                }
+            }
+            else if (Input.GetMouseButtonUp(1))
+            {
+                UngrabByMouse(obj);
+            }
+            // Change position of grabbed objects using mouse
+            foreach (var grabbedObj in mouseGrabbedObjects)
+            {
+                // Move actually grabbed objects only
+                // (i.e. children of the avatar)
+                if (grabbedObj.transform.IsChildOf(transform))
+                {
+                    MoveObjectByMouse(grabbedObj);
+                }
+            }
         }
 
         // Walking animation
@@ -296,6 +322,14 @@ public class PlayerAvatar : MonoBehaviour, ITag
         }
     }
 
+    void MoveObjectByMouse(ObjectSync obj)
+    {
+        // The object moves within the same plane (keeps camera-coordinate Z)
+        var z = Camera.main.transform.InverseTransformPoint(obj.transform.position).z;
+        var mousePos = Input.mousePosition;
+        obj.transform.position = Camera.main.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, z));
+    }
+
     void StartClicking(SyncObject thisObj, ObjectSync clickedObj)
     {
         clickedObjects.Add(clickedObj.SyncObject.Id);
@@ -358,6 +392,21 @@ public class PlayerAvatar : MonoBehaviour, ITag
                 );
             }
         }
+    }
+
+    void GrabObjectByMouse(SyncObject thisObj, ObjectSync targetObj)
+    {
+        mouseGrabbedObjects.Add(targetObj);
+        targetObj.SyncObject.SendEvent("grab", thisObj.Id, new IValue[0]);
+    }
+
+    void UngrabByMouse(SyncObject thisObj)
+    {
+        foreach (var targetObj in mouseGrabbedObjects)
+        {
+            targetObj.SyncObject.SendEvent("ungrab", thisObj.Id, new IValue[0]);
+        }
+        mouseGrabbedObjects.Clear();
     }
 
     void OnBeforeSync(SyncObject obj, float dt)
