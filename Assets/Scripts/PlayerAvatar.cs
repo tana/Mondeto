@@ -359,6 +359,7 @@ public class PlayerAvatar : MonoBehaviour, ITag
         {
             thisObj.Node.Objects[id].SendEvent("clickEnd", thisObj.Id, new IValue[0]);
         }
+        clickedObjects.Clear();
     }
 
     void GrabObject(GameObject handGameObj)
