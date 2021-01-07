@@ -38,3 +38,5 @@ jobs:
         uses: game-ci/unity-test-runner@v2.0-alpha-1
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          unityVersion: 2019.4.2f1
