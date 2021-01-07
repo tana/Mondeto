@@ -19,7 +19,8 @@ An open, flexible, and secure online virtual reality system.
 
 ## 🚀Usage
 ### Client (connecting to existing server)
-1. Download [the zip archive](https://github.com/tana/Mondeto/releases/download/v0.0.1/Mondeto_0.0.1_WindowsBinary.zip) and extract it.
+1. Download a zip archive from [the release page](https://github.com/tana/Mondeto/releases) and extract it.
+    - Alternatively, [(almost) the latest build of main branch](https://1drv.ms/f/s!AvizOnmg-QO6hplqj7dZul1EnOJtcA) is available.
 1. Launch the executable `Mondeto.exe`.
 1. Check the `Client` checkbox.
     - By default, it will connect to the server provided by the developer. However, you can connect to other servers by setting the `Signaler` URL.

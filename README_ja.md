@@ -19,7 +19,8 @@ Languages | [English](README.md) | 日本語
 
 ## 🚀使い方
 ### クライアント（既存サーバに接続する）
-1. [Zipアーカイブ](https://github.com/tana/Mondeto/releases/download/v0.0.1/Mondeto_0.0.1_WindowsBinary.zip)をダウンロードし、適当なディレクトリに展開する。
+1. [リリースページ](https://github.com/tana/Mondeto/releases)からZipアーカイブをダウンロードし、適当なディレクトリに展開する。
+    - もしくは、[mainブランチの（ほぼ）最新のビルド](https://1drv.ms/f/s!AvizOnmg-QO6hplqj7dZul1EnOJtcA)も使用可能です。
 1. `Mondeto.exe`を起動する。
 1. `Client`にチェックを入れる。    
     - デフォルトでは開発者が用意したサーバにつながるようになっていますが、`Signaler`のURLを変更することで別のサーバにも接続できます。
