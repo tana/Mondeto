@@ -36,3 +36,5 @@ jobs:
       
       - name: Unity - Test runner
         uses: game-ci/unity-test-runner@v2.0-alpha-1
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
