@@ -28,15 +28,16 @@ class WasmRunnerTests
 
     // Use Timeout attribute to check if infinite loops are really prevented
     // See: https://docs.nunit.org/articles/nunit/writing-tests/attributes/timeout.html
-    // FIXME: Currently Timeout is not working (maybe because the infinite loop is in unmanaged code?)
-    //        If this test fails, Unity Editor freezes.
+    // FIXME: Timeout does not work.
+    //        If WasmRunner fails to stop an infinite loop , Unity Editor freezes.
+    //        See: https://issuetracker.unity3d.com/issues/testrunner-nunit-tests-doesnt-time-out-when-timeout-attribute-is-set
     [Test, Timeout(20)]
     public void TimeLimitTest()
     {
         using (var runner = new WasmRunner())
         {
             runner.Load(File.ReadAllBytes("Assets/Editor/infinite_loop_test.wasm"));
-            runner.Initialize();
+            Assert.Throws<System.Reflection.TargetInvocationException>(() => runner.Initialize());
         }
     }
 }

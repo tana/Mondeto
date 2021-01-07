@@ -13,4 +13,5 @@
             br $loop1
         end
     )
+    (memory (export "memory") 1)
 )
