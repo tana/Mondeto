@@ -87,6 +87,12 @@ public class SyncBehaviour : MonoBehaviour
 
         if (IsServer)
         {
+            // World object has a tag called "world" (WorldTag.cs)
+            // TODO: Move to core?
+            Node.Objects[SyncNode.WorldObjectId].SetField(
+                "tags",
+                new Sequence(new List<IValue> { new Primitive<string>("world") }));
+
             // Load scene from YAML
             var loader = new SceneLoader(Node);
             await loader.LoadFile(Settings.Instance.SceneFile);
@@ -139,6 +145,7 @@ public class SyncBehaviour : MonoBehaviour
         RegisterComponentTag<MaterialSync>("material");
         RegisterComponentTag<ConstantVelocity>("constantVelocity");
         RegisterComponentTag<AudioPlayer>("audioPlayer");
+        RegisterComponentTag<WorldTag>("world");
     }
 
     // Update is called once per frame

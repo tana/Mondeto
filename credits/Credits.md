@@ -77,3 +77,7 @@ Note: some new types were added at the end of the file.
 
 ### Earth image (`earth.jpg`)
 Earth texture image (`Assets/StreamingAssets/scene_data/earth.jpg`) is a resized version of ["June, Blue Marble Next Generation w/ Topography"](https://visibleearth.nasa.gov/images/74368/june-blue-marble-next-generation-w-topography) by NASA (National Aeronautics and Space Administration).
+
+### Skybox image (`kloofendal_48d_partly_cloudy_2048x1024.jpg`)
+Skybox texture image (`Assets/StreamingAssets/scene_data/kloofendal_48d_partly_cloudy_2048x1024.jpg`) is [Kloofendal 48d Partly Cloudy](https://hdrihaven.com/hdri/?c=partly%20cloudy&h=kloofendal_48d_partly_cloudy) by Greg Zaal (licensed under CC0).
+This image is a resized version of the 8K tonemapped JPG.
