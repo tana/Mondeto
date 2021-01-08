@@ -24,6 +24,18 @@ class WasmRunnerTests
             runner.Initialize();
             Assert.That(runner.IsReady);
         }
+        using (var runner = new ObjectWasmRunner(obj))
+        {
+            runner.Load(File.ReadAllBytes("Assets/StreamingAssets/wasm/bullet.wasm"));
+            runner.Initialize();
+            Assert.That(runner.IsReady);
+        }
+        using (var runner = new ObjectWasmRunner(obj))
+        {
+            runner.Load(File.ReadAllBytes("Assets/StreamingAssets/wasm/target.wasm"));
+            runner.Initialize();
+            Assert.That(runner.IsReady);
+        }
     }
 
     // Use Timeout attribute to check if infinite loops are really prevented

@@ -5,6 +5,7 @@ using System.Text;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
+using System.Security.Cryptography;
 using WebAssembly;
 using WebAssembly.Runtime;
 
@@ -43,6 +44,8 @@ public class WasmRunner : IDisposable
         AddImportFunction("wasi_snapshot_preview1", "fd_write", (Func<int, int, int, int, int>)WasiFdWrite);
         // WASI-compatible exit for AssemblyScript
         AddImportFunction("wasi_snapshot_preview1", "proc_exit", (Action<int>)WasiProcExit);
+        // WASI-compatible random number generation (for seed)
+        AddImportFunction("wasi_snapshot_preview1", "random_get", (Func<int, int, int>)WasiRandomGet);
     }
 
     // Add imported (C#) function
@@ -244,6 +247,25 @@ public class WasmRunner : IDisposable
     void WasiProcExit(int exitCode)
     {
         IsReady = false;
+    }
+
+    // WASI-compatible random_get
+    //  https://github.com/WebAssembly/WASI/blob/master/phases/snapshot/docs.md#-random_getbuf-pointeru8-buf_len-size---errno
+    int WasiRandomGet(int bufPtr, int bufLen)
+    {
+        var randomBytes = new byte[bufLen];
+        // Use cryptographic random number
+        //  https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.rngcryptoserviceprovider?view=net-5.0
+        using (var rng = new RNGCryptoServiceProvider())
+        {
+            rng.GetBytes(randomBytes);
+        }
+        Marshal.Copy(randomBytes, 0, WasmToIntPtr(Instance.Exports.memory, bufPtr), bufLen);
+
+        // errno: "success"
+        //  https://github.com/WebAssembly/WASI/blob/master/phases/snapshot/docs.md#-errno-enumu16
+        //  https://github.com/WebAssembly/WASI/blob/master/phases/snapshot/witx/typenames.witx
+        return 0;
     }
 
     protected IntPtr WasmToIntPtr(UnmanagedMemory memory, int wasmPtr)
