@@ -1,0 +1,18 @@
+{
+  "name": "mondeto-synth-demo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "test.js",
+  "scripts": {
+    "build": "npx asc -O synth.ts -o synth.wasm",
+    "test": "node --experimental-wasi-unstable-preview1 test.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "assemblyscript": "^0.17.13"
+  },
+  "dependencies": {
+    "speaker": "^0.5.2"
+  }
+}
