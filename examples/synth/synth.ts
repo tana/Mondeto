@@ -1,11 +1,15 @@
 import "wasi";
+import { SawtoothOscillator } from "./sawtoothOscillator";
 
 const FS: f32 = 44100;  // sampling frequency
 
-let t: f32 = 0;
+let sawtooth: SawtoothOscillator;
+
+export function init(): void {
+    sawtooth = new SawtoothOscillator(FS);
+}
 
 export function generateSample(): f32 {
-    const val = Mathf.sin(2 * Mathf.PI * 440 * t);
-    t += 1 / FS;
+    const val = f32(0.2) * sawtooth.compute();
     return val;
 }
