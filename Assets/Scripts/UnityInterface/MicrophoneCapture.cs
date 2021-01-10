@@ -21,7 +21,7 @@ public class MicrophoneCapture : MonoBehaviour
         }
     }
 
-    const int SamplingRate = 8000;
+    const int SamplingRate = SyncObject.AudioSamplingRate;
     const int ClipLength = 1;
 
     bool ready;
@@ -69,7 +69,7 @@ public class MicrophoneCapture : MonoBehaviour
         ObjectSync sync = GetComponent<ObjectSync>();
 
         // Convert to byte array (TODO encoding)
-        len = Math.Min(len, 1024);  // FIXME
+        len = Math.Min(len, SyncObject.OpusFrameSize);  // FIXME
         var buf2 = new float[len];
         Array.Copy(buf, buf2, len);
 

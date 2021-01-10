@@ -473,8 +473,10 @@ public class AudioDataMessage
 {
     [Key(0)]
     public uint ObjectId;
-    [Key(1)]
-    public byte[] Data;
+    // Key of OpusData is intentionally changed from one of previous Data field.
+    // This is to prevent noise (playing Opus data as 8-bit raw PCM) when older nodes are connected.
+    [Key(2)]
+    public byte[] OpusData;
 }
 
 // Utility functions
