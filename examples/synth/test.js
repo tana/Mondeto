@@ -32,6 +32,7 @@ const fileBuf = fs.readFileSync("synth.wasm");
 (async function () {
     const { module, instance } = await WebAssembly.instantiate(fileBuf, imports);
 
+    wasi.start(instance);
     instance.exports.init();
 
     // Sound output using Speaker
