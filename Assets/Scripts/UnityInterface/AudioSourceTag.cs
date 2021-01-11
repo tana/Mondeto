@@ -5,6 +5,7 @@ public class AudioSourceTag : MonoBehaviour, ITag
 {
     AudioSource audioSource;
     SyncObject obj;
+    ObjectSync objectSync;
     AudioClip outClip;
     int outPos;
 
@@ -14,6 +15,7 @@ public class AudioSourceTag : MonoBehaviour, ITag
     {
         audioSource = gameObject.AddComponent<AudioSource>();
         obj = syncObject;
+        objectSync = GetComponent<ObjectSync>();
 
         audioSource.Stop();
 
@@ -26,6 +28,14 @@ public class AudioSourceTag : MonoBehaviour, ITag
 
     void OnAudioReceived(float[] data)
     {
+        // When noLocalAudioOutput is true, don't play sound on original node
+        if (objectSync.IsOriginal &&
+            obj.TryGetFieldPrimitive("noLocalAudioOutput", out int doNotPlayLocally) &&
+            doNotPlayLocally != 0)
+        {
+            return;
+        }
+
         if (data.Length == 0) return;   // When array has no element, SetData raises an exception
 
         try

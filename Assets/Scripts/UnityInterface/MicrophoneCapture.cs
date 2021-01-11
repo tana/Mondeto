@@ -67,7 +67,7 @@ public class MicrophoneCapture : MonoBehaviour
         var buf2 = new float[len];
         Array.Copy(buf, buf2, len);
 
-        sync.SyncObject.SendAudio(buf2);
+        sync.SyncObject.WriteAudio(buf2);
     }
 
     void OnSyncReady()

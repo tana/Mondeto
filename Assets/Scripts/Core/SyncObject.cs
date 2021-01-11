@@ -161,8 +161,10 @@ public class SyncObject
     }
 
     // Latency will be minimal if the length of samples are always equal to OpusFrameSize
-    public void SendAudio(float[] samples)
+    public void WriteAudio(float[] samples)
     {
+        AudioReceived?.Invoke(samples);  // sender itself also receives audio
+
         // TODO: queue-related performance improvement
         foreach (var sample in samples)
         {

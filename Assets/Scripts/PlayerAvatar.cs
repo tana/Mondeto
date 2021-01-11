@@ -53,6 +53,8 @@ public class PlayerAvatar : MonoBehaviour, ITag
     // TODO:
     public void Setup(SyncObject syncObject)
     {
+        // Don't play sound captured by microphone locally
+        syncObject.SetField("noLocalAudioOutput", new Primitive<int>(1));
     }
     // TODO:
     public void Cleanup(SyncObject syncObject)
