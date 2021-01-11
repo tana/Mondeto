@@ -1,7 +1,7 @@
 import "wasi";
 import { SubtractiveSynth } from "./subtractiveSynth";
 
-const FS: f32 = 44100;  // sampling frequency
+const FS: f32 = 48000;  // sampling frequency
 
 // note constants
 // See: http://newt.phys.unsw.edu.au/jw/notes.html
@@ -16,7 +16,7 @@ enum NoteNumbers {
     B = 71
 }
 
-let time: f32 = 0.0;
+let time: f64 = 0.0;    // using f64 because f32 precision is not enough for long time (minutes)
 let synth: SubtractiveSynth;
 
 let pos = 0;

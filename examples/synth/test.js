@@ -4,7 +4,7 @@ const Speaker = require("speaker");
 const { WASI } = require("wasi");
 const { plot } = require("nodeplotlib");
 
-const FS = 44100;
+const FS = 48000;
 const CHUNK_SIZE = 1024;
 
 // Plot signal using NodePlotLib
