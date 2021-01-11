@@ -54,6 +54,7 @@ public class ObjectWasmRunner : WasmRunner
         AddImportFunction("mondeto", "send_event", (Func<int, int, int, int, int, int, int>)SendEvent);
         // Other functions
         AddImportFunction("mondeto", "get_world_coordinate", (Func<int, int, int, int, int, int, int, int, int>)GetWorldCoordinate);
+        AddImportFunction("mondeto", "write_audio", (Action<int, int>)WriteAudio);
 
         Object = obj;
     }
@@ -389,6 +390,16 @@ public class ObjectWasmRunner : WasmRunner
         {
             return Failure;
         }
+    }
+
+    // i32 write_audio(i32 ptr, i32 len)
+    void WriteAudio(int ptr, int len)
+    {
+        IntPtr samplesPtr = WasmToIntPtr(Instance.Exports.memory, ptr);
+        var samples = new float[len];
+        Marshal.Copy(samplesPtr, samples, 0, len);
+        
+        Object.WriteAudio(samples);
     }
 
     bool WriteVecToWasm(Vec vec, UnmanagedMemory memory, int xPtr, int yPtr, int zPtr)
