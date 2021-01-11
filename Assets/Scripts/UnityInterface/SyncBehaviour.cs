@@ -145,6 +145,7 @@ public class SyncBehaviour : MonoBehaviour
         RegisterComponentTag<MaterialSync>("material");
         RegisterComponentTag<ConstantVelocity>("constantVelocity");
         RegisterComponentTag<AudioPlayer>("audioPlayer");
+        RegisterComponentTag<AudioSourceTag>("audioSource");
         RegisterComponentTag<WorldTag>("world");
     }
 
