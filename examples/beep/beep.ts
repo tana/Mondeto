@@ -25,7 +25,7 @@ export function update(dt: f32): void {
     const samples = new Array<f32>(len);
     for (let i = 0; i < len; i++) {
         samples[i] = BEEP_AMP * Mathf.sin(phase);
-        phase = (phase + 2.0 * Mathf.PI * BEEP_FREQ / FS)
+        phase = (phase + 2.0 * Mathf.PI * BEEP_FREQ / FS) % (2 * Mathf.PI);
     }
 
     // Play signal
