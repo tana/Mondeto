@@ -61,6 +61,9 @@ There are some modified files (paths are relative to root directory of UnityChan
 ### WebAssembly for .NET
 - [LICENSE](ThirdPartyLicenses/dotnet-webassembly/LICENSE)
 
+### Concentus
+- [LICENSE](ThirdPartyLicenses/Concentus/LICENSE)
+
 ### Unity builtin shaders
 - [license.txt](ThirdPartyLicenses/UnityBuiltinShaders/license.txt)
 

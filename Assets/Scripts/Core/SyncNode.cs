@@ -380,18 +380,11 @@ public abstract class SyncNode : IDisposable
     protected abstract void OnNewBlob(BlobHandle handle, Blob blob);
     protected abstract void RequestBlob(BlobHandle handle);
 
-    public void SendAudioData(uint oid, float[] data)
+    public void SendAudioData(uint oid, byte[] opusData)
     {
-        // Convert to byte array (TODO: encoding)
-        var buf = new byte[data.Length];
-        for (int i = 0; i < data.Length; i++)
-        {
-            buf[i] = (byte)(127 * data[i] + 127);
-        }
-
         foreach (var conn in Connections.Values)
         {
-            var msg = new AudioDataMessage { ObjectId = oid, Data = buf };
+            var msg = new AudioDataMessage { ObjectId = oid, OpusData = opusData };
             conn.SendMessage<AudioDataMessage>(Connection.ChannelType.Audio, msg);
         }
     }
@@ -401,9 +394,8 @@ public abstract class SyncNode : IDisposable
         if (!Objects.ContainsKey(msg.ObjectId)) return;  // Something is wrong
         SyncObject obj = Objects[msg.ObjectId];
         if (obj.OriginalNodeId == NodeId) return;
-        // Convert byte array to float array (TODO: decoding)
-        float[] data = msg.Data.Select(b => 2 * (float)b / 256 - 1).ToArray();
-        obj.HandleAudio(data);
+
+        obj.HandleAudio(msg.OpusData);
     }
 
     protected void InvokeObjectCreated(uint objId) => ObjectCreated?.Invoke(objId);
