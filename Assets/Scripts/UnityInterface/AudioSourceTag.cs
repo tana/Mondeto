@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using UnityEngine;
 
 public class AudioSourceTag : MonoBehaviour, ITag
@@ -6,10 +7,7 @@ public class AudioSourceTag : MonoBehaviour, ITag
     AudioSource audioSource;
     SyncObject obj;
     ObjectSync objectSync;
-    AudioClip outClip;
-    int outPos;
-
-    float[] overflow;
+    ConcurrentQueue<float> audioQueue = new ConcurrentQueue<float>();
 
     public void Setup(SyncObject syncObject)
     {
@@ -17,16 +15,22 @@ public class AudioSourceTag : MonoBehaviour, ITag
         obj = syncObject;
         objectSync = GetComponent<ObjectSync>();
 
+        // Ensure Unity's output sampling rate is same as Mondeto's internal sampling rate (48kHz)
+        if (AudioSettings.outputSampleRate != SyncObject.AudioSamplingRate)
+        {
+            Logger.Error("AudioSourceTag", $"Output sample rate is not {SyncObject.AudioSamplingRate} Hz (actual value = {AudioSettings.outputSampleRate} Hz)");
+            return;
+        }
+
         audioSource.spatialize = true;
         audioSource.spatialBlend = 1.0f;
 
-        audioSource.Stop();
-
-        outClip = AudioClip.Create("", SyncObject.AudioSamplingRate, 1, SyncObject.AudioSamplingRate, false);
-        audioSource.loop = false;
-        audioSource.clip = outClip;
+        audioSource.clip = AudioClip.Create("", SyncObject.AudioSamplingRate, 1, SyncObject.AudioSamplingRate, false);
+        audioSource.loop = true;
 
         obj.AudioReceived += OnAudioReceived;
+
+        audioSource.Play();
     }
 
     void OnAudioReceived(float[] data)
@@ -39,44 +43,25 @@ public class AudioSourceTag : MonoBehaviour, ITag
             return;
         }
 
-        if (data.Length == 0) return;   // When array has no element, SetData raises an exception
-
-        try
+        foreach (var sample in data)
         {
-            if (overflow != null)
+            audioQueue.Enqueue(sample);
+        }
+    }
+
+    void OnAudioFilterRead(float[] buf, int channels)
+    {
+        var len = buf.Length / channels;
+
+        for (int i = 0; i < len; i++)
+        {
+            float sample = 0.0f;
+            audioQueue.TryDequeue(out sample);
+
+            for (int j = 0; j < channels; j++)
             {
-                outClip.SetData(overflow, outPos);
-                outPos += overflow.Length;
+                buf[channels * i + j] = sample;
             }
-            outClip.SetData(data, outPos);
-            outPos += data.Length;
-        }
-        catch (ArgumentException e)
-        {
-            Debug.Log(e);
-        }
-        if (outPos > outClip.samples)
-        {
-            // When outClip overflowed
-            overflow = new float[outPos - outClip.samples];
-            Array.Copy(data, data.Length - overflow.Length, overflow, 0, overflow.Length);
-            outPos = 0;
-            Logger.Debug("AudioSourceTag", $"Overflow {overflow.Length} samples");
-        }
-        else if (outPos == outClip.samples)
-        {
-            // It expects the playback of current clip ends before new audio data arrives.
-            // If not, some glitch may occur.
-            outPos = 0;
-        }
-        else
-        {
-            overflow = null;
-        }
-
-        if (!audioSource.isPlaying)
-        {
-            audioSource.Play();
         }
     }
 
