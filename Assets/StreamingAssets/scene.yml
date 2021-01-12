@@ -149,6 +149,13 @@ objects:
     text: "Skybox image:\n\"Kloofendal 48d Partly Cloudy\" by Greg Zaal."
     fontSize: 15
     tags: [text]
+  # Beep (audio test)
+  - position: !vec [-2, 1, 0]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.3, 0.3, 0.3]
+    color: !vec [1, 1, 1]
+    tags: [cube, material, collider, audioSource]
+    codes: [!load_file "wasm/beep.wasm"]
   # ------- Shooting game -------
   # Raygun
   - position: !vec [1.3, 1, 1]

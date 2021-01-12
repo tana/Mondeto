@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 
-[RequireComponent(typeof(AudioSource))]
 public class MicrophoneCapture : MonoBehaviour
 {
     public string DeviceName = "";
@@ -30,11 +29,6 @@ public class MicrophoneCapture : MonoBehaviour
     int lastPos;
     float[] tempBuf;
     float[] buf = new float[SamplingRate];  // 1 sec
-
-    AudioClip outClip;
-    int outPos;
-
-    float[] overflow;
 
     void Update()
     {
@@ -73,7 +67,7 @@ public class MicrophoneCapture : MonoBehaviour
         var buf2 = new float[len];
         Array.Copy(buf, buf2, len);
 
-        sync.SyncObject.SendAudio(buf2);
+        sync.SyncObject.WriteAudio(buf2);
     }
 
     void OnSyncReady()
@@ -88,62 +82,9 @@ public class MicrophoneCapture : MonoBehaviour
         else
         {
             Logger.Debug("MicrophoneCapture", $"MicrophoneCapture Clone (obj={gameObject.name})");
-            var source = GetComponent<AudioSource>();
-            source.Stop();
-
-            outClip = AudioClip.Create("", SamplingRate, 1, SamplingRate, false);
-            source.loop = false;
-            source.clip = outClip;
-
-            sync.SyncObject.AudioReceived += OnAudioReceived;
         }
 
         ready = true;
-    }
-
-    void OnAudioReceived(float[] data)
-    {
-        if (data.Length == 0) return;   // When array has no element, SetData raises an exception
-
-        var source = GetComponent<AudioSource>();
-
-        try
-        {
-            if (overflow != null)
-            {
-                outClip.SetData(overflow, outPos);
-                outPos += overflow.Length;
-            }
-            outClip.SetData(data, outPos);
-            outPos += data.Length;
-        }
-        catch (ArgumentException e)
-        {
-            Debug.Log(e);
-        }
-        if (outPos > outClip.samples)
-        {
-            // When outClip overflowed
-            overflow = new float[outPos - outClip.samples];
-            Array.Copy(data, data.Length - overflow.Length, overflow, 0, overflow.Length);
-            outPos = 0;
-            Logger.Debug("MicrophoneCapture", $"Overflow {overflow.Length} samples");
-        }
-        else if (outPos == outClip.samples)
-        {
-            // It expects the playback of current clip ends before new audio data arrives.
-            // If not, some glitch may occur.
-            outPos = 0;
-        }
-        else
-        {
-            overflow = null;
-        }
-
-        if (!source.isPlaying)
-        {
-            source.Play();
-        }
     }
     
     void OnDestroy()

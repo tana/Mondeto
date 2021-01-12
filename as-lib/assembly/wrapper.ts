@@ -5,7 +5,7 @@
 // Note: @packageDocumentation is needed for file-level doc comment.
 // See: https://typedoc.org/guides/doccomments/#files
 
-import { get_field, get_string_length, get_world_coordinate, make_quat, make_sequence, make_string, make_vec, object_get_field, object_set_field, read_quat, read_string, read_vec, send_event, set_field } from "./mondeto";
+import { get_field, get_string_length, get_world_coordinate, make_quat, make_sequence, make_string, make_vec, object_get_field, object_set_field, read_quat, read_string, read_vec, send_event, set_field, write_audio } from "./mondeto";
 
 /**
  * 3-dimensional vector.
@@ -224,8 +224,10 @@ export function makeQuat(q: Quat): u32 {
 }
 
 export function makeSequence(elems: u32[]): u32 {
-    // AssemblyScript array contains an ArrayBuffer
-    // See: https://www.assemblyscript.org/memory.html#internals
+    // AssemblyScript array contains an ArrayBuffer. Pointer can be acquired by changetype.
+    // See:
+    //  https://www.assemblyscript.org/memory.html#internals
+    //  https://www.assemblyscript.org/runtime.html#interface
     return make_sequence(changetype<usize>(elems.buffer), elems.length);
 }
 
@@ -276,10 +278,25 @@ export function sendEvent(receiverID: u32, name: string, args: u32[], localOnly:
     const namePtr = changetype<usize>(buf);
     const nameLen = buf.byteLength;
 
-    // AssemblyScript array contains an ArrayBuffer
-    // See: https://www.assemblyscript.org/memory.html#internals
+    // AssemblyScript array contains an ArrayBuffer. Pointer can be acquired by changetype.
+    // See:
+    //  https://www.assemblyscript.org/memory.html#internals
+    //  https://www.assemblyscript.org/runtime.html#interface
     const argsPtr = changetype<usize>(args.buffer);
     const argsLen = args.length;
 
     return send_event(receiverID, namePtr, nameLen, argsPtr, argsLen, localOnly ? 1 : 0);
+}
+
+/**
+ * Play audio samples (48000 Hz sampling rate, 32-bit floating point, value is from -1 to 1).
+ * It can write any number of samples, but 960 is the best. This is related to [frame size restriction of Opus codec](https://opus-codec.org/docs/opus_api-1.3.1/group__opus__encoder.html#ga4ae9905859cd241ef4bb5c59cd5e5309).
+ * @param samples Audio samples.
+ */
+export function writeAudio(samples: f32[]): void {
+    // AssemblyScript array contains an ArrayBuffer. Pointer can be acquired by changetype.
+    // See:
+    //  https://www.assemblyscript.org/memory.html#internals
+    //  https://www.assemblyscript.org/runtime.html#interface
+    write_audio(changetype<usize>(samples.buffer), samples.length);
 }

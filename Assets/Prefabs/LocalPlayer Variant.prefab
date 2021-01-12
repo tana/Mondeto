@@ -1092,7 +1092,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3adb0779835a2d54a9942f2ce245bc49, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  InitialTags: player constantVelocity
+  InitialTags: player audioSource constantVelocity
   SetInitialTags: 1
   NetManager: {fileID: 0}
   IsOriginal: 1
