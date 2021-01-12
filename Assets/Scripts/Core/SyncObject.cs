@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using Concentus;
+using Concentus.Structs;
+using Concentus.Enums;
 
 // TODO name change
 public class SyncObject
@@ -20,6 +23,18 @@ public class SyncObject
     // Called when the original used SendAudio
     public event AudioReceivedDelegate AudioReceived;
 
+    OpusEncoder opusEncoder;
+    OpusDecoder opusDecoder;
+    public const int AudioSamplingRate = 48000;
+    // In Opus, only some specific values are allowed for frame size.
+    //  See: https://opus-codec.org/docs/opus_api-1.3.1/group__opus__encoder.html#ga4ae9905859cd241ef4bb5c59cd5e5309
+    public const int OpusFrameSize = 960;
+    public const int OpusBitrate = 64000;
+    Queue<float> audioSendQueue = new Queue<float>();
+    float[] samplesToEncode = new float[OpusFrameSize];
+    byte[] opusOutBuf = new byte[4096];
+    float[] decodedSamples = new float[OpusFrameSize];
+
     public delegate void BeforeAfterSyncDelegate(SyncObject sender, float dt);
     public event BeforeAfterSyncDelegate BeforeSync;
     public event BeforeAfterSyncDelegate AfterSync;
@@ -37,6 +52,17 @@ public class SyncObject
         Node = node;
         Id = id;
         OriginalNodeId = originalNodeId;
+
+        // Initialize Opus codec
+        // For usage of Concentus library, see:
+        //  https://github.com/lostromb/concentus/blob/master/CSharp/Concentus/Readme.txt
+        // libopus documents are also useful (because API of Concentus is quite similar to libopus)
+        //  https://opus-codec.org/docs/opus_api-1.3.1/group__opus__encoder.html
+        //  https://opus-codec.org/docs/opus_api-1.3.1/group__opus__decoder.html
+        // TODO: voice/audio mode selection
+        opusEncoder = OpusEncoder.Create(AudioSamplingRate, 1, OpusApplication.OPUS_APPLICATION_AUDIO);
+        opusEncoder.Bitrate = OpusBitrate;
+        opusDecoder = OpusDecoder.Create(AudioSamplingRate, 1);
 
         // All objects have position and rotation fields
         SetField("position", new Vec());
@@ -134,9 +160,28 @@ public class SyncObject
         return tags.ContainsKey(tag);
     }
 
-    public void SendAudio(float[] data)
+    // Latency will be minimal if the length of samples are always equal to OpusFrameSize
+    public void WriteAudio(float[] samples)
     {
-        Node.SendAudioData(Id, data);
+        AudioReceived?.Invoke(samples);  // sender itself also receives audio
+
+        // TODO: queue-related performance improvement
+        foreach (var sample in samples)
+        {
+            audioSendQueue.Enqueue(sample);
+        }
+
+        while (audioSendQueue.Count >= OpusFrameSize)
+        {
+            for (int i = 0; i < OpusFrameSize; i++)
+            {
+                samplesToEncode[i] = audioSendQueue.Dequeue();
+            }
+            var encodedSize = opusEncoder.Encode(samplesToEncode, 0, OpusFrameSize, opusOutBuf, 0, opusOutBuf.Length);
+            var opusData = new byte[encodedSize];
+            Array.Copy(opusOutBuf, opusData, encodedSize);
+            Node.SendAudioData(Id, opusData);
+        }
     }
 
     public ObjectRef GetObjectRef()
@@ -200,9 +245,11 @@ public class SyncObject
     public void WriteDebugLog(string component, string message) => WriteLog(Logger.LogType.Debug, component, message);
     public void WriteErrorLog(string component, string message) => WriteLog(Logger.LogType.Error, component, message);
 
-    internal void HandleAudio(float[] data)
+    internal void HandleAudio(byte[] opusData)
     {
-        AudioReceived?.Invoke(data);
+        opusDecoder.Decode(opusData, 0, opusData.Length, decodedSamples, 0, OpusFrameSize);
+
+        AudioReceived?.Invoke(decodedSamples);
     }
 
     internal void ProcessBeforeSync(float dt)
