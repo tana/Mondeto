@@ -17,6 +17,9 @@ public class AudioSourceTag : MonoBehaviour, ITag
         obj = syncObject;
         objectSync = GetComponent<ObjectSync>();
 
+        audioSource.spatialize = true;
+        audioSource.spatialBlend = 1.0f;
+
         audioSource.Stop();
 
         outClip = AudioClip.Create("", SyncObject.AudioSamplingRate, 1, SyncObject.AudioSamplingRate, false);
