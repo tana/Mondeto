@@ -1,5 +1,5 @@
 import "wasi";
-import { setField, make_vec, writeAudio } from "mondeto-as";
+import { setField, make_vec, writeAudio, object_is_original, get_object_id } from "mondeto-as";
 
 const FS: f32 = 48000;   // Sampling rate
 
@@ -15,6 +15,7 @@ export function init(): void {
 }
 
 export function update(dt: f32): void {
+    if (!object_is_original(get_object_id())) return;   // Generate sound only on original node
     if (!beeping) return;   // If not beeping, do nothing
 
     // Calculate number of samples generated in this update
