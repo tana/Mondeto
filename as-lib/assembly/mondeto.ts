@@ -86,7 +86,7 @@ export declare function make_object_ref(obj_id: u32): u32;
 // Event-related
 export declare function send_event(receiver_id: u32, name_ptr: usize, name_len: usize, args_ptr: usize, args_len: usize, local_only: i32): i32;
 export declare function get_event_args_count(): usize;
-export declare function get_event_args(ptr: usize, max_count: usize);
+export declare function get_event_args(ptr: usize, max_count: usize): usize;
 // Other
 export declare function get_world_coordinate(obj_id: u32, vx_ptr: usize, vy_ptr: usize, vz_ptr: usize, qw_ptr: usize, qx_ptr: usize, qy_ptr: usize, qz_ptr: usize): i32;
 export declare function write_audio(ptr: usize, len: usize): void;
