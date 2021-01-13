@@ -2,10 +2,8 @@
   "name": "mondeto-synth-demo",
   "version": "1.0.0",
   "description": "",
-  "main": "test.js",
   "scripts": {
-    "build": "npx asc -O synth.ts -o synth.wasm",
-    "test": "node --experimental-wasi-unstable-preview1 test.js"
+    "build": "npx asc -O synth.ts -o synth.wasm"
   },
   "author": "",
   "license": "MIT",
@@ -13,8 +11,6 @@
     "assemblyscript": "^0.17.13"
   },
   "dependencies": {
-    "mondeto-as": "file:../../as-lib",
-    "nodeplotlib": "^0.7.1",
-    "speaker": "^0.5.2"
+    "mondeto-as": "file:../../as-lib"
   }
 }
