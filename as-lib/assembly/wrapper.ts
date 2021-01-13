@@ -293,7 +293,7 @@ export function sendEvent(receiverID: u32, name: string, args: u32[], localOnly:
  * @returns Array of Value IDs.
  */
 export function getEventArgs(): u32[] {
-    const count = get_event_args_count();
+    const count = i32(get_event_args_count());
     const array = new Array<u32>(count);
     // AssemblyScript array contains an ArrayBuffer. Pointer can be acquired by changetype.
     // See:

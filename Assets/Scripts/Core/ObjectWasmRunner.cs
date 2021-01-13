@@ -75,7 +75,13 @@ public class ObjectWasmRunner : WasmRunner
             string eventName = export.Name.Substring("handle_".Length);
             // signature check
             // (event handlers should have signatures "void handle_EVENTNAME(i32 sender)")
-            var funcTypeIdx = Module.Functions[(int)export.Index].Type;
+            // Because function index space counts imported functions,
+            // we have to subtract the number of imported functions before getting a Function from Module.Functions.
+            //  See:
+            //      https://webassembly.github.io/spec/core/syntax/modules.html#syntax-funcidx
+            //      https://webassembly.github.io/spec/core/syntax/modules.html#imports
+            var numImportedFuncs = Module.Imports.Count(import => import.Kind == ExternalKind.Function);
+            var funcTypeIdx = Module.Functions[(int)export.Index - numImportedFuncs].Type;
             var funcType = Module.Types[(int)funcTypeIdx];
             if (funcType.Returns.Count != 0)
             {
