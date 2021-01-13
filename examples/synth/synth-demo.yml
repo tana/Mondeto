@@ -16,8 +16,119 @@ objects:
     isStatic: true
     tags: [plane, material, collider]
   # Synth object
-  - position: !vec [0, 1, 2]
+  - $name: synth
+    position: !vec [0, 1, 2]
     rotation: !euler [0, 0, 0]
     scale: !vec [0.3, 0.3, 0.3]
     tags: [cube, audioSource]
     codes: [!load_file "synth.wasm"]
+  # Keyboard
+  # noteNum is MIDI note number. See: http://newt.phys.unsw.edu.au/jw/notes.html
+  # C
+  - position: !vec [0, 1, 1.5]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.1, 0.05, 0.3]
+    color: !vec [1, 1, 1]
+    noteNum: 60
+    target: !ref synth
+    tags: [cube, material, collider]
+    codes: [!load_file "key.wasm"]
+  # C#
+  - position: !vec [0.055, 1.05, 1.575]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.1, 0.05, 0.15]
+    color: !vec [0, 0, 0]
+    noteNum: 61
+    target: !ref synth
+    tags: [cube, material, collider]
+    codes: [!load_file "key.wasm"]
+  # D
+  - position: !vec [0.11, 1, 1.5]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.1, 0.05, 0.3]
+    color: !vec [1, 1, 1]
+    noteNum: 62
+    target: !ref synth
+    tags: [cube, material, collider]
+    codes: [!load_file "key.wasm"]
+  # D#
+  - position: !vec [0.165, 1.05, 1.575]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.1, 0.05, 0.15]
+    color: !vec [0, 0, 0]
+    noteNum: 63
+    target: !ref synth
+    tags: [cube, material, collider]
+    codes: [!load_file "key.wasm"]
+  # E
+  - position: !vec [0.22, 1, 1.5]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.1, 0.05, 0.3]
+    color: !vec [1, 1, 1]
+    noteNum: 64
+    target: !ref synth
+    tags: [cube, material, collider]
+    codes: [!load_file "key.wasm"]
+  # F
+  - position: !vec [0.33, 1, 1.5]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.1, 0.05, 0.3]
+    color: !vec [1, 1, 1]
+    noteNum: 65
+    target: !ref synth
+    tags: [cube, material, collider]
+    codes: [!load_file "key.wasm"]
+  # F#
+  - position: !vec [0.385, 1.05, 1.575]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.1, 0.05, 0.15]
+    color: !vec [0, 0, 0]
+    noteNum: 66
+    target: !ref synth
+    tags: [cube, material, collider]
+    codes: [!load_file "key.wasm"]
+  # G
+  - position: !vec [0.44, 1, 1.5]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.1, 0.05, 0.3]
+    color: !vec [1, 1, 1]
+    noteNum: 67
+    target: !ref synth
+    tags: [cube, material, collider]
+    codes: [!load_file "key.wasm"]
+  # G#
+  - position: !vec [0.495, 1.05, 1.575]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.1, 0.05, 0.15]
+    color: !vec [0, 0, 0]
+    noteNum: 68
+    target: !ref synth
+    tags: [cube, material, collider]
+    codes: [!load_file "key.wasm"]
+  # A
+  - position: !vec [0.55, 1, 1.5]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.1, 0.05, 0.3]
+    color: !vec [1, 1, 1]
+    noteNum: 69
+    target: !ref synth
+    tags: [cube, material, collider]
+    codes: [!load_file "key.wasm"]
+  # A#
+  - position: !vec [0.605, 1.05, 1.575]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.1, 0.05, 0.15]
+    color: !vec [0, 0, 0]
+    noteNum: 70
+    target: !ref synth
+    tags: [cube, material, collider]
+    codes: [!load_file "key.wasm"]
+  # B
+  - position: !vec [0.66, 1, 1.5]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.1, 0.05, 0.3]
+    color: !vec [1, 1, 1]
+    noteNum: 71
+    target: !ref synth
+    tags: [cube, material, collider]
+    codes: [!load_file "key.wasm"]

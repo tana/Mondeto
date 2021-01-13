@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "build": "npx asc -O synth.ts -o synth.wasm"
+    "build-synth": "npx asc -O synth.ts -o synth.wasm",
+    "build-key": "npx asc -O key.ts -o key.wasm",
+    "build": "npm run build-synth && npm run build-key"
   },
-  "author": "",
+  "author": "Satoshi Tanaka",
   "license": "MIT",
   "devDependencies": {
     "assemblyscript": "^0.17.13"
