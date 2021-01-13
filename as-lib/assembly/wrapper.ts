@@ -5,7 +5,7 @@
 // Note: @packageDocumentation is needed for file-level doc comment.
 // See: https://typedoc.org/guides/doccomments/#files
 
-import { get_field, get_string_length, get_world_coordinate, make_quat, make_sequence, make_string, make_vec, object_get_field, object_set_field, read_quat, read_string, read_vec, send_event, set_field, write_audio } from "./mondeto";
+import { get_event_args, get_event_args_count, get_field, get_string_length, get_world_coordinate, make_quat, make_sequence, make_string, make_vec, object_get_field, object_set_field, read_quat, read_string, read_vec, send_event, set_field, write_audio } from "./mondeto";
 
 /**
  * 3-dimensional vector.
@@ -286,6 +286,21 @@ export function sendEvent(receiverID: u32, name: string, args: u32[], localOnly:
     const argsLen = args.length;
 
     return send_event(receiverID, namePtr, nameLen, argsPtr, argsLen, localOnly ? 1 : 0);
+}
+
+/**
+ * Retrieves arguments of an event inside an event handler.
+ * @returns Array of Value IDs.
+ */
+export function getEventArgs(): u32[] {
+    const count = get_event_args_count();
+    const array = new Array<u32>(count);
+    // AssemblyScript array contains an ArrayBuffer. Pointer can be acquired by changetype.
+    // See:
+    //  https://www.assemblyscript.org/memory.html#internals
+    //  https://www.assemblyscript.org/runtime.html#interface
+    get_event_args(changetype<usize>(array.buffer), count);
+    return array;
 }
 
 /**

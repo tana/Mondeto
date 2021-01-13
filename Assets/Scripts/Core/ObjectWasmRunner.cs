@@ -15,6 +15,9 @@ public class ObjectWasmRunner : WasmRunner
 
     ConcurrentQueue<uint> createdObjects = new ConcurrentQueue<uint>();
 
+    IValue[] eventArgs;
+    bool insideEventHandler = false;
+
     const int Success = 0, Failure = -1;
 
     public ObjectWasmRunner(SyncObject obj)
@@ -52,6 +55,8 @@ public class ObjectWasmRunner : WasmRunner
         AddImportFunction("mondeto", "make_object_ref", (Func<int, int>)MakeObjectRef);
         // Event-related functions
         AddImportFunction("mondeto", "send_event", (Func<int, int, int, int, int, int, int>)SendEvent);
+        AddImportFunction("mondeto", "get_event_args_count", (Func<int>)GetEventArgsCount);
+        AddImportFunction("mondeto", "get_event_args", (Func<int, int, int>)GetEventArgs);
         // Other functions
         AddImportFunction("mondeto", "get_world_coordinate", (Func<int, int, int, int, int, int, int, int, int>)GetWorldCoordinate);
         AddImportFunction("mondeto", "write_audio", (Action<int, int>)WriteAudio);
@@ -66,14 +71,30 @@ public class ObjectWasmRunner : WasmRunner
         {
             // Event handlers should have names like handle_EVENTNAME
             if (!export.Name.StartsWith("handle_")) continue;
-            // TODO: signature check (event handlers should have signatures "void handle_EVENTNAME(i32 sender)")
-
             string funcName = export.Name;
             string eventName = export.Name.Substring("handle_".Length);
+            // signature check
+            // (event handlers should have signatures "void handle_EVENTNAME(i32 sender)")
+            var funcTypeIdx = Module.Functions[(int)export.Index].Type;
+            var funcType = Module.Types[(int)funcTypeIdx];
+            if (funcType.Returns.Count != 0)
+            {
+                Logger.Error("ObjectWasmRunner", $"{funcName}: An event handler must not have return value.");
+                return;
+            }
+            if (funcType.Parameters.Count != 1 || funcType.Parameters[0] != WebAssemblyValueType.Int32)
+            {
+                Logger.Error("ObjectWasmRunner", $"{funcName}: An event handler must accept one i32 argument.");
+                return;
+            }
+
             // Register as a handler
             // TODO: unregister
             Object.RegisterEventHandler(eventName, (sender, args) => {
+                eventArgs = args;
+                insideEventHandler = true;
                 CallWasmFuncWithExceptionHandling(funcName, (int)sender);
+                insideEventHandler = false;
             });
         }
 
@@ -369,6 +390,27 @@ public class ObjectWasmRunner : WasmRunner
         {
             return Failure; // Cannot find receiving object
         }
+    }
+
+    // i32 get_event_args_count()
+    int GetEventArgsCount()
+    {
+        if (!insideEventHandler) return 0;
+
+        return eventArgs.Length;
+    }
+
+    // i32 get_event_args(i32 ptr, i32 max_count)
+    int GetEventArgs(int ptr, int maxCount)
+    {
+        if (!insideEventHandler) return 0;
+
+        // Value ID is cast to int because Marshal.Copy cannot copy uint arrays.
+        var valueIds = eventArgs.Select(val => (int)RegisterValue(val)).ToArray();
+        var count = Math.Min(eventArgs.Length, maxCount);
+        Marshal.Copy(valueIds, 0, WasmToIntPtr(Instance.Exports.memory, ptr), count);
+
+        return count;
     }
 
     // i32 get_world_coordinate(i32 obj_id, i32 vx_ptr, i32 vy_ptr, i32 vz_ptr, i32 qw_ptr, i32 qx_ptr, i32 qy_ptr, i32 qz_ptr)
