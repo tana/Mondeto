@@ -41,7 +41,6 @@ public class SyncBehaviour : MonoBehaviour
             SettingsManager.Instance.InitializeSettings();
             // Override some StreamingAssets-related settings
             Settings.Instance.MimeTypesPath = Application.streamingAssetsPath + "/config/mime.types";
-            Settings.Instance.SceneFile = Application.streamingAssetsPath + "/scene.yml";
         }
 
         if (IsServer)
