@@ -13,6 +13,7 @@
     "assemblyscript": "^0.17.13"
   },
   "dependencies": {
+    "mondeto-as": "file:../../as-lib",
     "nodeplotlib": "^0.7.1",
     "speaker": "^0.5.2"
   }

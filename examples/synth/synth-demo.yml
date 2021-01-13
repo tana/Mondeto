@@ -1,0 +1,23 @@
+objects:
+  # Light
+  # Use an angled directional light as the sun
+  #   https://docs.unity3d.com/ja/2019.4/Manual/UsingLights.html
+  - position: !vec [10, 10, 10]
+    rotation: !euler [70, 0, 0]
+    color: !vec [1, 1, 1]
+    lightType: directional
+    tags: [light]
+  # Ground
+  - position: !vec [0, 0, 0]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [20, 1, 20]
+    color: !vec [0, 0.4, 0]
+    isTangible: true
+    isStatic: true
+    tags: [plane, material, collider]
+  # Synth object
+  - position: !vec [0, 1, 2]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.3, 0.3, 0.3]
+    tags: [cube, audioSource]
+    codes: [!load_file "synth.wasm"]

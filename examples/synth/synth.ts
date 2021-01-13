@@ -1,7 +1,9 @@
 import "wasi";
+import { writeAudio } from "mondeto-as";
 import { SubtractiveSynth } from "./subtractiveSynth";
 
 const FS: f32 = 48000;  // sampling frequency
+const CHUNK_SIZE = 960;
 
 // note constants
 // See: http://newt.phys.unsw.edu.au/jw/notes.html
@@ -22,6 +24,8 @@ let synth: SubtractiveSynth;
 let pos = 0;
 let notes: Array<i32>;
 
+let samples: Array<f32>;
+
 export function init(): void {
     synth = new SubtractiveSynth(FS);
     notes = [
@@ -34,9 +38,18 @@ export function init(): void {
         NoteNumbers.B,
         NoteNumbers.C + 12
     ];
+
+    samples = new Array<f32>(CHUNK_SIZE);
 }
 
-export function generateSample(): f32 {
+export function update(dt: f32): void {
+    for (let i = 0; i < CHUNK_SIZE; i++) {
+        samples[i] = generateSample();
+    }
+    writeAudio(samples);
+}
+
+function generateSample(): f32 {
     if ((time % 1.0) < (1 / FS)) {
         synth.noteOff();
         synth.noteOn(midiNoteToFreq(notes[pos % notes.length]));
