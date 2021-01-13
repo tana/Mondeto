@@ -1,43 +1,18 @@
 import "wasi";
-import { writeAudio } from "mondeto-as";
+import { writeAudio, getEventArgs, read_int } from "mondeto-as";
 import { SubtractiveSynth } from "./subtractiveSynth";
 
 const FS: f32 = 48000;  // sampling frequency
 const CHUNK_SIZE = 960;
 
-// note constants
-// See: http://newt.phys.unsw.edu.au/jw/notes.html
-// Only white keys. To change octave, add or subtract 12.
-enum NoteNumbers {
-    C = 60,
-    D = 62,
-    E = 64,
-    F = 65,
-    G = 67,
-    A = 69,
-    B = 71
-}
-
-let time: f64 = 0.0;    // using f64 because f32 precision is not enough for long time (minutes)
 let synth: SubtractiveSynth;
 
 let pos = 0;
-let notes: Array<i32>;
 
 let samples: Array<f32>;
 
 export function init(): void {
     synth = new SubtractiveSynth(FS);
-    notes = [
-        NoteNumbers.C,
-        NoteNumbers.D,
-        NoteNumbers.E,
-        NoteNumbers.F,
-        NoteNumbers.G,
-        NoteNumbers.A,
-        NoteNumbers.B,
-        NoteNumbers.C + 12
-    ];
 
     samples = new Array<f32>(CHUNK_SIZE);
 }
@@ -49,15 +24,22 @@ export function update(dt: f32): void {
     writeAudio(samples);
 }
 
-function generateSample(): f32 {
-    if ((time % 1.0) < (1 / FS)) {
-        synth.noteOff();
-        synth.noteOn(midiNoteToFreq(notes[pos % notes.length]));
-        pos++;
-    }
+// Handle noteOn event sent from keys
+export function handle_noteOn(sender: u32): void {
+    const args = getEventArgs();
+    if (args.length < 1) return;
+    const noteNum = read_int(args[0]);  // MIDI note number
 
+    synth.noteOn(midiNoteToFreq(noteNum));
+}
+
+// Handle noteOff event sent from keys
+export function handle_noteOff(sender: u32): void {
+    synth.noteOff();
+}
+
+function generateSample(): f32 {
     const val = f32(0.2) * synth.compute();
-    time += 1 / FS;
     return val;
 }
 

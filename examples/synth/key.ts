@@ -1,16 +1,32 @@
 import "wasi";
-import { getField, read_object_ref, read_int, makeSequence, sendEvent } from "mondeto-as";
+import { getField, read_object_ref, read_int, make_int, sendEvent } from "mondeto-as";
 
 export function init(): void {
 }
 
 export function handle_collisionStart(sender: u32): void {
-    const target = read_object_ref(getField("target") as u32);
-    const noteNum = read_int(getField("noteNum") as u32);
-    sendEvent(target, "noteOn", [noteNum]);
+    sendNoteOn();
 }
 
 export function handle_collisionEnd(sender: u32): void {
+    sendNoteOff();
+}
+
+export function handle_clickStart(sender: u32): void {
+    sendNoteOn();
+}
+
+export function handle_clickEnd(sender: u32): void {
+    sendNoteOff();
+}
+
+function sendNoteOn(): void {
+    const target = read_object_ref(getField("target") as u32);
+    const noteNum = read_int(getField("noteNum") as u32);
+    sendEvent(target, "noteOn", [make_int(noteNum)]);
+}
+
+function sendNoteOff(): void {
     const target = read_object_ref(getField("target") as u32);
     sendEvent(target, "noteOff", []);
 }
