@@ -132,3 +132,12 @@ objects:
     target: !ref synth
     tags: [cube, material, collider]
     codes: [!load_file "key.wasm"]
+  # C
+  - position: !vec [0.77, 1, 1.5]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.1, 0.05, 0.3]
+    color: !vec [1, 1, 1]
+    noteNum: 72
+    target: !ref synth
+    tags: [cube, material, collider]
+    codes: [!load_file "key.wasm"]
