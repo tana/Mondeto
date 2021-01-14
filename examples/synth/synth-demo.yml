@@ -141,3 +141,12 @@ objects:
     target: !ref synth
     tags: [cube, material, collider]
     codes: [!load_file "key.wasm"]
+  # Controls
+  - position: !vec [-1, 1, 1.5]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.1, 0.1, 0.1]
+    color: !vec [0, 1, 0]
+    target: !ref synth
+    eventName: setAttack
+    tags: [cube, material, collider]
+    codes: [!load_file "slider.wasm"]

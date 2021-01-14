@@ -5,7 +5,8 @@
   "scripts": {
     "build-synth": "npx asc -O synth.ts -o synth.wasm",
     "build-key": "npx asc -O key.ts -o key.wasm",
-    "build": "npm run build-synth && npm run build-key"
+    "build-slider": "npx asc -O slider.ts -o slider.wasm",
+    "build": "npm run build-synth && npm run build-key && npm run build-slider"
   },
   "author": "Satoshi Tanaka",
   "license": "MIT",
