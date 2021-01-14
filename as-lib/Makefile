@@ -1,6 +1,6 @@
 .PHONY: docs
 
-FILES = assembly/index.ts assembly/wrapper.ts assembly/mondeto.ts
+FILES = assembly/index.ts assembly/wrapper.ts assembly/math.ts assembly/mondeto.ts
 
 DOCS_DIR = docs
 docs:
