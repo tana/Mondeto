@@ -12,6 +12,9 @@ public class Menu : MonoBehaviour
     public GameObject DialogPanel;
     public Text NodeIdText;
     public Toggle MicrophoneToggle;
+    public Toggle ShowHandColliderToggle;
+    public Slider HandColliderSizeSlider;
+    public Text HandColliderSizeText;
 
     public InputField ObjectCreationInput;
     
@@ -110,6 +113,24 @@ public class Menu : MonoBehaviour
         await UniTask.WaitForEndOfFrame();
 
         MoveMenu();
+    }
+
+    public void OnShowHandCollidersToggleChanged()
+    {
+        foreach (var grabDetector in GetComponentsInChildren<GrabDetector>())
+        {
+            grabDetector.Display = ShowHandColliderToggle.isOn;
+        }
+    }
+
+    public void OnHandColliderSizeSliderChanged()
+    {
+        var value = HandColliderSizeSlider.value;
+        foreach (var grabDetector in GetComponentsInChildren<GrabDetector>())
+        {
+            grabDetector.Radius = value;
+        }
+        HandColliderSizeText.text = $"Hand collider size: {(int)Mathf.Round(value * 100)} cm";
     }
 
     public async void OnCreateObjectButtonClicked()

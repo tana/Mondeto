@@ -6,8 +6,11 @@ using UnityEngine;
 public class GrabDetector : MonoBehaviour
 {
     public readonly HashSet<GameObject> ObjectsToGrab = new HashSet<GameObject>();
-
+    
+    GameObject display;
     SphereCollider col;
+    MeshRenderer meshRenderer;
+    float radius = 0.3f;
 
     public void Setup(SyncObject syncObj)
     {
@@ -19,8 +22,33 @@ public class GrabDetector : MonoBehaviour
         if (GetComponent<ColliderSync>() == null) return;
         col = gameObject.AddComponent<SphereCollider>();
         col.isTrigger = true;
-        col.radius = 0.3f;  // FIXME: setting
+        col.radius = radius;
         GetComponent<ColliderSync>().AddCollider(col);
+
+        display = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        Destroy(display.GetComponent<Collider>());  // display is just for display.
+        display.transform.SetParent(transform, false);
+        display.transform.localScale = Vector3.one * (2 * radius);  // scale = diameter = 2*radius
+        meshRenderer = display.GetComponent<MeshRenderer>();
+        meshRenderer.material = Resources.Load<Material>("Materials/HandColliderMaterial");
+        meshRenderer.enabled = false;   // display is disabled by default
+    }
+
+    public bool Display
+    {
+        get => meshRenderer.enabled;
+        set => meshRenderer.enabled = value;
+    }
+
+    public float Radius
+    {
+        get => radius;
+        set
+        {
+            radius = value;
+            col.radius = radius;
+            display.transform.localScale = Vector3.one * (2 * radius);  // scale = diameter = 2*radius
+        }
     }
 
     void OnTriggerEnter(Collider other)
