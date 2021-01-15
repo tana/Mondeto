@@ -34,6 +34,9 @@ public class PlayerAvatar : MonoBehaviour, ITag
     // Child objects for left and right hands (only non-null when tracking device is available)
     private SyncObject leftHandObj, rightHandObj;
     private GameObject leftHandGameObj, rightHandGameObj;
+    // and for desktop-mode grabbing
+    private SyncObject mouseGrabberObj;
+    private GameObject mouseGrabberGameObj;
 
     private Vector3 lastMousePosition;
     private Quaternion camRotBeforeDrag;
@@ -47,8 +50,10 @@ public class PlayerAvatar : MonoBehaviour, ITag
     
     private List<GameObject> headForShadow = new List<GameObject>();
 
-    private HashSet<uint> clickedObjects = new HashSet<uint>();
+    private List<ObjectSync> clickedObjects = new List<ObjectSync>();
     private List<ObjectSync> mouseGrabbedObjects = new List<ObjectSync>();
+    private List<ObjectSync> leftGrabbedObjects = new List<ObjectSync>();
+    private List<ObjectSync> rightGrabbedObjects = new List<ObjectSync>();
 
     // TODO:
     public void Setup(SyncObject syncObject)
@@ -221,22 +226,21 @@ public class PlayerAvatar : MonoBehaviour, ITag
                 var clickedObj = FindMouseClickedObject();
                 if (clickedObj != null)
                 {
-                    GrabObjectByMouse(obj, clickedObj);
+                    // mouseGrabber moves to the place of clicked object
+                    mouseGrabberGameObj.transform.position = clickedObj.transform.position;
+                    // Because this is inside Update(), position fields are not immediately updated unless forcibly updated.
+                    mouseGrabberGameObj.GetComponent<ObjectSync>().UpdateFields();
+                    StartClicking(mouseGrabberObj, clickedObj, "grab", mouseGrabbedObjects);
                 }
             }
             else if (Input.GetMouseButtonUp(1))
             {
-                UngrabByMouse(obj);
+                EndClicking(mouseGrabberObj, "ungrab", mouseGrabbedObjects);
             }
-            // Change position of grabbed objects using mouse
-            foreach (var grabbedObj in mouseGrabbedObjects)
+            // Change position of mouseGrabber using mouse
+            if (mouseGrabbedObjects.Count != 0)
             {
-                // Move actually grabbed objects only
-                // (i.e. children of the avatar)
-                if (grabbedObj.transform.IsChildOf(transform))
-                {
-                    MoveObjectByMouse(grabbedObj);
-                }
+                MoveObjectByMouse(mouseGrabberGameObj);
             }
         }
 
@@ -256,6 +260,10 @@ public class PlayerAvatar : MonoBehaviour, ITag
         {
             rightHandGameObj = syncBehaviour.GameObjects[rightHandObj.Id];
             SetHandCollider(rightHandGameObj, rightHandObj);
+        }
+        if (mouseGrabberObj != null)
+        {
+            mouseGrabberGameObj = syncBehaviour.GameObjects[mouseGrabberObj.Id];
         }
     }
 
@@ -278,8 +286,8 @@ public class PlayerAvatar : MonoBehaviour, ITag
         leftTriggerDetector.ButtonUp += (bd) => EndClicking(leftHandObj);
         // grab
         leftGripDetector = new ButtonDetector(leftController.Value, CommonUsages.gripButton);
-        leftGripDetector.ButtonDown += (bd) => GrabObject(leftHandGameObj);
-        leftGripDetector.ButtonUp += (bd) => UngrabObject(leftHandGameObj);
+        leftGripDetector.ButtonDown += (bd) => StartClickingByHand(leftHandGameObj, "grab", leftGrabbedObjects);
+        leftGripDetector.ButtonUp += (bd) => EndClicking(leftHandObj, "ungrab", leftGrabbedObjects);
     }
     
     void SetupRightController()
@@ -301,8 +309,8 @@ public class PlayerAvatar : MonoBehaviour, ITag
         rightTriggerDetector.ButtonUp += (bd) => EndClicking(rightHandObj);
         // grab-related
         rightGripDetector = new ButtonDetector(rightController.Value, CommonUsages.gripButton);
-        rightGripDetector.ButtonDown += (bd) => GrabObject(rightHandGameObj);
-        rightGripDetector.ButtonUp += (bd) => UngrabObject(rightHandGameObj);
+        rightGripDetector.ButtonDown += (bd) => StartClickingByHand(rightHandGameObj, "grab", rightGrabbedObjects);
+        rightGripDetector.ButtonUp += (bd) => EndClicking(rightHandObj, "ungrab", rightGrabbedObjects);
     }
 
     void SetHandCollider(GameObject handGameObj, SyncObject obj)
@@ -324,7 +332,7 @@ public class PlayerAvatar : MonoBehaviour, ITag
         }
     }
 
-    void MoveObjectByMouse(ObjectSync obj)
+    void MoveObjectByMouse(GameObject obj)
     {
         // The object moves within the same plane (keeps camera-coordinate Z)
         var z = Camera.main.transform.InverseTransformPoint(obj.transform.position).z;
@@ -332,85 +340,42 @@ public class PlayerAvatar : MonoBehaviour, ITag
         obj.transform.position = Camera.main.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, z));
     }
 
-    void StartClicking(SyncObject thisObj, ObjectSync clickedObj)
+    // This is also used for grabbing
+    void StartClicking(SyncObject thisObj, ObjectSync clickedObj, string eventName, List<ObjectSync> objectList)
     {
-        clickedObjects.Add(clickedObj.SyncObject.Id);
-        clickedObj.SyncObject.SendEvent("clickStart", thisObj.Id, new IValue[0]);
+        objectList.Add(clickedObj);
+        clickedObj.SyncObject.SendEvent(eventName, thisObj.Id, new IValue[0]);
     }
 
-    void StartClickingByHand(GameObject handGameObj)
+    void StartClicking(SyncObject thisObj, ObjectSync clickedObj) => StartClicking(thisObj, clickedObj, "clickStart", clickedObjects);
+
+    // Also used for grabbing
+    void StartClickingByHand(GameObject handGameObj, string eventName, List<ObjectSync> objectList)
     {
         if (handGameObj == null) return;
         var detector = handGameObj.GetComponent<GrabDetector>();
         var handObj = handGameObj.GetComponent<ObjectSync>().SyncObject;
         foreach (var obj in detector.ObjectsToGrab)
         {
-            var syncObj = obj.GetComponent<ObjectSync>().SyncObject;
-            clickedObjects.Add(syncObj.Id);
-            syncObj.SendEvent(
-                "clickStart",
-                handObj.Id,
-                new IValue[0]
-            );
+            var objSync = obj.GetComponent<ObjectSync>();
+            objectList.Add(objSync);
+            objSync.SyncObject.SendEvent(eventName, handObj.Id, new IValue[0]);
         }
     }
 
-    void EndClicking(SyncObject thisObj)
+    void StartClickingByHand(GameObject handGameObj) => StartClickingByHand(handGameObj, "clickStart", clickedObjects);
+
+    // Also used for grabbing
+    void EndClicking(SyncObject thisObj, string eventName, List<ObjectSync> objectList)
     {
-        foreach (var id in clickedObjects)
+        foreach (var objSync in objectList)
         {
-            thisObj.Node.Objects[id].SendEvent("clickEnd", thisObj.Id, new IValue[0]);
+            objSync.SyncObject.SendEvent(eventName, thisObj.Id, new IValue[0]);
         }
-        clickedObjects.Clear();
+        objectList.Clear();
     }
 
-    void GrabObject(GameObject handGameObj)
-    {
-        if (handGameObj == null) return;
-        var detector = handGameObj.GetComponent<GrabDetector>();
-        var handObj = handGameObj.GetComponent<ObjectSync>().SyncObject;
-        foreach (var obj in detector.ObjectsToGrab)
-        {
-            obj.GetComponent<ObjectSync>().SyncObject.SendEvent(
-                "grab",
-                handObj.Id,
-                new IValue[0]
-            );
-        }
-    }
-
-    void UngrabObject(GameObject handGameObj)
-    {
-        if (handGameObj == null) return;
-        var handObj = handGameObj.GetComponent<ObjectSync>().SyncObject;
-        // FIXME: provisional implementation
-        if (handObj.TryGetField("children", out Sequence children))
-        {
-            foreach (var child in children.Elements.Select(elem => elem as ObjectRef).Where(elem => elem != null))
-            {
-                handObj.Node.Objects[child.Id].SendEvent(
-                    "ungrab",
-                    handObj.Id,
-                    new IValue[0]
-                );
-            }
-        }
-    }
-
-    void GrabObjectByMouse(SyncObject thisObj, ObjectSync targetObj)
-    {
-        mouseGrabbedObjects.Add(targetObj);
-        targetObj.SyncObject.SendEvent("grab", thisObj.Id, new IValue[0]);
-    }
-
-    void UngrabByMouse(SyncObject thisObj)
-    {
-        foreach (var targetObj in mouseGrabbedObjects)
-        {
-            targetObj.SyncObject.SendEvent("ungrab", thisObj.Id, new IValue[0]);
-        }
-        mouseGrabbedObjects.Clear();
-    }
+    void EndClicking(SyncObject thisObj) => EndClicking(thisObj, "clickEnd", clickedObjects);
 
     void OnBeforeSync(SyncObject obj, float dt)
     {
@@ -450,9 +415,11 @@ public class PlayerAvatar : MonoBehaviour, ITag
         obj.AfterSync += OnAfterSync;
         obj.RegisterFieldUpdateHandler("leftHand", OnLeftHandUpdated);
         obj.RegisterFieldUpdateHandler("rightHand", OnRightHandUpdated);
+        obj.RegisterFieldUpdateHandler("mouseGrabber", OnMouseGrabberUpdated);
 
         OnLeftHandUpdated();
         OnRightHandUpdated();
+        OnMouseGrabberUpdated();
 
         Blob vrmBlob;
         if (GetComponent<ObjectSync>().IsOriginal)
@@ -561,6 +528,15 @@ public class PlayerAvatar : MonoBehaviour, ITag
                 }));
                 obj.SetField("rightHand", rightHandObj.GetObjectRef());
             }
+            // Mouse
+            var mouseGrabberId = await node.CreateObject();
+            mouseGrabberObj = node.Objects[mouseGrabberId];
+            mouseGrabberObj.SetField("parent", obj.GetObjectRef());
+            mouseGrabberObj.SetField("tags", new Sequence(new IValue[] {
+                new Primitive<string>("constantVelocity"),
+                new Primitive<string>("collider")
+            }));
+            obj.SetField("mouseGrabber", mouseGrabberObj.GetObjectRef());
         }
     }
 
@@ -606,6 +582,16 @@ public class PlayerAvatar : MonoBehaviour, ITag
         if (obj.TryGetField("rightHand", out ObjectRef rightHandRef))
         {
             rightHandObj = obj.Node.Objects[rightHandRef.Id];
+        }
+    }
+
+    void OnMouseGrabberUpdated()
+    {
+        SyncObject obj = GetComponent<ObjectSync>().SyncObject;
+
+        if (obj.TryGetField("mouseGrabber", out ObjectRef mouseGrabberRef))
+        {
+            mouseGrabberObj = obj.Node.Objects[mouseGrabberRef.Id];
         }
     }
 

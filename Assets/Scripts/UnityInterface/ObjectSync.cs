@@ -90,10 +90,15 @@ public class ObjectSync : MonoBehaviour
     {
         beforeSync = true;
 
-        obj.SetField("position", UnityUtil.ToVec(transform.localPosition));
-        obj.SetField("rotation", UnityUtil.ToQuat(transform.localRotation));
+        UpdateFields();
         
         beforeSync = false;
+    }
+
+    public void UpdateFields()
+    {
+        SyncObject.SetField("position", UnityUtil.ToVec(transform.localPosition));
+        SyncObject.SetField("rotation", UnityUtil.ToQuat(transform.localRotation));
     }
 
     void HandleUpdate()
