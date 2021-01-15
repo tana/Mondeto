@@ -42,9 +42,9 @@ export class Vec {
 
     cross(other: Vec): Vec {
         return new Vec(
-            this.y * other.z - this.z - other.y,
-            this.z * other.x - this.x - other.z,
-            this.x * other.y - this.y - other.x
+            this.y * other.z - this.z * other.y,
+            this.z * other.x - this.x * other.z,
+            this.x * other.y - this.y * other.x
         );
     }
 
@@ -62,7 +62,7 @@ export class Vec {
     }
 
     @operator.prefix("-")
-    static __opPrefixPlus(a: Vec): Vec {
+    static __opPrefixMinus(a: Vec): Vec {
         return new Vec(-a.x, -a.y, -a.z);
     }
 }

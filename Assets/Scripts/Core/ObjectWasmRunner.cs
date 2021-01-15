@@ -424,10 +424,11 @@ public class ObjectWasmRunner : WasmRunner
     {
         // Check object ID
         if (!Object.Node.Objects.ContainsKey((uint)objId)) return Failure;
+        var obj = Object.Node.Objects[(uint)objId];
 
         Vec worldPos;
         Quat worldRot;
-        if (Object.CalcWorldCoord(out worldPos, out worldRot))
+        if (obj.CalcWorldCoord(out worldPos, out worldRot))
         {
             WriteVecToWasm(worldPos, Instance.Exports.memory, vxPtr, vyPtr, vzPtr);
             WriteQuatToWasm(worldRot, Instance.Exports.memory, qwPtr, qxPtr, qyPtr, qzPtr);
