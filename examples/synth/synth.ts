@@ -1,5 +1,5 @@
 import "wasi";
-import { writeAudio, getEventArgs, read_int } from "mondeto-as";
+import { writeAudio, getEventArgs, read_int, read_float } from "mondeto-as";
 import { SubtractiveSynth } from "./subtractiveSynth";
 
 const FS: f32 = 48000;  // sampling frequency
@@ -36,6 +36,38 @@ export function handle_noteOn(sender: u32): void {
 // Handle noteOff event sent from keys
 export function handle_noteOff(sender: u32): void {
     synth.noteOff();
+}
+
+// Handle events from sliders
+export function handle_setAttack(sender: u32): void {
+    const args = getEventArgs();
+    if (args.length < 1) return;
+    synth.setAmpAttack(read_float(args[0]));
+}
+export function handle_setDecay(sender: u32): void {
+    const args = getEventArgs();
+    if (args.length < 1) return;
+    synth.setAmpDecay(read_float(args[0]));
+}
+export function handle_setSustain(sender: u32): void {
+    const args = getEventArgs();
+    if (args.length < 1) return;
+    synth.setAmpSustain(read_float(args[0]));
+}
+export function handle_setRelease(sender: u32): void {
+    const args = getEventArgs();
+    if (args.length < 1) return;
+    synth.setAmpRelease(read_float(args[0]));
+}
+export function handle_setCutOff(sender: u32): void {
+    const args = getEventArgs();
+    if (args.length < 1) return;
+    synth.setFilterRelativeFreq(3 * read_float(args[0]));   // from 0 to 3
+}
+export function handle_setResonance(sender: u32): void {
+    const args = getEventArgs();
+    if (args.length < 1) return;
+    synth.setFilterQ(Mathf.pow(2, 4 * read_float(args[0]) - 2));    // from 0.25 to 4
 }
 
 function generateSample(): f32 {

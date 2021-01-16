@@ -17,7 +17,10 @@ export class SubtractiveSynth {
         this.filter = new BiquadFilter(this.fs);
         this.envelope = new ADSLEnvelope(this.fs);
 
-        this.setAmpADSR(0.1, 0.5, 0.3, 0.2);
+        this.setAmpAttack(0.1);
+        this.setAmpDecay(0.5);
+        this.setAmpRelease(0.3);
+        this.setAmpRelease(0.2);
         this.setFilterRelativeFreq(2);
         this.setFilterQ(0.5);
     }
@@ -36,10 +39,19 @@ export class SubtractiveSynth {
         this.envelope.noteOff();
     }
 
-    setAmpADSR(attackTime: f32, decayTime: f32, sustainLevel: f32, releaseTime: f32): void {
+    setAmpAttack(attackTime: f32): void {
         this.envelope.attackTime = attackTime;
+    }
+
+    setAmpDecay(decayTime: f32): void {
         this.envelope.decayTime = decayTime;
+    }
+
+    setAmpSustain(sustainLevel: f32): void{
         this.envelope.sustainLevel = sustainLevel;
+    }
+
+    setAmpRelease(releaseTime: f32): void {
         this.envelope.releaseTime = releaseTime;
     }
 
