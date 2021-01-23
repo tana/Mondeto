@@ -11,15 +11,28 @@ objects:
   - position: !vec [0, 0, 0]
     rotation: !euler [0, 0, 0]
     scale: !vec [20, 1, 20]
-    color: !vec [0, 0.4, 0]
+    color: !vec [0.3, 0.3, 0.3]
     isTangible: true
     isStatic: true
     tags: [plane, material, collider]
+  # Oscillator waveform display
+  - $name: oscWaveformPlot
+    position: !vec [0, 1.5, 1.5]
+    rotation: !euler [0, 0, 0]
+    width: 0.01
+    points: []
+    maxValue: 1.0
+    minValue: -1.0
+    color: !vec [0, 1, 0]
+    shader: unlit
+    tags: [line, material]
+    codes: [!load_file "plot.wasm"]
   # Synth object
   - $name: synth
     position: !vec [0, 1, 2]
     rotation: !euler [0, 0, 0]
     scale: !vec [0.3, 0.3, 0.3]
+    oscWaveformPlot: !ref oscWaveformPlot
     tags: [cube, audioSource]
     codes: [!load_file "synth.wasm"]
   # Keyboard

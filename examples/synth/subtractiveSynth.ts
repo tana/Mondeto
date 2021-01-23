@@ -65,6 +65,14 @@ export class SubtractiveSynth {
         this.setFilter();
     }
 
+    getOscWaveform(len: i32): Array<f32> {
+        return this.osc.getWaveform(len);
+    }
+
+    getFilterFrequencyResponse(len: i32): Array<f32> {
+        return this.filter.getFrequencyResponse(len);
+    }
+
     private setFilter(): void {
         const filterFreq = this.osc.freq * this.filterRelativeFreq;
         this.filter.setCharacteristics(filterFreq, this.filterQ);

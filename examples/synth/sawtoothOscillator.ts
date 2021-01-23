@@ -18,4 +18,13 @@ export class SawtoothOscillator {
 
         return output;
     }
+
+    // Generate waveform of one period
+    getWaveform(len: i32): Array<f32> {
+        const array = new Array<f32>(len);
+        for (let i = 0; i < len; i++) {
+            array[i] = 2.0 * f32(i) / f32(len) - 1.0;
+        }
+        return array;
+    }
 }

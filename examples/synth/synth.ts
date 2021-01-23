@@ -1,9 +1,10 @@
 import "wasi";
-import { writeAudio, getEventArgs, read_int, read_float } from "mondeto-as";
+import { writeAudio, getEventArgs, read_int, read_float, sendEvent, getField, make_float, read_object_ref, makeSequence } from "mondeto-as";
 import { SubtractiveSynth } from "./subtractiveSynth";
 
 const FS: f32 = 48000;  // sampling frequency
 const CHUNK_SIZE = 960;
+const PLOT_LEN = 100;
 
 let synth: SubtractiveSynth;
 
@@ -15,6 +16,8 @@ export function init(): void {
     synth = new SubtractiveSynth(FS);
 
     samples = new Array<f32>(CHUNK_SIZE);
+
+    showOscWaveform();
 }
 
 export function update(dt: f32): void {
@@ -79,4 +82,16 @@ function generateSample(): f32 {
 //  See: https://en.wikipedia.org/wiki/MIDI_tuning_standard (accessed on Jan 10, 2021)
 function midiNoteToFreq(note: i32): f32 {
     return Mathf.pow(2, f32(note - 69) / 12) * f32(440);
+}
+
+function showOscWaveform(): void {
+    const target = read_object_ref(getField("oscWaveformPlot") as u32);
+
+    const waveform = synth.getOscWaveform(PLOT_LEN);
+    const valueIDs = new Array<u32>(PLOT_LEN);
+    for (let i = 0; i < PLOT_LEN; i++) {
+        valueIDs[i] = make_float(waveform[i]);
+    }
+    
+    sendEvent(target, "plot", [makeSequence(valueIDs)]);
 }

@@ -1,3 +1,5 @@
+import { Complex } from "./complex";
+
 // IIR Biquad low-pass filter
 // Calculation is based on:
 //  Robert Bristow-Johnson, "Cookbook formulae for audio equalizer biquad filter coefficients" (edited by Raymond Toy and Doug Schepers)
@@ -22,6 +24,7 @@ export class BiquadFilter {
     }
 
     compute(x: f32): f32 {
+        // See: Equation 4 of the Cookbook
         const y =
             (this.b0 / this.a0) * x
             + (this.b1 / this.a0) * this.x1
@@ -51,5 +54,22 @@ export class BiquadFilter {
         this.a0 = 1 + alpha;
         this.a1 = -2 * c;
         this.a2 = 1 - alpha;
+    }
+
+    // Generate frequnency response (in dB, from 1 Hz to Nyquist freqency)
+    getFrequencyResponse(len: i32): Array<f32> {
+        const array = new Array<f32>(len);
+        const maxFreq = this.fs / 2;
+        for (let i = 0; i < len; i++) {
+            const freq = Mathf.pow(10, Mathf.log10(maxFreq) * f32(i) / len);
+            // Compute frequency response of a transfer function H(z)
+            //  https://ccrma.stanford.edu/~jos/fp/Frequency_Response_I.html
+            const z = (new Complex(0, 2 * Mathf.PI * freq / this.fs)).exp();
+            const zMinus1 = new Complex(1, 0) / z;
+            const zMinus2 = new Complex(1, 0) / (z * z);
+            // H(z) (See: Equation 1 of the Cookbook)
+            const h = (this.b0 + zMinus1.multiply(this.b1) + zMinus2.multiply(this.b2)) / (this.a0 + zMinus1.multiply(this.a1) + zMinus2.multiply(this.b2));
+            array[i] = 20 * Mathf.log10(h.abs());
+        }
     }
 }
