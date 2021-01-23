@@ -44,6 +44,8 @@ public class ObjectWasmRunner : WasmRunner
         AddImportFunction("mondeto", "get_string_length", (Func<int, int>)GetStringLength);
         AddImportFunction("mondeto", "read_string", (Func<int, int, int, int>)ReadString);
         AddImportFunction("mondeto", "read_object_ref", (Func<int, int>)ReadObjectRef);
+        AddImportFunction("mondeto", "get_sequence_length", (Func<int, int>)GetSequenceLength);
+        AddImportFunction("mondeto", "read_sequence", (Func<int, int, int, int>)ReadSequence);
         AddImportFunction("mondeto", "make_int", (Func<int, int>)MakePrimitive<int>);
         AddImportFunction("mondeto", "make_long", (Func<long, int>)MakePrimitive<long>);
         AddImportFunction("mondeto", "make_float", (Func<float, int>)MakePrimitive<float>);
@@ -328,6 +330,23 @@ public class ObjectWasmRunner : WasmRunner
         return (int)val.Id;
     }
 
+    // i32 get_sequence_length(i32 value_id)
+    int GetSequenceLength(int valueId)
+    {
+        var val = (Sequence)FindValue((uint)valueId);
+        return val.Elements.Count;
+    }
+
+    // i32 read_sequence(i32 value_id, i32 ptr, i32 max_len)
+    int ReadSequence(int valueId, int ptr, int maxLen)
+    {
+        var seq = (Sequence)FindValue((uint)valueId);
+        return WriteUIntArrayToWasm(
+            seq.Elements.Select(RegisterValue).ToArray(),
+            Instance.Exports.memory, ptr, maxLen
+        );
+    }
+
     // i32 make_int(i32 value)
     // i32 make_long(i64 value)
     // i32 make_float(f32 value)
@@ -411,12 +430,10 @@ public class ObjectWasmRunner : WasmRunner
     {
         if (!insideEventHandler) return 0;
 
-        // Value ID is cast to int because Marshal.Copy cannot copy uint arrays.
-        var valueIds = eventArgs.Select(val => (int)RegisterValue(val)).ToArray();
-        var count = Math.Min(eventArgs.Length, maxCount);
-        Marshal.Copy(valueIds, 0, WasmToIntPtr(Instance.Exports.memory, ptr), count);
-
-        return count;
+        return WriteUIntArrayToWasm(
+            eventArgs.Select(RegisterValue).ToArray(),
+            Instance.Exports.memory, ptr, maxCount
+        );
     }
 
     // i32 get_world_coordinate(i32 obj_id, i32 vx_ptr, i32 vy_ptr, i32 vz_ptr, i32 qw_ptr, i32 qx_ptr, i32 qy_ptr, i32 qz_ptr)
@@ -489,6 +506,18 @@ public class ObjectWasmRunner : WasmRunner
         var intArray = new int[elemsLen];
         Marshal.Copy(WasmToIntPtr(memory, elemsPtr), intArray, 0, elemsLen);
         return intArray.Select(intValue => (uint)intValue).ToArray();
+    }
+
+    int WriteUIntArrayToWasm(uint[] array, UnmanagedMemory memory, int ptr, int maxLen)
+    {
+        // Array is cast to int because Marshal.Copy cannot copy uint arrays.
+        // Note: Using Select instead of Cast<int> because the latter throws an ArrayTypeMismatchException.
+        //  See: https://stackoverflow.com/questions/11039479/why-does-this-linq-cast-fail-when-using-tolist
+        var intArray = array.Select(vid => (int)vid).ToArray();
+        var len = Math.Min(intArray.Length, maxLen);
+        Marshal.Copy(intArray, 0, WasmToIntPtr(memory, ptr), len);
+
+        return len;
     }
 
     public override void WriteLog(Logger.LogType type, string component, string message)
