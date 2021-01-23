@@ -5,7 +5,7 @@
 // Note: @packageDocumentation is needed for file-level doc comment.
 // See: https://typedoc.org/guides/doccomments/#files
 
-import { get_event_args, get_event_args_count, get_field, get_string_length, get_world_coordinate, make_quat, make_sequence, make_string, make_vec, object_get_field, object_set_field, read_quat, read_string, read_vec, send_event, set_field, write_audio } from "./mondeto";
+import { get_event_args, get_event_args_count, get_field, get_sequence_length, get_string_length, get_world_coordinate, make_quat, make_sequence, make_string, make_vec, object_get_field, object_set_field, read_quat, read_sequence, read_string, read_vec, send_event, set_field, write_audio } from "./mondeto";
 import { Vec, Quat, Transform } from "./math";
 
 /**
@@ -90,6 +90,21 @@ export function readQuat(valueID: u32): Quat {
     read_quat(valueID, ptr + wOffset, ptr + xOffset, ptr + yOffset, ptr + zOffset);
 
     return quat;
+}
+
+/**
+ * @param valueID Value ID of a sequence.
+ * @returns Array of Value IDs.
+ */
+export function readSequence(valueID: u32): u32[] {
+    const len = i32(get_sequence_length(valueID));
+    const array = new Array<u32>(len);
+    // AssemblyScript array contains an ArrayBuffer. Pointer can be acquired by changetype.
+    // See:
+    //  https://www.assemblyscript.org/memory.html#internals
+    //  https://www.assemblyscript.org/runtime.html#interface
+    read_sequence(valueID, changetype<usize>(array.buffer), len);
+    return array;
 }
 
 export function makeVec(v: Vec): u32 {

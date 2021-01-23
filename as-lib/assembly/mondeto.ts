@@ -74,6 +74,8 @@ export declare function read_double(value_id: u32): f64;
 export declare function get_string_length(value_id: u32): usize;
 export declare function read_string(value_id: u32, ptr: usize, max_len: usize): i32;
 export declare function read_object_ref(value_id: u32): u32;
+export declare function get_sequence_length(value_id: u32): usize;
+export declare function read_sequence(value_id: u32, ptr: usize, max_len: usize): usize;
 export declare function make_int(value: i32): u32;
 export declare function make_long(value: i64): u32;
 export declare function make_float(value: f32): u32;
