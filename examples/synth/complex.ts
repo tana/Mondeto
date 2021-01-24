@@ -9,6 +9,10 @@ export class Complex {
         this.im = im;
     }
 
+    toString(): string {
+        return this.re.toString() + "+" + this.im.toString() + "j";
+    }
+
     abs(): f32 {
         return Mathf.sqrt(this.re * this.re + this.im * this.im);
     }
@@ -25,7 +29,7 @@ export class Complex {
     // exp(a+jb) = exp(a) exp(jb) = exp(a)(cos(b) + jsin(b))
     // See: https://mathworld.wolfram.com/EulerFormula.html
     exp(): Complex {
-        return new Complex(this.re * Mathf.cos(this.im), this.re * Mathf.sin(this.im));
+        return new Complex(Mathf.exp(this.re) * Mathf.cos(this.im), Mathf.exp(this.re) * Mathf.sin(this.im));
     }
 
     // Using operator overloads

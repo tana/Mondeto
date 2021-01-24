@@ -1,4 +1,4 @@
-export class ADSLEnvelope {
+export class ADSREnvelope {
     private readonly fs: f32;
     private isOn: bool = false;
     private isReleasing: bool = false;

@@ -1,13 +1,13 @@
 import { SawtoothOscillator } from "./sawtoothOscillator";
 import { BiquadFilter } from "./biquadFilter";
-import { ADSLEnvelope } from "./adslEnvelope";
+import { ADSREnvelope } from "./adsrEnvelope";
 
 // Monophonic subtractive synthesizer
 export class SubtractiveSynth {
     private readonly fs: f32;   // sampling freq
     private readonly osc: SawtoothOscillator;
     private readonly filter: BiquadFilter;
-    private readonly envelope: ADSLEnvelope;
+    private readonly envelope: ADSREnvelope;
     private filterRelativeFreq: f32;
     private filterQ: f32;
 
@@ -15,7 +15,7 @@ export class SubtractiveSynth {
         this.fs = fs;
         this.osc = new SawtoothOscillator(this.fs);
         this.filter = new BiquadFilter(this.fs);
-        this.envelope = new ADSLEnvelope(this.fs);
+        this.envelope = new ADSREnvelope(this.fs);
 
         this.setAmpAttack(0.1);
         this.setAmpDecay(0.5);

@@ -61,15 +61,16 @@ export class BiquadFilter {
         const array = new Array<f32>(len);
         const maxFreq = this.fs / 2;
         for (let i = 0; i < len; i++) {
-            const freq = Mathf.pow(10, Mathf.log10(maxFreq) * f32(i) / len);
+            const freq = Mathf.pow(10, Mathf.log10(maxFreq) * f32(i) / f32(len));
             // Compute frequency response of a transfer function H(z)
             //  https://ccrma.stanford.edu/~jos/fp/Frequency_Response_I.html
             const z = (new Complex(0, 2 * Mathf.PI * freq / this.fs)).exp();
             const zMinus1 = new Complex(1, 0) / z;
             const zMinus2 = new Complex(1, 0) / (z * z);
             // H(z) (See: Equation 1 of the Cookbook)
-            const h = (this.b0 + zMinus1.multiply(this.b1) + zMinus2.multiply(this.b2)) / (this.a0 + zMinus1.multiply(this.a1) + zMinus2.multiply(this.b2));
+            const h = ((new Complex(this.b0, 0)) + zMinus1.multiply(this.b1) + zMinus2.multiply(this.b2)) / ((new Complex(this.a0, 0)) + zMinus1.multiply(this.a1) + zMinus2.multiply(this.a2));
             array[i] = 20 * Mathf.log10(h.abs());
         }
+        return array;
     }
 }

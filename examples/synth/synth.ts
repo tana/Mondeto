@@ -17,7 +17,8 @@ export function init(): void {
 
     samples = new Array<f32>(CHUNK_SIZE);
 
-    showOscWaveform();
+    plotOscWaveform();
+    plotFilter();
 }
 
 export function update(dt: f32): void {
@@ -34,6 +35,7 @@ export function handle_noteOn(sender: u32): void {
     const noteNum = read_int(args[0]);  // MIDI note number
 
     synth.noteOn(midiNoteToFreq(noteNum));
+    plotFilter();
 }
 
 // Handle noteOff event sent from keys
@@ -66,11 +68,13 @@ export function handle_setCutOff(sender: u32): void {
     const args = getEventArgs();
     if (args.length < 1) return;
     synth.setFilterRelativeFreq(3 * read_float(args[0]));   // from 0 to 3
+    plotFilter();
 }
 export function handle_setResonance(sender: u32): void {
     const args = getEventArgs();
     if (args.length < 1) return;
     synth.setFilterQ(Mathf.pow(2, 4 * read_float(args[0]) - 2));    // from 0.25 to 4
+    plotFilter();
 }
 
 function generateSample(): f32 {
@@ -84,13 +88,20 @@ function midiNoteToFreq(note: i32): f32 {
     return Mathf.pow(2, f32(note - 69) / 12) * f32(440);
 }
 
-function showOscWaveform(): void {
-    const target = read_object_ref(getField("oscWaveformPlot") as u32);
+function plotOscWaveform(): void {
+    plot(synth.getOscWaveform(PLOT_LEN), "oscWaveformPlot");
+}
 
-    const waveform = synth.getOscWaveform(PLOT_LEN);
+function plotFilter(): void {
+    plot(synth.getFilterFrequencyResponse(PLOT_LEN), "filterPlot");
+}
+
+function plot(array: f32[], targetName: string): void {
+    const target = read_object_ref(getField(targetName) as u32);
+
     const valueIDs = new Array<u32>(PLOT_LEN);
     for (let i = 0; i < PLOT_LEN; i++) {
-        valueIDs[i] = make_float(waveform[i]);
+        valueIDs[i] = make_float(array[i]);
     }
     
     sendEvent(target, "plot", [makeSequence(valueIDs)]);
