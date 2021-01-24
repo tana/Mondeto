@@ -307,7 +307,7 @@ public class SyncObject
                         {
                             WriteErrorLog("SyncObject", "WASM init error " + e);
                         }
-                    });
+                    }, System.Threading.Tasks.TaskContinuationOptions.ExecuteSynchronously);    // Run init in main thread
                 }
             }
         }
