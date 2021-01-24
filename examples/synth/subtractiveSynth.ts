@@ -72,6 +72,10 @@ export class SubtractiveSynth {
     getFilterFrequencyResponse(len: i32): Array<f32> {
         return this.filter.getFrequencyResponse(len);
     }
+    
+    getEnvelopeCurve(len: i32): Array<f32> {
+        return this.envelope.getEnvelopeCurve(len);
+    }
 
     private setFilter(): void {
         const filterFreq = this.osc.freq * this.filterRelativeFreq;

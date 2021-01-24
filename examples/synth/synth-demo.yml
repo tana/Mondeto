@@ -17,7 +17,7 @@ objects:
     tags: [plane, material, collider]
   # Oscillator waveform display
   - $name: oscWaveformPlot
-    position: !vec [-0.2, 1.5, 1.5]
+    position: !vec [-0.35, 1.5, 1.5]
     rotation: !euler [0, 0, 0]
     scale: !vec [0.3, 0.2, 1.0]
     width: 0.01
@@ -30,13 +30,26 @@ objects:
     codes: [!load_file "plot.wasm"]
   # Filter frequency response display
   - $name: filterPlot
-    position: !vec [0.2, 1.5, 1.5]
+    position: !vec [0.0, 1.5, 1.5]
     rotation: !euler [0, 0, 0]
     scale: !vec [0.3, 0.2, 1.0]
     width: 0.01
     points: []
     maxValue: 0.0
     minValue: -60.0
+    color: !vec [0, 1, 0]
+    shader: unlit
+    tags: [line, material]
+    codes: [!load_file "plot.wasm"]
+  # Envelope display
+  - $name: envelopePlot
+    position: !vec [0.35, 1.5, 1.5]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.3, 0.2, 1.0]
+    width: 0.01
+    points: []
+    maxValue: 1.0
+    minValue: 0.0
     color: !vec [0, 1, 0]
     shader: unlit
     tags: [line, material]
@@ -48,6 +61,7 @@ objects:
     scale: !vec [0.3, 0.3, 0.3]
     oscWaveformPlot: !ref oscWaveformPlot
     filterPlot: !ref filterPlot
+    envelopePlot: !ref envelopePlot
     tags: [cube, audioSource]
     codes: [!load_file "synth.wasm"]
   # Keyboard

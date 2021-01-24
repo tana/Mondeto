@@ -19,7 +19,7 @@ export class ADSREnvelope {
         if (this.isOn) {
             if (this.noteTime < this.attackTime) {    // Attack state
                 value = this.noteTime / this.attackTime;
-            } else if (this.noteTime < this.decayTime) {  // Decay state
+            } else if (this.noteTime < (this.attackTime + this.decayTime)) {  // Decay state
                 value = 1 - (1 - this.sustainLevel) * (this.noteTime - this.attackTime) / this.decayTime;
             } else {    // Sustain state
                 value = this.sustainLevel;
@@ -52,5 +52,30 @@ export class ADSREnvelope {
             this.isReleasing = true;
             this.timeAfterOff = 0;
         }
+    }
+
+    // Generate curve of envelope
+    getEnvelopeCurve(len: i32): Array<f32> {
+        const array = new Array<f32>(len);
+        const duration: f32 = 3.0;
+        const sustainLen: f32 = 1.0;
+        for (let i = 0; i < len; i++) {
+            const t = duration * f32(i) / f32(len);
+            let value: f32;
+            if (t < this.attackTime) {
+               value = t / this.attackTime;
+            } else if (t < (this.attackTime + this.decayTime)) {
+                value = 1 - (1 - this.sustainLevel) * (t - this.attackTime) / this.decayTime;
+            } else if (t < (this.attackTime + this.decayTime + sustainLen)) {
+                value = this.sustainLevel;
+            } else if (t < (this.attackTime + this.decayTime + sustainLen + this.releaseTime)) {
+                value = this.sustainLevel * (1 - (t - this.attackTime - this.decayTime - sustainLen) / this.releaseTime);
+            } else {
+                value = 0;
+            }
+            array[i] = value;
+        }
+
+        return array;
     }
 }

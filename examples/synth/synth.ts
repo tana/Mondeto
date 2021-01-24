@@ -8,8 +8,6 @@ const PLOT_LEN = 100;
 
 let synth: SubtractiveSynth;
 
-let pos = 0;
-
 let samples: Array<f32>;
 
 export function init(): void {
@@ -19,6 +17,7 @@ export function init(): void {
 
     plotOscWaveform();
     plotFilter();
+    plotEnvelope();
 }
 
 export function update(dt: f32): void {
@@ -48,21 +47,25 @@ export function handle_setAttack(sender: u32): void {
     const args = getEventArgs();
     if (args.length < 1) return;
     synth.setAmpAttack(read_float(args[0]));
+    plotEnvelope();
 }
 export function handle_setDecay(sender: u32): void {
     const args = getEventArgs();
     if (args.length < 1) return;
     synth.setAmpDecay(read_float(args[0]));
+    plotEnvelope();
 }
 export function handle_setSustain(sender: u32): void {
     const args = getEventArgs();
     if (args.length < 1) return;
     synth.setAmpSustain(read_float(args[0]));
+    plotEnvelope();
 }
 export function handle_setRelease(sender: u32): void {
     const args = getEventArgs();
     if (args.length < 1) return;
     synth.setAmpRelease(read_float(args[0]));
+    plotEnvelope();
 }
 export function handle_setCutOff(sender: u32): void {
     const args = getEventArgs();
@@ -94,6 +97,10 @@ function plotOscWaveform(): void {
 
 function plotFilter(): void {
     plot(synth.getFilterFrequencyResponse(PLOT_LEN), "filterPlot");
+}
+
+function plotEnvelope(): void {
+    plot(synth.getEnvelopeCurve(PLOT_LEN), "envelopePlot");
 }
 
 function plot(array: f32[], targetName: string): void {
