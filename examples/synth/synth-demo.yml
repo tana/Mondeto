@@ -49,7 +49,7 @@ objects:
   # C#
   - position: !vec [0.055, 1.05, 1.575]
     rotation: !euler [0, 0, 0]
-    scale: !vec [0.1, 0.05, 0.15]
+    scale: !vec [0.1, 0.04, 0.15]
     color: !vec [0, 0, 0]
     noteNum: 61
     target: !ref synth
@@ -67,7 +67,7 @@ objects:
   # D#
   - position: !vec [0.165, 1.05, 1.575]
     rotation: !euler [0, 0, 0]
-    scale: !vec [0.1, 0.05, 0.15]
+    scale: !vec [0.1, 0.04, 0.15]
     color: !vec [0, 0, 0]
     noteNum: 63
     target: !ref synth
@@ -94,7 +94,7 @@ objects:
   # F#
   - position: !vec [0.385, 1.05, 1.575]
     rotation: !euler [0, 0, 0]
-    scale: !vec [0.1, 0.05, 0.15]
+    scale: !vec [0.1, 0.04, 0.15]
     color: !vec [0, 0, 0]
     noteNum: 66
     target: !ref synth
@@ -112,7 +112,7 @@ objects:
   # G#
   - position: !vec [0.495, 1.05, 1.575]
     rotation: !euler [0, 0, 0]
-    scale: !vec [0.1, 0.05, 0.15]
+    scale: !vec [0.1, 0.04, 0.15]
     color: !vec [0, 0, 0]
     noteNum: 68
     target: !ref synth
@@ -130,7 +130,7 @@ objects:
   # A#
   - position: !vec [0.605, 1.05, 1.575]
     rotation: !euler [0, 0, 0]
-    scale: !vec [0.1, 0.05, 0.15]
+    scale: !vec [0.1, 0.04, 0.15]
     color: !vec [0, 0, 0]
     noteNum: 70
     target: !ref synth
