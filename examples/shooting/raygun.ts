@@ -1,10 +1,9 @@
 import "wasi"
 
-import { getField, readQuat, getWorldCoordinate, get_new_object, get_object_id, makeQuat, makeSequence, makeString, makeVec, make_int, make_vec, objectSetField, object_is_original, request_new_object, setField, Vec } from "mondeto-as"
+import { getField, getWorldCoordinate, get_new_object, get_object_id, makeQuat, makeSequence, makeString, makeVec, make_int, make_vec, objectSetField, object_is_original, request_new_object, setField, Vec } from "mondeto-as"
 
 export function init(): void {
-    // TODO: this trace causes crash, probably because a bug in ObjectWasmRunner.
-    //trace("Raygun init");
+    trace("Raygun init");
 }
 
 export function handle_clickStart(sender: u32): void {
@@ -29,8 +28,10 @@ function setupBullet(objId: u32): void {
     const transform = getWorldCoordinate(get_object_id());
     if (transform == null) return;
 
+    // Place the bullet in front of the raygun (bullet does not collide with the raygun)
+    const bulletPosition = transform.position + transform.rotation.rotateVec(new Vec(-0.5, 0, 0));
     // Set fields of new object
-    objectSetField(objId, "position", makeVec(transform.position)); // Same position
+    objectSetField(objId, "position", makeVec(bulletPosition));
     objectSetField(objId, "rotation", makeQuat(transform.rotation)); // Same rotation
     objectSetField(objId, "scale", make_vec(0.3, 0.1, 0.1));    // Long box
     objectSetField(objId, "color", make_vec(1.0, 0.0, 0.0));    // Red
