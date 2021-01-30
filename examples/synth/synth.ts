@@ -25,6 +25,8 @@ export function update(dt: f32): void {
         samples[i] = generateSample();
     }
     writeAudio(samples);
+
+    visualize(samples);
 }
 
 // Handle noteOn event sent from keys
@@ -103,11 +105,15 @@ function plotEnvelope(): void {
     plot(synth.getEnvelopeCurve(PLOT_LEN), "envelopePlot");
 }
 
+function visualize(samples: f32[]): void {
+    plot(samples, "visualizerPlot");
+}
+
 function plot(array: f32[], targetName: string): void {
     const target = read_object_ref(getField(targetName) as u32);
 
-    const valueIDs = new Array<u32>(PLOT_LEN);
-    for (let i = 0; i < PLOT_LEN; i++) {
+    const valueIDs = new Array<u32>(array.length);
+    for (let i = 0; i < array.length; i++) {
         valueIDs[i] = make_float(array[i]);
     }
     

@@ -54,6 +54,19 @@ objects:
     shader: unlit
     tags: [line, material]
     codes: [!load_file "plot.wasm"]
+  # Waveform visualizer
+  - $name: visualizerPlot
+    position: !vec [-5.0, 0.0, 5.0]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [10, 6, 1]
+    width: 0.01
+    points: []
+    maxValue: 1.0
+    minValue: -1.0
+    color: !vec [0, 1, 0]
+    shader: unlit
+    tags: [line, material]
+    codes: [!load_file "plot.wasm"]
   # Synth object
   - $name: synth
     position: !vec [0, 1, 2]
@@ -62,6 +75,7 @@ objects:
     oscWaveformPlot: !ref oscWaveformPlot
     filterPlot: !ref filterPlot
     envelopePlot: !ref envelopePlot
+    visualizerPlot: !ref visualizerPlot
     tags: [cube, audioSource]
     codes: [!load_file "synth.wasm"]
   # Keyboard
