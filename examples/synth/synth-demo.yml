@@ -198,6 +198,21 @@ objects:
     tags: [cube, material, collider]
     codes: [!load_file "key.wasm"]
   # Controls
+  # Waveform change button
+  - position: !vec [-0.85, 1.7, 1.5]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.3, 0.1, 0.1]
+    color: !vec [0, 1, 0]
+    target: !ref synth
+    eventName: changeWaveform
+    tags: [cube, material, collider]
+    codes: [!load_file "button.wasm"]
+  - position: !vec [-1.7, 1.75, 1.5]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.05, 0.05, 0.05]
+    text: "WAVEFORM"
+    fontSize: 20
+    tags: [text]
   # Attack
   - position: !vec [-1, 1.5, 1.5]
     rotation: !euler [0, 0, 0]
@@ -288,7 +303,7 @@ objects:
     eventName: setResonance
     tags: [cube, material, collider]
     codes: [!load_file "slider.wasm"]
-  - position: !vec [-1.6, 0.55, 1.5]
+  - position: !vec [-1.7, 0.55, 1.5]
     rotation: !euler [0, 0, 0]
     scale: !vec [0.05, 0.05, 0.05]
     text: "RESONANCE"

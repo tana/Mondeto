@@ -6,8 +6,9 @@
     "build-synth": "npx asc -O synth.ts -o synth.wasm",
     "build-key": "npx asc key.ts -o key.wasm",
     "build-slider": "npx asc slider.ts -o slider.wasm",
+    "build-button": "npx asc button.ts -o button.wasm",
     "build-plot": "npx asc plot.ts -o plot.wasm",
-    "build": "npm run build-synth && npm run build-key && npm run build-slider && npm run build-plot"
+    "build": "npm run build-synth && npm run build-key && npm run build-slider && npm run build-button && npm run build-plot"
   },
   "author": "Satoshi Tanaka",
   "license": "MIT",

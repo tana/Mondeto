@@ -12,7 +12,6 @@ let samples: Array<f32>;
 
 export function init(): void {
     synth = new SubtractiveSynth(FS);
-    synth.setOscillatorType(OscillatorType.Noise);
 
     samples = new Array<f32>(CHUNK_SIZE);
 
@@ -43,6 +42,17 @@ export function handle_noteOn(sender: u32): void {
 // Handle noteOff event sent from keys
 export function handle_noteOff(sender: u32): void {
     synth.noteOff();
+}
+
+// Handle changeWaveform event sent from a button
+export function handle_changeWaveform(sender: u32): void {
+    if (synth.oscillatorType === OscillatorType.Sawtooth) {
+        synth.oscillatorType = OscillatorType.Noise;
+    } else if (synth.oscillatorType === OscillatorType.Noise) {
+        synth.oscillatorType = OscillatorType.Sawtooth;
+    }
+
+    plotOscWaveform();
 }
 
 // Handle events from sliders

@@ -80,7 +80,7 @@ export class SubtractiveSynth {
         this.setFilter();
     }
 
-    setOscillatorType(oscType: OscillatorType): void {
+    set oscillatorType(oscType: OscillatorType) {
         switch (oscType) {
             case OscillatorType.Sawtooth:
                 this.osc = this.sawtoothOsc;
@@ -88,6 +88,16 @@ export class SubtractiveSynth {
             case OscillatorType.Noise:
                 this.osc = this.noiseOsc;
                 break;
+        }
+    }
+
+    get oscillatorType(): OscillatorType {
+        if (this.osc instanceof SawtoothOscillator) {
+            return OscillatorType.Sawtooth;
+        } else if (this.osc instanceof NoiseOscillator) {
+            return OscillatorType.Noise;
+        } else {    // This should not happen
+            return OscillatorType.Sawtooth;
         }
     }
 
