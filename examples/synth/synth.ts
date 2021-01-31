@@ -1,6 +1,6 @@
 import "wasi";
 import { writeAudio, getEventArgs, read_int, read_float, sendEvent, getField, make_float, read_object_ref, makeSequence } from "mondeto-as";
-import { SubtractiveSynth } from "./subtractiveSynth";
+import { SubtractiveSynth, OscillatorType } from "./subtractiveSynth";
 
 const FS: f32 = 48000;  // sampling frequency
 const CHUNK_SIZE = 960;
@@ -12,6 +12,7 @@ let samples: Array<f32>;
 
 export function init(): void {
     synth = new SubtractiveSynth(FS);
+    synth.setOscillatorType(OscillatorType.Noise);
 
     samples = new Array<f32>(CHUNK_SIZE);
 

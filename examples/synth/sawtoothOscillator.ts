@@ -1,12 +1,13 @@
+import { Oscillator } from "./oscillator";
+
 // Sawtooth wave oscillator
 // Output value is between -1 and 1
-export class SawtoothOscillator {
-    private readonly samplePeriod: f32;    // sampling period (seconds)
+export class SawtoothOscillator extends Oscillator {
     private phase: f64 = 0; // phase (from 0 to 1)
     freq: f32 = 440;    // frequency (Hz)
 
     constructor(fs: f32) {
-        this.samplePeriod = 1 / fs;
+        super(fs);
     }
 
     compute(): f32 {
@@ -19,7 +20,7 @@ export class SawtoothOscillator {
         return output;
     }
 
-    // Generate waveform of one period
+    // Generate waveform of one period (for display of setting)
     getWaveform(len: i32): Array<f32> {
         const array = new Array<f32>(len);
         for (let i = 0; i < len; i++) {

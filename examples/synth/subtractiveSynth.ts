@@ -1,19 +1,31 @@
+import { Oscillator } from "./oscillator";
 import { SawtoothOscillator } from "./sawtoothOscillator";
+import { NoiseOscillator } from "./noiseOscillator";
 import { BiquadFilter } from "./biquadFilter";
 import { ADSREnvelope } from "./adsrEnvelope";
+
+export enum OscillatorType {
+    Sawtooth,
+    Noise
+}
 
 // Monophonic subtractive synthesizer
 export class SubtractiveSynth {
     private readonly fs: f32;   // sampling freq
-    private readonly osc: SawtoothOscillator;
+    private readonly sawtoothOsc: SawtoothOscillator;
+    private readonly noiseOsc: NoiseOscillator;
+    private osc: Oscillator;
     private readonly filter: BiquadFilter;
     private readonly envelope: ADSREnvelope;
+    private freq: f32 = 440.0;
     private filterRelativeFreq: f32;
     private filterQ: f32;
 
     constructor(fs: f32) {
         this.fs = fs;
-        this.osc = new SawtoothOscillator(this.fs);
+        this.sawtoothOsc = new SawtoothOscillator(this.fs);
+        this.noiseOsc = new NoiseOscillator(this.fs);
+        this.osc = this.sawtoothOsc;
         this.filter = new BiquadFilter(this.fs);
         this.envelope = new ADSREnvelope(this.fs);
 
@@ -30,7 +42,10 @@ export class SubtractiveSynth {
     }
 
     noteOn(freq: f32): void {
-        this.osc.freq = freq;
+        this.freq = freq;
+        if (this.osc instanceof SawtoothOscillator) {
+            (this.osc as SawtoothOscillator).freq = this.freq;
+        }
         this.setFilter();
         this.envelope.noteOn();
     }
@@ -65,6 +80,17 @@ export class SubtractiveSynth {
         this.setFilter();
     }
 
+    setOscillatorType(oscType: OscillatorType): void {
+        switch (oscType) {
+            case OscillatorType.Sawtooth:
+                this.osc = this.sawtoothOsc;
+                break;
+            case OscillatorType.Noise:
+                this.osc = this.noiseOsc;
+                break;
+        }
+    }
+
     getOscWaveform(len: i32): Array<f32> {
         return this.osc.getWaveform(len);
     }
@@ -78,7 +104,7 @@ export class SubtractiveSynth {
     }
 
     private setFilter(): void {
-        const filterFreq = this.osc.freq * this.filterRelativeFreq;
+        const filterFreq = this.freq * this.filterRelativeFreq;
         this.filter.setCharacteristics(filterFreq, this.filterQ);
     }
 }
