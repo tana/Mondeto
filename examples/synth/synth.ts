@@ -47,6 +47,8 @@ export function handle_noteOff(sender: u32): void {
 // Handle changeWaveform event sent from a button
 export function handle_changeWaveform(sender: u32): void {
     if (synth.oscillatorType === OscillatorType.Sawtooth) {
+        synth.oscillatorType = OscillatorType.Square;
+    } else if (synth.oscillatorType === OscillatorType.Square) {
         synth.oscillatorType = OscillatorType.Noise;
     } else if (synth.oscillatorType === OscillatorType.Noise) {
         synth.oscillatorType = OscillatorType.Sawtooth;

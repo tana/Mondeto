@@ -3,9 +3,11 @@ import { SawtoothOscillator } from "./sawtoothOscillator";
 import { NoiseOscillator } from "./noiseOscillator";
 import { BiquadFilter } from "./biquadFilter";
 import { ADSREnvelope } from "./adsrEnvelope";
+import { SquareOscillator } from "./squareOscillator";
 
 export enum OscillatorType {
     Sawtooth,
+    Square,
     Noise
 }
 
@@ -13,6 +15,7 @@ export enum OscillatorType {
 export class SubtractiveSynth {
     private readonly fs: f32;   // sampling freq
     private readonly sawtoothOsc: SawtoothOscillator;
+    private readonly squareOsc: SquareOscillator;
     private readonly noiseOsc: NoiseOscillator;
     private osc: Oscillator;
     private readonly filter: BiquadFilter;
@@ -24,6 +27,7 @@ export class SubtractiveSynth {
     constructor(fs: f32) {
         this.fs = fs;
         this.sawtoothOsc = new SawtoothOscillator(this.fs);
+        this.squareOsc = new SquareOscillator(this.fs);
         this.noiseOsc = new NoiseOscillator(this.fs);
         this.osc = this.sawtoothOsc;
         this.filter = new BiquadFilter(this.fs);
@@ -45,6 +49,8 @@ export class SubtractiveSynth {
         this.freq = freq;
         if (this.osc instanceof SawtoothOscillator) {
             (this.osc as SawtoothOscillator).freq = this.freq;
+        } else if (this.osc instanceof SquareOscillator) {
+            (this.osc as SquareOscillator).freq = this.freq;
         }
         this.setFilter();
         this.envelope.noteOn();
@@ -85,6 +91,9 @@ export class SubtractiveSynth {
             case OscillatorType.Sawtooth:
                 this.osc = this.sawtoothOsc;
                 break;
+            case OscillatorType.Square:
+                this.osc = this.squareOsc;
+                break;
             case OscillatorType.Noise:
                 this.osc = this.noiseOsc;
                 break;
@@ -94,6 +103,8 @@ export class SubtractiveSynth {
     get oscillatorType(): OscillatorType {
         if (this.osc instanceof SawtoothOscillator) {
             return OscillatorType.Sawtooth;
+        } else if (this.osc instanceof SquareOscillator) {
+            return OscillatorType.Square;
         } else if (this.osc instanceof NoiseOscillator) {
             return OscillatorType.Noise;
         } else {    // This should not happen
