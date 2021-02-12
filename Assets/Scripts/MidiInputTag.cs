@@ -9,6 +9,12 @@ public class MidiInputTag : ITag
 
     public void Setup(SyncObject syncObject)
     {
+        if (syncObject.OriginalNodeId != syncObject.Node.NodeId)
+        {
+            Logger.Log("MidiInputTag", "midiInput tag only works on the original node");
+            return;
+        }
+
         if (InputDevice.GetDevicesCount() == 0)
         {
             Logger.Error("MidiInputTag", "MIDI input device not found");
