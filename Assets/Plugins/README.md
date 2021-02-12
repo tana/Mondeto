@@ -14,6 +14,9 @@
 - `YamlDotNet.dll`
     - [YamlDotNet](https://github.com/aaubry/YamlDotNet)
     - [version 8.1.2](https://www.nuget.org/packages/YamlDotNet/8.1.2) (for net35)
+- `Concentus.dll`
+    - [Concentus](https://github.com/lostromb/concentus)
+    - [version 1.1.7](https://www.nuget.org/packages/Concentus/1.1.7) (for netstandard1.0)
 
 - `armeabi-v7a/libmrwebrtc.so`
     - [MixedReality-WebRTC](https://github.com/microsoft/MixedReality-WebRTC) native library ([Built for 32-bit ARM architecture](https://github.com/tana/MixedReality-WebRTC/tree/armeabi-v7a))
