@@ -14,6 +14,9 @@
 - `YamlDotNet.dll`
     - [YamlDotNet](https://github.com/aaubry/YamlDotNet)
     - [version 8.1.2](https://www.nuget.org/packages/YamlDotNet/8.1.2) (for net35)
+- `Melanchall.DryWetMidi.dll`
+    - [DryWetMIDI](https://github.com/melanchall/drywetmidi)
+    - [version 5.1.2](https://github.com/melanchall/drywetmidi/releases/tag/v5.1.2) (for netstandard20)
 
 - `armeabi-v7a/libmrwebrtc.so`
     - [MixedReality-WebRTC](https://github.com/microsoft/MixedReality-WebRTC) native library ([Built for 32-bit ARM architecture](https://github.com/tana/MixedReality-WebRTC/tree/armeabi-v7a))

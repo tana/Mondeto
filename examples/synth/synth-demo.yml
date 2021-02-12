@@ -76,7 +76,7 @@ objects:
     filterPlot: !ref filterPlot
     envelopePlot: !ref envelopePlot
     visualizerPlot: !ref visualizerPlot
-    tags: [cube, audioSource]
+    tags: [cube, audioSource, midiInput]  # midiInput for handling input from a MIDI device
     codes: [!load_file "synth.wasm"]
   # Keyboard
   # noteNum is MIDI note number. See: http://newt.phys.unsw.edu.au/jw/notes.html

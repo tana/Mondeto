@@ -56,6 +56,9 @@ public abstract class SyncNode : IDisposable
         // Register simple (Unity-independent) tags
         RegisterTag("grabbable", _ => new GrabbableTag());
         RegisterTag("objectMoveButton", _ => new ObjectMoveButtonTag());
+
+        // For synth demo
+        RegisterTag("midiInput", _ => new MidiInputTag());
     }
 
     // TODO naming

@@ -64,6 +64,9 @@ There are some modified files (paths are relative to root directory of UnityChan
 ### Concentus
 - [LICENSE](ThirdPartyLicenses/Concentus/LICENSE)
 
+### DryWetMIDI
+- [LICENSE](ThirdPartyLicenses/DryWetMIDI/LICENSE)
+
 ### Unity builtin shaders
 - [license.txt](ThirdPartyLicenses/UnityBuiltinShaders/license.txt)
 
