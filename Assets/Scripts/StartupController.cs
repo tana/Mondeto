@@ -5,6 +5,7 @@ using System.IO.Compression;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using UnityEngine.XR.Management;
 using VRM;
 using Cysharp.Threading.Tasks;
 
@@ -59,6 +60,13 @@ public class StartupController : MonoBehaviour
                         if (arg == "--scene")
                         {
                             state = "--scene";
+                        }
+                        else if (arg == "--force-desktop")
+                        {
+                            // Force desktop mode
+                            // See:
+                            //  https://stackoverflow.com/a/63890378
+                            XRGeneralSettings.Instance.Manager.DeinitializeLoader();
                         }
                     }
                     else if (arg.StartsWith("wss://") || arg.StartsWith("ws://"))
