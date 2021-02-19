@@ -4454,6 +4454,11 @@ PrefabInstance:
       propertyPath: RightHand
       value: 
       objectReference: {fileID: 49289511}
+    - target: {fileID: 1252498136356511351, guid: 92acc6079fd763f4783d1ecdf56001f0,
+        type: 3}
+      propertyPath: SpeedCoeff
+      value: 5
+      objectReference: {fileID: 0}
     - target: {fileID: 7750428759976842891, guid: 92acc6079fd763f4783d1ecdf56001f0,
         type: 3}
       propertyPath: m_RootOrder
