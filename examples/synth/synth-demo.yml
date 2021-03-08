@@ -1,3 +1,5 @@
+world:
+  skyboxTexture: !load_file "background.png"
 objects:
   # Light
   # Use an angled directional light as the sun
@@ -59,7 +61,20 @@ objects:
     position: !vec [-5.0, 0.0, 5.0]
     rotation: !euler [0, 0, 0]
     scale: !vec [10, 6, 1]
-    width: 0.01
+    width: 0.03
+    points: []
+    maxValue: 1.0
+    minValue: -1.0
+    color: !vec [0, 1, 0]
+    shader: unlit
+    tags: [line, material]
+    codes: [!load_file "plot.wasm"]
+  # Waveform visualizer 2
+  - $name: visualizerPlot2
+    position: !vec [5.0, 0.0, -5.0]
+    rotation: !euler [0, 180, 0]
+    scale: !vec [10, 6, 1]
+    width: 0.03
     points: []
     maxValue: 1.0
     minValue: -1.0
@@ -76,6 +91,7 @@ objects:
     filterPlot: !ref filterPlot
     envelopePlot: !ref envelopePlot
     visualizerPlot: !ref visualizerPlot
+    visualizerPlot2: !ref visualizerPlot2
     tags: [cube, audioSource, midiInput]  # midiInput for handling input from a MIDI device
     codes: [!load_file "synth.wasm"]
   # Keyboard

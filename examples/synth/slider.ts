@@ -46,5 +46,5 @@ export function handle_ungrab(sender: u32): void {
 function sendValue(value: f32): void {
     const target = read_object_ref(getField("target") as u32);
     const eventName = readString(getField("eventName") as u32);
-    sendEvent(target, eventName, [make_float(value)]);
+    sendEvent(target, eventName, [make_float(value)], true);
 }

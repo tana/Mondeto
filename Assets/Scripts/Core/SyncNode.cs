@@ -59,6 +59,8 @@ public abstract class SyncNode : IDisposable
 
         // For synth demo
         RegisterTag("midiInput", _ => new MidiInputTag());
+        // For LED demo
+        RegisterTag("ledButton", _ => new LedButtonTag());
     }
 
     // TODO naming

@@ -23,10 +23,10 @@ export function handle_clickEnd(sender: u32): void {
 function sendNoteOn(): void {
     const target = read_object_ref(getField("target") as u32);
     const noteNum = read_int(getField("noteNum") as u32);
-    sendEvent(target, "noteOn", [make_int(noteNum)]);
+    sendEvent(target, "noteOn", [make_int(noteNum)], true);
 }
 
 function sendNoteOff(): void {
     const target = read_object_ref(getField("target") as u32);
-    sendEvent(target, "noteOff", []);
+    sendEvent(target, "noteOff", [], true);
 }

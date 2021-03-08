@@ -179,4 +179,15 @@ objects:
     audioLoop: false
     tags: [cube, material, collider, audioPlayer]
     codes: [!load_file "wasm/target.wasm"]
+  # LED Controller
+  - position: !vec [-2, 0.7, 1]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.3, 0.3, 0.3]
+    color: !vec [0.5, 0.5, 0.5]
+    tags: [cube, material]
+  - position: !vec [-2, 0.95, 1]
+    rotation: !euler [0, 0, 0]
+    scale: !vec [0.2, 0.1, 0.2]
+    color: !vec [1.0, 0.3, 0.0]
+    tags: [cylinder, material, collider, ledButton]
     

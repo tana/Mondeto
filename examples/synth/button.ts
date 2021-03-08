@@ -15,5 +15,5 @@ export function handle_clickStart(sender: u32): void {
 function sendClickEvent(): void {
     const target = read_object_ref(getField("target") as u32);
     const eventName = readString(getField("eventName") as u32);
-    sendEvent(target, eventName, []);
+    sendEvent(target, eventName, [], true);
 }

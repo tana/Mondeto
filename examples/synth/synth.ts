@@ -1,5 +1,5 @@
 import "wasi";
-import { writeAudio, getEventArgs, read_int, read_float, sendEvent, getField, make_float, read_object_ref, makeSequence } from "mondeto-as";
+import { object_is_original, get_object_id, writeAudio, getEventArgs, read_int, read_float, sendEvent, getField, make_float, read_object_ref, makeSequence } from "mondeto-as";
 import { SubtractiveSynth, OscillatorType } from "./subtractiveSynth";
 
 const FS: f32 = 48000;  // sampling frequency
@@ -21,6 +21,8 @@ export function init(): void {
 }
 
 export function update(dt: f32): void {
+    if (!object_is_original(get_object_id())) return;
+
     for (let i = 0; i < CHUNK_SIZE; i++) {
         samples[i] = generateSample();
     }
@@ -120,6 +122,7 @@ function plotEnvelope(): void {
 
 function visualize(samples: f32[]): void {
     plot(samples, "visualizerPlot");
+    plot(samples, "visualizerPlot2");
 }
 
 function plot(array: f32[], targetName: string): void {
@@ -130,5 +133,5 @@ function plot(array: f32[], targetName: string): void {
         valueIDs[i] = make_float(array[i]);
     }
     
-    sendEvent(target, "plot", [makeSequence(valueIDs)]);
+    sendEvent(target, "plot", [makeSequence(valueIDs)], true);
 }
