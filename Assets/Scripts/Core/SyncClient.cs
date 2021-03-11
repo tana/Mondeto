@@ -16,6 +16,8 @@ public class SyncClient : SyncNode
 
     CompletionNotifier<string, uint> symbolNotifier = new CompletionNotifier<string, uint>();
 
+    const int NodeIdRetryTimeout = 1000;
+
     public SyncClient(string signalerUri)
     {
         conn = new Connection();
@@ -33,14 +35,19 @@ public class SyncClient : SyncNode
         await conn.SetupAsync(signaler, false);
         Logger.Log("Client", "Connected to server");
 
-        // FIXME: this message has not meaningful but seems working as a kind of "ready"
-        if (await conn.ReceiveMessageAsync<ITcpMessage>(Connection.ChannelType.Control) is NodeIdMessage nodeIdMsg)
+        var nodeIdCancelSource = new CancellationTokenSource();
+        nodeIdCancelSource.CancelAfter(NodeIdRetryTimeout);
+        var nodeIdCancel = nodeIdCancelSource.Token;
+
+        while (true)
         {
-            Logger.Debug("Client", $"Received NodeId={nodeIdMsg.NodeId}");
-        }
-        else
-        {
-            throw new ConnectionException("Cannot receive a NodeIdMessage");
+            nodeIdCancel.ThrowIfCancellationRequested();
+            // FIXME: this message has not meaningful but seems working as a kind of "ready"
+            if (await conn.ReceiveMessageAsync<ITcpMessage>(Connection.ChannelType.Control, nodeIdCancel) is NodeIdMessage nodeIdMsg)
+            {
+                Logger.Debug("Client", $"Received NodeId={nodeIdMsg.NodeId}");
+                break;
+            }
         }
 
         var cancelSource = new CancellationTokenSource();
