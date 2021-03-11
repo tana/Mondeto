@@ -118,6 +118,7 @@ objects:
     texture: !load_file "scene_data/earth.jpg"
     shader: unlit
     tags: [sphere, material]
+    codes: [!load_file "wasm/earth.wasm"]
   # Credit for Earth texture by NASA
   - position: !vec [-3.6, 0.4, 3]
     rotation: !euler [0, 0, 0]

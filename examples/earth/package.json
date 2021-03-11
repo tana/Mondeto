@@ -1,0 +1,18 @@
+{
+  "name": "mondeto-wasm-earth",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "npx asc earth.ts -o earth.wasm",
+    "copy": "npx cpx earth.wasm ../../Assets/StreamingAssets/wasm/"
+  },
+  "author": "Satoshi Tanaka",
+  "license": "MIT",
+  "devDependencies": {
+    "assemblyscript": "^0.17.13",
+    "cpx2": "^3.0.0"
+  },
+  "dependencies": {
+    "mondeto-as": "file:../../as-lib"
+  }
+}
