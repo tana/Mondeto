@@ -16,7 +16,7 @@ public class SyncClient : SyncNode
 
     CompletionNotifier<string, uint> symbolNotifier = new CompletionNotifier<string, uint>();
 
-    const int NodeIdRetryTimeout = 1000;
+    const int NodeIdRetryTimeout = 10000;
 
     public SyncClient(string signalerUri)
     {
