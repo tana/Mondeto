@@ -13,7 +13,7 @@ The following are credits for these third-party works.
 - [LICENSE](ThirdPartyLicenses/MixedReality-WebRTC/LICENSE)
 - [NOTICE](ThirdPartyLicenses/MixedReality-WebRTC/NOTICE) (Because MixedReality-WebRTC itself uses other open source works)
 
-### MessagePack for C#
+### MessagePack for C\#
 - [LICENSE](ThirdPartyLicenses/MessagePack-CSharp/LICENSE)
 
 ### UniVRM
