@@ -26,7 +26,7 @@
     "com.unity.ugui": "1.0.0",
     "com.unity.xr.interaction.toolkit": "0.9.4-preview",
     "com.unity.xr.management": "3.2.13",
-    "com.unity.xr.oculus": "1.8.1",
+    "com.unity.xr.openxr": "1.0.2",
     "com.vrmc.meshutility": "https://github.com/vrm-c/UniVRM.git?path=/Assets/MeshUtility#v0.61.1",
     "com.vrmc.univrm": "https://github.com/vrm-c/UniVRM.git?path=/Assets/VRM#v0.61.1",
     "com.vrmc.vrmshaders": "https://github.com/vrm-c/UniVRM.git?path=/Assets/VRMShaders#v0.61.1",
