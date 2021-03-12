@@ -1,10 +1,8 @@
-﻿using System.Collections;
-using System.Linq;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.XR;
+using UnityEngine.InputSystem;
 using VRM;
 using Cysharp.Threading.Tasks;
 
@@ -43,7 +41,7 @@ public class PlayerAvatar : MonoBehaviour, ITag
 
     private Camera xrCamera;
 
-    private InputDevice? leftController, rightController;
+    private UnityEngine.XR.InputDevice? leftController, rightController;
 
     private ButtonDetector leftGripDetector, rightGripDetector;
     private ButtonDetector leftTriggerDetector, rightTriggerDetector;
@@ -89,29 +87,12 @@ public class PlayerAvatar : MonoBehaviour, ITag
             );
         }
 
-        if (isOriginal && Input.GetKeyDown(KeyCode.M))
-        {
-            var micCap = GetComponent<MicrophoneCapture>();
-            if (micCap != null)
-            {
-                micCap.MicrophoneEnabled = !micCap.MicrophoneEnabled;
-            }
-        }
-
-        // Viewpoint change
-        if (isOriginal && Input.GetKeyDown(KeyCode.F))
-        {
-            firstPerson = !firstPerson;
-            if (xrCamera != null)
-                xrCamera.enabled = firstPerson;
-            if (ThirdPersonCamera != null)
-                ThirdPersonCamera.enabled = !firstPerson;
-            SetHeadShadow();
-            obj.WriteDebugLog("PlayerAvatar", (firstPerson ? "first" : "third") + "person camera");
-        }
-
         if (isOriginal)
         {
+            // Polling can be done through getting actions from PlayerInput
+            //  See: https://docs.unity3d.com/Packages/com.unity.inputsystem@1.0/api/UnityEngine.InputSystem.PlayerInput.html
+            var playerInput = GetComponent<PlayerInput>();
+
             // VR controller related
             if (!leftController.HasValue)
             {
@@ -138,7 +119,7 @@ public class PlayerAvatar : MonoBehaviour, ITag
 
             Vector2 stick;
             if (rightController.HasValue &&
-                rightController.Value.TryGetFeatureValue(CommonUsages.primary2DAxis, out stick))
+                rightController.Value.TryGetFeatureValue(UnityEngine.XR.CommonUsages.primary2DAxis, out stick))
             {
                 // VR (HMD) turn control
                 turn = AngularSpeedCoeff * stick.x;
@@ -149,15 +130,19 @@ public class PlayerAvatar : MonoBehaviour, ITag
                 Camera cam = Camera.main;
                 // Use mouse movement during drag (similar to Mozilla Hubs?)
                 // because Unity's cursor lock feature seemed somewhat strange especially in Editor.
-                if (Input.GetKeyDown(KeyCode.Mouse0))
+                var mousePos2D = Pointer.current.position.ReadValue();
+                var mousePos = new Vector3(mousePos2D.x, mousePos2D.y, 0);
+                // Using wasPressedInThisFrame for KeyDown check
+                //  See: https://docs.unity3d.com/Packages/com.unity.inputsystem@1.0/manual/HowDoI.html#check-if-the-space-key-has-been-pressed-this-frame
+                if (Mouse.current.leftButton.wasPressedThisFrame)
                 {
-                    lastMousePosition = Input.mousePosition;
+                    lastMousePosition = mousePos;
                     camRotBeforeDrag = cam.transform.localRotation;
                 }
-                if (Input.GetKey(KeyCode.Mouse0))
+                if (Mouse.current.leftButton.isPressed)
                 {
-                    Vector3 mouseDiff = Input.mousePosition - lastMousePosition;
-                    lastMousePosition = Input.mousePosition;
+                    Vector3 mouseDiff = mousePos - lastMousePosition;
+                    lastMousePosition = mousePos;
                     turn = -AngularSpeedCoeff * mouseDiff.x;
                     float elevation = AngularSpeedCoeff * mouseDiff.y;
                     if (cam != null)
@@ -167,9 +152,9 @@ public class PlayerAvatar : MonoBehaviour, ITag
 
             // Walking control
             var characterController = GetComponent<CharacterController>();
-
-            forward = SpeedCoeff * Input.GetAxis("Vertical");
-            sideways = SpeedCoeff * Input.GetAxis("Horizontal");
+            var walkAction = playerInput.actions["Walk"].ReadValue<Vector2>();
+            forward = SpeedCoeff * walkAction.y;
+            sideways = SpeedCoeff * walkAction.x;
 
             var velocity = new Vector3(sideways, 0, forward);
             var angularVelocity = new Vector3(0, turn, 0);
@@ -204,9 +189,8 @@ public class PlayerAvatar : MonoBehaviour, ITag
             }
 
             // Mouse click
-            // Use primary button (button number 0)
-            //  See https://docs.unity3d.com/ja/current/ScriptReference/Input.GetMouseButtonDown.html
-            if (Input.GetMouseButtonDown(0))
+            //  See: https://docs.unity3d.com/Packages/com.unity.inputsystem@1.0/manual/HowDoI.html#check-if-the-space-key-has-been-pressed-this-frame
+            if (Mouse.current.leftButton.wasPressedThisFrame)
             {
                 var clickedObj = FindMouseClickedObject();
                 if (clickedObj != null)
@@ -214,14 +198,14 @@ public class PlayerAvatar : MonoBehaviour, ITag
                     StartClicking(obj, clickedObj);
                 }
             }
-            else if (Input.GetMouseButtonUp(0))
+            else if (Mouse.current.leftButton.wasReleasedThisFrame)
             {
                 EndClicking(obj);
             }
 
             // Grab using mouse secondary button
-            // secondary = 1 (See https://docs.unity3d.com/ja/current/ScriptReference/Input.GetMouseButtonDown.html )
-            if (Input.GetMouseButtonDown(1))
+            //  See: https://docs.unity3d.com/Packages/com.unity.inputsystem@1.0/manual/HowDoI.html#check-if-the-space-key-has-been-pressed-this-frame
+            if (Mouse.current.rightButton.wasPressedThisFrame)
             {
                 var clickedObj = FindMouseClickedObject();
                 if (clickedObj != null)
@@ -233,7 +217,7 @@ public class PlayerAvatar : MonoBehaviour, ITag
                     StartClicking(mouseGrabberObj, clickedObj, "grab", mouseGrabbedObjects);
                 }
             }
-            else if (Input.GetMouseButtonUp(1))
+            else if (Mouse.current.rightButton.wasReleasedThisFrame)
             {
                 EndClicking(mouseGrabberObj, "ungrab", mouseGrabbedObjects);
             }
@@ -246,6 +230,25 @@ public class PlayerAvatar : MonoBehaviour, ITag
 
         // Walking animation
         GetComponent<WalkAnimation>().SetAnimationParameters(forward, sideways, turn);
+    }
+
+    // Called by Input System
+    void OnToggleViewpoint()
+    {
+        SyncObject obj = GetComponent<ObjectSync>().SyncObject;
+        if (obj == null) return;
+        bool isOriginal = GetComponent<ObjectSync>().IsOriginal;
+        // Viewpoint change
+        if (isOriginal)
+        {
+            firstPerson = !firstPerson;
+            if (xrCamera != null)
+                xrCamera.enabled = firstPerson;
+            if (ThirdPersonCamera != null)
+                ThirdPersonCamera.enabled = !firstPerson;
+            SetHeadShadow();
+            obj.WriteDebugLog("PlayerAvatar", (firstPerson ? "first" : "third") + "person camera");
+        }
     }
 
     public void FixedUpdate()
@@ -271,7 +274,7 @@ public class PlayerAvatar : MonoBehaviour, ITag
     {
         // Search left hand controller
         // https://docs.unity3d.com/ja/2019.4/Manual/xr_input.html
-        var devices = new List<InputDevice>();
+        var devices = new List<UnityEngine.XR.InputDevice>();
         InputDevices.GetDevicesWithCharacteristics(
             InputDeviceCharacteristics.Controller | InputDeviceCharacteristics.Left,
             devices
@@ -281,11 +284,11 @@ public class PlayerAvatar : MonoBehaviour, ITag
 
         // button setting
         // trigger
-        leftTriggerDetector = new ButtonDetector(leftController.Value, CommonUsages.triggerButton);
+        leftTriggerDetector = new ButtonDetector(leftController.Value, UnityEngine.XR.CommonUsages.triggerButton);
         leftTriggerDetector.ButtonDown += (bd) => StartClickingByHand(leftHandGameObj);
         leftTriggerDetector.ButtonUp += (bd) => EndClicking(leftHandObj);
         // grab
-        leftGripDetector = new ButtonDetector(leftController.Value, CommonUsages.gripButton);
+        leftGripDetector = new ButtonDetector(leftController.Value, UnityEngine.XR.CommonUsages.gripButton);
         leftGripDetector.ButtonDown += (bd) => StartClickingByHand(leftHandGameObj, "grab", leftGrabbedObjects);
         leftGripDetector.ButtonUp += (bd) => EndClicking(leftHandObj, "ungrab", leftGrabbedObjects);
     }
@@ -294,7 +297,7 @@ public class PlayerAvatar : MonoBehaviour, ITag
     {
         // Search right hand controller
         // https://docs.unity3d.com/ja/2019.4/Manual/xr_input.html
-        var devices = new List<InputDevice>();
+        var devices = new List<UnityEngine.XR.InputDevice>();
         InputDevices.GetDevicesWithCharacteristics(
             InputDeviceCharacteristics.Controller | InputDeviceCharacteristics.Right,
             devices
@@ -304,11 +307,11 @@ public class PlayerAvatar : MonoBehaviour, ITag
 
         // button setting
         // trigger
-        rightTriggerDetector = new ButtonDetector(rightController.Value, CommonUsages.triggerButton);
+        rightTriggerDetector = new ButtonDetector(rightController.Value, UnityEngine.XR.CommonUsages.triggerButton);
         rightTriggerDetector.ButtonDown += (bd) => StartClickingByHand(rightHandGameObj);
         rightTriggerDetector.ButtonUp += (bd) => EndClicking(rightHandObj);
         // grab-related
-        rightGripDetector = new ButtonDetector(rightController.Value, CommonUsages.gripButton);
+        rightGripDetector = new ButtonDetector(rightController.Value, UnityEngine.XR.CommonUsages.gripButton);
         rightGripDetector.ButtonDown += (bd) => StartClickingByHand(rightHandGameObj, "grab", rightGrabbedObjects);
         rightGripDetector.ButtonUp += (bd) => EndClicking(rightHandObj, "ungrab", rightGrabbedObjects);
     }
@@ -322,7 +325,7 @@ public class PlayerAvatar : MonoBehaviour, ITag
 
     ObjectSync FindMouseClickedObject()
     {
-        if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out var hit))
+        if (Physics.Raycast(Camera.main.ScreenPointToRay(Pointer.current.position.ReadValue()), out var hit))
         {
             return hit.collider.GetComponentInParent<ObjectSync>();
         }
@@ -336,7 +339,7 @@ public class PlayerAvatar : MonoBehaviour, ITag
     {
         // The object moves within the same plane (keeps camera-coordinate Z)
         var z = Camera.main.transform.InverseTransformPoint(obj.transform.position).z;
-        var mousePos = Input.mousePosition;
+        var mousePos = Pointer.current.position.ReadValue();
         obj.transform.position = Camera.main.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, z));
     }
 

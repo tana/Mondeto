@@ -86,6 +86,12 @@ public class MicrophoneCapture : MonoBehaviour
 
         ready = true;
     }
+
+    // Called by Input System
+    void OnToggleMicrophone()
+    {
+        MicrophoneEnabled = !MicrophoneEnabled;
+    }
     
     void OnDestroy()
     {

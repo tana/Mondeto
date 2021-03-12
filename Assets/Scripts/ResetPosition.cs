@@ -4,18 +4,15 @@ using UnityEngine;
 
 public class ResetPosition : MonoBehaviour
 {
-    // Update is called once per frame
-    void Update()
+	// Called by Input System
+    void OnResetPosition()
     {
-        if (Input.GetKey(KeyCode.Z))
-		{
-			// CharacterController overwrites transform.position.
-			// Therefore we have to disable before resetting position.
-			//  https://forum.unity.com/threads/does-transform-position-work-on-a-charactercontroller.36149/
-			GetComponent<CharacterController>().enabled = false;
-			transform.position = Vector3.zero;
-			GetComponent<CharacterController>().enabled = true;
-			Debug.Log("Position reset");
-		}
+		// CharacterController overwrites transform.position.
+		// Therefore we have to disable before resetting position.
+		//  https://forum.unity.com/threads/does-transform-position-work-on-a-charactercontroller.36149/
+		GetComponent<CharacterController>().enabled = false;
+		transform.position = Vector3.zero;
+		GetComponent<CharacterController>().enabled = true;
+		Debug.Log("Position reset");
     }
 }

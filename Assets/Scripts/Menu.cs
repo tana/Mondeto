@@ -27,10 +27,6 @@ public class Menu : MonoBehaviour
     bool isOpen = false;
     bool canToggle = true;
 
-    InputDevice? controller;
-
-    bool lastButtonValue = false;   // for detecting button down/up of the XR controller
-
     Camera lastCamera;
 
     public void Update()
@@ -44,38 +40,17 @@ public class Menu : MonoBehaviour
             MoveMenu();
         }
 
-        // For VR
-        if (!controller.HasValue)
-        {
-            // FIXME: currently, cannot find controller during Start().
-            // Search right controller
-            //  See https://docs.unity3d.com/ja/2019.4/Manual/xr_input.html
-            var devices = new List<InputDevice>();
-            InputDevices.GetDevicesWithCharacteristics(
-                InputDeviceCharacteristics.Right | InputDeviceCharacteristics.Controller,
-                devices
-            );
-            if (devices.Count != 0)
-                controller = devices[0];
-        }
-        else
-        {
-            // Check button down
-            if (controller.Value.TryGetFeatureValue(CommonUsages.primaryButton, out bool buttonValue))
-            {
-                if ((!lastButtonValue && buttonValue) && canToggle) Toggle();
-                lastButtonValue = buttonValue;
-            }
-        }
-
-        // For desktop (non-VR)
-        // If object specification YAML is being typed in, space key does not close the menu.
-        if (Input.GetKeyDown(DesktopKey) && canToggle && !ObjectCreationInput.isFocused)
-            Toggle();
-        
         // Show microphone state
         var micCap = GetComponent<MicrophoneCapture>();
         MicrophoneToggle.isOn = micCap.MicrophoneEnabled;
+    }
+
+    // Called by Input System
+    void OnToggleMenu()
+    {
+        // If object specification YAML is being typed in, space key does not close the menu.
+        if (canToggle && !ObjectCreationInput.isFocused)
+            Toggle();
     }
 
     public void OnMicrophoneToggleChanged()

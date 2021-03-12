@@ -1140,6 +1140,89 @@ MonoBehaviour:
   ObjectCreationInput: {fileID: 7075010400787005166}
   LeftLine: {fileID: 673454957}
   RightLine: {fileID: 49289512}
+--- !u!114 &1146118077130059508
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5089013582163170}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Actions: {fileID: -944628639613478452, guid: 6c91487807491b44091ff1eeac0c6b4e,
+    type: 3}
+  m_NotificationBehavior: 0
+  m_UIInputModule: {fileID: 2700858925631347062}
+  m_DeviceLostEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_DeviceRegainedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ControlsChangedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ActionEvents:
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 3c0bb77f-a36d-4e8d-8e72-9443e2802212
+    m_ActionName: Player/Move[/Keyboard/w,/Keyboard/upArrow,/Keyboard/s,/Keyboard/downArrow,/Keyboard/a,/Keyboard/leftArrow,/Keyboard/d,/Keyboard/rightArrow]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: fd2a65d7-0f9b-40bd-97e5-8143f1365a41
+    m_ActionName: Player/Look[/Mouse/delta]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 444dd432-bb9c-481e-9a3c-19108943406a
+    m_ActionName: Player/Fire[/Mouse/leftButton]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 58461f93-0ed7-4743-9f3d-43c6a6fe5a11
+    m_ActionName: UI/Navigate[/Keyboard/w,/Keyboard/upArrow,/Keyboard/s,/Keyboard/downArrow,/Keyboard/a,/Keyboard/leftArrow,/Keyboard/d,/Keyboard/rightArrow]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 85948eca-afb9-414f-a286-ea6bdf7f7006
+    m_ActionName: UI/Submit[/Keyboard/enter]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 6d184aa7-4e52-4cec-8e95-422755adceea
+    m_ActionName: UI/Cancel[/Keyboard/escape]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 6a5d2d61-3bd7-4761-b024-94b7a2209f71
+    m_ActionName: UI/Point[/Mouse/position]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 25d0f248-c4ec-4946-ad47-54af10fcb12d
+    m_ActionName: UI/Click[/Mouse/leftButton]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 4cd7d7a7-7f1f-4db9-8bf4-4e316a91fb47
+    m_ActionName: UI/ScrollWheel[/Mouse/scroll]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 36bd3bb8-f7cc-4cbc-b28d-a6fe64fefa38
+    m_ActionName: UI/MiddleClick[/Mouse/middleButton]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 77ff577b-930f-49de-ad79-311fd1a5abff
+    m_ActionName: UI/RightClick[/Mouse/rightButton]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 87ef23a8-1582-4228-ba53-f94c8e7a76cb
+    m_ActionName: UI/TrackedDevicePosition
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: a89a2f40-f2b2-42dc-b9e4-b2d766a338df
+    m_ActionName: UI/TrackedDeviceOrientation
+  m_NeverAutoSwitchControlSchemes: 0
+  m_DefaultControlScheme: 
+  m_DefaultActionMap: Player
+  m_SplitScreenIndex: -1
+  m_Camera: {fileID: 0}
 --- !u!1 &411649899872720783
 GameObject:
   m_ObjectHideFlags: 0
@@ -2027,6 +2110,7 @@ GameObject:
   - component: {fileID: 122918820351444506}
   - component: {fileID: 5493020826025084774}
   - component: {fileID: 2834838936685241242}
+  - component: {fileID: 2700858925631347062}
   m_Layer: 0
   m_Name: EventSystem
   m_TagString: Untagged
@@ -2084,6 +2168,44 @@ MonoBehaviour:
   m_EnableXRInput: 1
   m_EnableMouseInput: 1
   m_EnableTouchInput: 1
+--- !u!114 &2700858925631347062
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1827155470597596084}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01614664b831546d2ae94a42149d80ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_MoveRepeatDelay: 0.5
+  m_MoveRepeatRate: 0.1
+  m_ActionsAsset: {fileID: -944628639613478452, guid: 6c91487807491b44091ff1eeac0c6b4e,
+    type: 3}
+  m_PointAction: {fileID: -8385924636176465238, guid: 6c91487807491b44091ff1eeac0c6b4e,
+    type: 3}
+  m_MoveAction: {fileID: 7043450135397174933, guid: 6c91487807491b44091ff1eeac0c6b4e,
+    type: 3}
+  m_SubmitAction: {fileID: -2490730205656748251, guid: 6c91487807491b44091ff1eeac0c6b4e,
+    type: 3}
+  m_CancelAction: {fileID: -420761922119713068, guid: 6c91487807491b44091ff1eeac0c6b4e,
+    type: 3}
+  m_LeftClickAction: {fileID: -5091870994981728597, guid: 6c91487807491b44091ff1eeac0c6b4e,
+    type: 3}
+  m_MiddleClickAction: {fileID: 5846888352953937416, guid: 6c91487807491b44091ff1eeac0c6b4e,
+    type: 3}
+  m_RightClickAction: {fileID: -5048568832782197216, guid: 6c91487807491b44091ff1eeac0c6b4e,
+    type: 3}
+  m_ScrollWheelAction: {fileID: 7756159387023762004, guid: 6c91487807491b44091ff1eeac0c6b4e,
+    type: 3}
+  m_TrackedDevicePositionAction: {fileID: 7838390662225623430, guid: 6c91487807491b44091ff1eeac0c6b4e,
+    type: 3}
+  m_TrackedDeviceOrientationAction: {fileID: -1004075465888392908, guid: 6c91487807491b44091ff1eeac0c6b4e,
+    type: 3}
+  m_DeselectOnBackgroundClick: 1
+  m_PointerBehavior: 0
 --- !u!1 &1979792172815051705
 GameObject:
   m_ObjectHideFlags: 0
@@ -2170,7 +2292,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 349478799524225043}
-        m_TargetAssemblyTypeName: 
+        m_TargetAssemblyTypeName: Menu, Assembly-CSharp
         m_MethodName: OnShowHandCollidersToggleChanged
         m_Mode: 1
         m_Arguments:
@@ -2418,7 +2540,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 349478799524225043}
-        m_TargetAssemblyTypeName: 
+        m_TargetAssemblyTypeName: Menu, Assembly-CSharp
         m_MethodName: OnMicrophoneToggleChanged
         m_Mode: 1
         m_Arguments:
@@ -3420,7 +3542,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 349478799524225043}
-        m_TargetAssemblyTypeName: 
+        m_TargetAssemblyTypeName: Menu, Assembly-CSharp
         m_MethodName: OnHandColliderSizeSliderChanged
         m_Mode: 1
         m_Arguments:
@@ -3877,7 +3999,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 0
+  m_PresetInfoIsWorld: 1
 --- !u!114 &8343152781555975095
 MonoBehaviour:
   m_ObjectHideFlags: 0
