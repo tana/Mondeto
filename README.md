@@ -39,4 +39,4 @@ Mondeto itself is licensed under [MIT License](LICENSE). However, it uses some t
 In addition, this repository contains some of those third-party program or data that are licensed under redistributable licenses.
 
 ## 🙏Acknowledgements
-This project is supported by [The MITOU Program](https://www.ipa.go.jp/english/about/about_2_3.html) of [Information-technology Promotion Agency (IPA)](https://www.ipa.go.jp/index-e.html).
+This project was supported by [The MITOU Program](https://www.ipa.go.jp/english/about/about_2_3.html) of [Information-technology Promotion Agency (IPA)](https://www.ipa.go.jp/index-e.html) in FY2020.
