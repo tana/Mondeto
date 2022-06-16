@@ -1,5 +1,5 @@
 import "wasi";
-import { setField, make_vec, writeAudio, object_is_original, get_object_id } from "mondeto-as";
+import { setField, make_vec, writeAudio, object_is_original, get_object_id } from "mondeto-as/assembly";
 
 const FS: f32 = 48000;   // Sampling rate
 

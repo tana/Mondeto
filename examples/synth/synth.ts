@@ -1,5 +1,5 @@
 import "wasi";
-import { object_is_original, get_object_id, writeAudio, getEventArgs, read_int, read_float, sendEvent, getField, make_float, read_object_ref, makeSequence } from "mondeto-as";
+import { object_is_original, get_object_id, writeAudio, getEventArgs, read_int, read_float, sendEvent, getField, make_float, read_object_ref, makeSequence } from "mondeto-as/assembly";
 import { SubtractiveSynth, OscillatorType } from "./subtractiveSynth";
 
 const FS: f32 = 48000;  // sampling frequency

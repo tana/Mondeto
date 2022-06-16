@@ -7,7 +7,7 @@
   "author": "Satoshi Tanaka",
   "license": "MIT",
   "devDependencies": {
-    "assemblyscript": "^0.14.11"
+    "assemblyscript": "^0.20.11"
   },
   "dependencies": {
     "mondeto-as": "file:../../as-lib"

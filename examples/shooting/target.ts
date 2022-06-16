@@ -1,5 +1,5 @@
 import "wasi"
-import { make_int, setField, getField, readVec, makeVec } from "mondeto-as"
+import { make_int, setField, getField, readVec, makeVec } from "mondeto-as/assembly"
 
 var exploding: boolean = false;
 var explosionTimer: f32 = 1.5;

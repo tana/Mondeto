@@ -1,6 +1,6 @@
 import "wasi"
 
-import { getField, getWorldCoordinate, get_new_object, get_object_id, makeQuat, makeSequence, makeString, makeVec, make_int, make_vec, objectSetField, object_is_original, request_new_object, setField, Vec } from "mondeto-as"
+import { getField, getWorldCoordinate, get_new_object, get_object_id, makeQuat, makeSequence, makeString, makeVec, make_int, make_vec, objectSetField, object_is_original, request_new_object, setField, Vec } from "mondeto-as/assembly"
 
 export function init(): void {
     trace("Raygun init");

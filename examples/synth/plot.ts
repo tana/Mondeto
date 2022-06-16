@@ -1,5 +1,5 @@
 import "wasi";
-import { getEventArgs, readSequence, read_float, make_vec, getField, setField, makeSequence } from "mondeto-as";
+import { getEventArgs, readSequence, read_float, make_vec, getField, setField, makeSequence } from "mondeto-as/assembly";
 
 export function init(): void {
 }

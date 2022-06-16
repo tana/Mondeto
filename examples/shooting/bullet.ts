@@ -1,6 +1,6 @@
 import "wasi"
 
-import { delete_self, getField, readVec, get_object_id, makeVec, object_is_original, sendEvent, setField } from "mondeto-as"
+import { delete_self, getField, readVec, get_object_id, makeVec, object_is_original, sendEvent, setField } from "mondeto-as/assembly"
 
 var lifetime: f32 = 2.0;
 

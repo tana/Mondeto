@@ -1,5 +1,5 @@
 import "wasi";
-import { read_float, getWorldCoordinate, get_object_id, Transform, Vec, getField, setField, makeVec, read_object_ref, readString, make_float, sendEvent } from "mondeto-as";
+import { read_float, getWorldCoordinate, get_object_id, Transform, Vec, getField, setField, makeVec, read_object_ref, readString, make_float, sendEvent } from "mondeto-as/assembly";
 
 let isGrabbed: bool = false;
 let grabber: u32;

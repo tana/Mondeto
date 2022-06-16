@@ -1,5 +1,5 @@
 import "wasi";
-import { read_object_ref, readString, getField, sendEvent } from "mondeto-as";
+import { read_object_ref, readString, getField, sendEvent } from "mondeto-as/assembly";
 
 export function init(): void {
 }

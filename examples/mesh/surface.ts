@@ -1,5 +1,5 @@
 import "wasi";
-import { make_vec, makeSequence, setField, make_int } from "mondeto-as";
+import { make_vec, makeSequence, setField, make_int } from "mondeto-as/assembly";
 
 const DIV: i32 = 32;
 let vertices: Array<u32>;

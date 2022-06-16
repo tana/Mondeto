@@ -10,7 +10,7 @@ copy:
 clean:
 	rm $(WASM_FILES)
 
-ASFLAGS = --runtime half
+ASFLAGS =
 %.wasm: %.ts
 	npx asc $< $(ASFLAGS) -o $@
 

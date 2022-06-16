@@ -1,5 +1,5 @@
 import "wasi";
-import { getField, readQuat, Quat, Vec, setField, makeQuat } from "mondeto-as";
+import { getField, readQuat, Quat, Vec, setField, makeQuat } from "mondeto-as/assembly";
 
 export function init(): void {
     trace("Earth init");
