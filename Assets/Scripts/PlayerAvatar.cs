@@ -24,8 +24,6 @@ public class PlayerAvatar : MonoBehaviour, ITag
 
     private bool firstPerson = true;
 
-    private VRMImporterContext ctx;
-
     // State values for walking animation
     private float forward = 0.0f, sideways = 0.0f, turn = 0.0f;
 
@@ -450,34 +448,36 @@ public class PlayerAvatar : MonoBehaviour, ITag
         GetComponent<CharacterController>().enabled = false;
 
         // Load VRM from byte array
-        // https://github.com/vrm-c/UniVRM/wiki/Runtime-import
-        // https://qiita.com/sh_akira/items/8155e4b69107c2a7ede6
-        ctx = new VRMImporterContext();
-        ctx.Root = new GameObject();    // VRM is loaded as a separate object
-        ctx.ParseGlb(vrmBlob.Data);
+        // https://vrm-c.github.io/UniVRM/ja/api/sample/SimpleViewer.html
+        // https://github.com/vrm-c/UniVRM/blob/e91ab9fc519aa387dc9b39044aa2189ff0382f15/Assets/VRM_Samples/SimpleViewer/ViewerUI.cs
+        UniGLTF.GltfData gltf = new UniGLTF.GlbBinaryParser(vrmBlob.Data, vrmBlob.ToString()).Parse();
+        VRMData vrm = new VRMData(gltf);
 
-        var meta = ctx.ReadMeta();
-        obj.WriteLog("PlayerAvatar", $"Loading VRM {meta.Title} created by {meta.Author} ({meta.ContactInformation})");
-        obj.WriteLog("PlayerAvatar", $"AllowedUser={meta.AllowedUser}, ViolentUsage={meta.ViolentUssage}");
-        obj.WriteLog("PlayerAvatar", $"SexualUsage={meta.SexualUssage}, CommercialUsage={meta.CommercialUssage}");
-        obj.WriteLog("PlayerAvatar", $"OtherPermissionUrl={meta.OtherPermissionUrl}");
-        obj.WriteLog("PlayerAvatar", $"LicenseType={meta.LicenseType}");
-        obj.WriteLog("PlayerAvatar", $"OtherLicenseUrl={meta.OtherLicenseUrl}");
+        using (var ctx = new VRMImporterContext(vrm))
+        {
+            var meta = ctx.ReadMeta();
+            obj.WriteLog("PlayerAvatar", $"Loading VRM {meta.Title} created by {meta.Author} ({meta.ContactInformation})");
+            obj.WriteLog("PlayerAvatar", $"AllowedUser={meta.AllowedUser}, ViolentUsage={meta.ViolentUssage}");
+            obj.WriteLog("PlayerAvatar", $"SexualUsage={meta.SexualUssage}, CommercialUsage={meta.CommercialUssage}");
+            obj.WriteLog("PlayerAvatar", $"OtherPermissionUrl={meta.OtherPermissionUrl}");
+            obj.WriteLog("PlayerAvatar", $"LicenseType={meta.LicenseType}");
+            obj.WriteLog("PlayerAvatar", $"OtherLicenseUrl={meta.OtherLicenseUrl}");
 
-        await ctx.LoadAsyncTask();
+            UniGLTF.RuntimeGltfInstance instance = await ctx.LoadAsync(new VRMShaders.RuntimeOnlyAwaitCaller());
 
-        ctx.EnableUpdateWhenOffscreen();
-        ctx.ShowMeshes();
+            instance.EnableUpdateWhenOffscreen();
+            instance.ShowMeshes();
 
-        // Enable collision (and character controller) again (see the disabling line above)
-        GetComponent<CharacterController>().enabled = true;
+            // Enable collision (and character controller) again (see the disabling line above)
+            GetComponent<CharacterController>().enabled = true;
 
-        // Move VRM avatar inside this gameObject
-        ctx.Root.transform.SetParent(transform);
-        ctx.Root.transform.localPosition = Vector3.zero;
-        ctx.Root.transform.localRotation = Quaternion.identity;
+            // Move VRM avatar inside this gameObject
+            instance.Root.transform.SetParent(transform);
+            instance.Root.transform.localPosition = Vector3.zero;
+            instance.Root.transform.localRotation = Quaternion.identity;
 
-        GetComponent<Animator>().avatar = ctx.Root.GetComponent<Animator>().avatar;
+            GetComponent<Animator>().avatar = instance.Root.GetComponent<Animator>().avatar;
+        }
         
         obj.WriteLog("PlayerAvatar", $"VRM loaded");
 
@@ -625,10 +625,5 @@ public class PlayerAvatar : MonoBehaviour, ITag
                 headForShadow.Add(obj);
             }
         }
-    }
-
-    void OnDestroy()
-    {
-        ctx.Dispose();
     }
 }

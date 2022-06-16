@@ -136,10 +136,15 @@ public class StartupController : MonoBehaviour
         try
         {
             // Load and analyze VRM
-            var ctx = new VRMImporterContext();
-            ctx.ParseGlb(File.ReadAllBytes(AvatarInput.text));
-            meta = ctx.ReadMeta();
-            ctx.Dispose();
+            // https://vrm-c.github.io/UniVRM/ja/api/sample/SimpleViewer.html
+            // https://github.com/vrm-c/UniVRM/blob/e91ab9fc519aa387dc9b39044aa2189ff0382f15/Assets/VRM_Samples/SimpleViewer/ViewerUI.cs
+            string path = AvatarInput.text;
+            UniGLTF.GltfData gltf = new UniGLTF.GlbBinaryParser(File.ReadAllBytes(path), path).Parse();
+            VRMData vrm = new VRMData(gltf);
+            using (var ctx = new VRMImporterContext(vrm))
+            {
+                meta = ctx.ReadMeta();
+            }
 
             // Create information text
             using (var writer = new StringWriter())

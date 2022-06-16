@@ -8,7 +8,7 @@ public class ModelSync : MonoBehaviour, ITag
     public delegate void LoadCompleteDelegate(ModelSync ms);
     public event LoadCompleteDelegate LoadComplete;
 
-    UniGLTF.ImporterContext ctx;
+    List<GameObject> meshes;
 
     public async void Setup(SyncObject obj)
     {
@@ -26,18 +26,25 @@ public class ModelSync : MonoBehaviour, ITag
         obj.WriteDebugLog("Model", $"Blob {handle} loaded");
 
         // Because UniGLTF.ImporterContext is the parent class of VRMImporterContext,
-        //  ( https://github.com/vrm-c/UniVRM/blob/3b68eb7f99bfe78ea9c83ea75511282ef1782f1a/Assets/VRM/UniVRM/Scripts/Format/VRMImporterContext.cs#L11 )
         // loading procedure is probably almost same (See PlyayerAvatar.cs for VRM loading).
-        //  https://github.com/vrm-c/UniVRM/blob/3b68eb7f99bfe78ea9c83ea75511282ef1782f1a/Assets/VRM/UniGLTF/Editor/Tests/UniGLTFTests.cs#L46
-        ctx = new UniGLTF.ImporterContext();
-        // ParseGlb parses GLB file.
-        //  https://github.com/vrm-c/UniVRM/blob/3b68eb7f99bfe78ea9c83ea75511282ef1782f1a/Assets/VRM/UniGLTF/Scripts/IO/ImporterContext.cs#L239
+        // https://vrm-c.github.io/UniVRM/ja/api/sample/SimpleViewer.html
+        // https://github.com/vrm-c/UniVRM/blob/e91ab9fc519aa387dc9b39044aa2189ff0382f15/Assets/VRM_Samples/SimpleViewer/ViewerUI.cs
         // Currently, only GLB (glTF binary format) is supported because it is self-contained
-        ctx.ParseGlb(blob.Data);
-        ctx.Root = gameObject;
-        await ctx.LoadAsyncTask();
-        // UniGLTF also has ShowMeshes https://github.com/ousttrue/UniGLTF/wiki/Rutime-API#import
-        ctx.ShowMeshes();
+        UniGLTF.GltfData gltf = new UniGLTF.GlbBinaryParser(blob.Data, blob.ToString()).Parse();
+        using (var ctx = new UniGLTF.ImporterContext(gltf))
+        {
+            UniGLTF.RuntimeGltfInstance instance = await ctx.LoadAsync(new VRMShaders.RuntimeOnlyAwaitCaller());
+
+            // Move the model inside this gameObject
+            instance.Root.transform.SetParent(transform);
+            instance.Root.transform.localPosition = Vector3.zero;
+            instance.Root.transform.localRotation = Quaternion.identity;
+
+            instance.ShowMeshes();
+
+            // For GetMeshes
+            meshes = instance.Nodes.Select(tf => tf.gameObject).ToList();
+        }
 
         obj.WriteDebugLog("Model", "Model load completed");
 
@@ -46,22 +53,10 @@ public class ModelSync : MonoBehaviour, ITag
 
     public List<GameObject> GetMeshes()
     {
-        if (ctx == null)
-        {
-            return new List<GameObject>();
-        }
-        else
-        {
-            return ctx.Nodes.Select(tf => tf.gameObject).ToList();
-        }
+        return meshes;
     }
 
     public void Cleanup(SyncObject syncObject)
     {
-    }
-
-    public void OnDestroy()
-    {
-        ctx.Dispose();
     }
 }
