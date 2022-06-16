@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "build-synth": "npx asc -O synth.ts -o synth.wasm",
-    "build-key": "npx asc key.ts -o key.wasm",
-    "build-slider": "npx asc slider.ts -o slider.wasm",
-    "build-button": "npx asc button.ts -o button.wasm",
-    "build-plot": "npx asc plot.ts -o plot.wasm",
+    "build-synth": "npx asc --disable bulk-memory -O synth.ts -o synth.wasm",
+    "build-key": "npx asc --disable bulk-memory key.ts -o key.wasm",
+    "build-slider": "npx asc --disable bulk-memory slider.ts -o slider.wasm",
+    "build-button": "npx asc --disable bulk-memory button.ts -o button.wasm",
+    "build-plot": "npx asc --disable bulk-memory plot.ts -o plot.wasm",
     "build": "npm run build-synth && npm run build-key && npm run build-slider && npm run build-button && npm run build-plot"
   },
   "author": "Satoshi Tanaka",

@@ -10,7 +10,7 @@ copy:
 clean:
 	rm $(WASM_FILES)
 
-ASFLAGS =
+ASFLAGS = --disable bulk-memory
 %.wasm: %.ts
 	npx asc $< $(ASFLAGS) -o $@
 

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "build": "npx asc earth.ts -o earth.wasm",
+    "build": "npx asc --disable bulk-memory earth.ts -o earth.wasm",
     "copy": "npx cpx earth.wasm ../../Assets/StreamingAssets/wasm/"
   },
   "author": "Satoshi Tanaka",
