@@ -107,28 +107,33 @@ public class WasmRunner : IDisposable
     public void Initialize()
     {
         // Initialization of WASM code
-        // In the future, we are planning to support WASI reactors.
-        // (See https://github.com/WebAssembly/WASI/blob/master/design/application-abi.md )
-        // However, until we support it, we use ABI (especially function names) that is
-        // intentionally different from WASI, because our preliminary ABI is incompatible with WASI reactor.
-        // (for example, we use "init" instead of WASI "_initialize")
+        // Compatible to WASI reactors.
+        // (See https://github.com/WebAssembly/WASI/blob/main/legacy/application-abi.md )
 
         IsReady = true;
 
-        // Constructors
-        var callCtors = FindExport("__wasm_call_ctors", WebAssembly.ExternalKind.Function);
-        if (callCtors != null)
+        // Call initialization function of a WASI Reactor
+        var wasiInit = FindExport("_initialize", WebAssembly.ExternalKind.Function);
+        if (wasiInit != null)
         {
-            CallWasmFunc("__wasm_call_ctors");
+            CallWasmFunc("_initialize");
         }
+        else
+        {
+            // If _initialize does not exist, call constructors
+            var callCtors = FindExport("__wasm_call_ctors", WebAssembly.ExternalKind.Function);
+            if (callCtors != null)
+            {
+                CallWasmFunc("__wasm_call_ctors");
+            }
+        }
+
         // Initialization
         var init = FindExport("init", WebAssembly.ExternalKind.Function);
-        if (init == null)
+        if (init != null)
         {
-            WriteLog(Logger.LogType.Error, "WasmRunner", "Cannot find function init");
-            return;
+            CallWasmFunc("init");
         }
-        CallWasmFunc("init");
 
         WriteLog(Logger.LogType.Debug, "WasmRunner", "WASM initialized");
     }
