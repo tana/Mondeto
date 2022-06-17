@@ -16,7 +16,7 @@ public class PlayerAvatar : MonoBehaviour, ITag
     public float SpeedCoeff = 1.0f;
     public float AngularSpeedCoeff = 60.0f;
 
-    public GameObject XRRig;
+    public GameObject XROrigin;
     public Transform LeftHand;
     public Transform RightHand;
 
@@ -66,8 +66,8 @@ public class PlayerAvatar : MonoBehaviour, ITag
 
     void Start()
     {
-        if (XRRig != null)
-            xrCamera = XRRig.GetComponentInChildren<Camera>();
+        if (XROrigin != null)
+            xrCamera = XROrigin.GetComponentInChildren<Camera>();
     }
 
     void Update()
@@ -488,10 +488,10 @@ public class PlayerAvatar : MonoBehaviour, ITag
             //  https://vrm.dev/en/dev/univrm-0.xx/programming/univrm_use_firstperson/
             var fp = GetComponentInChildren<VRMFirstPerson>();
             fp.Setup();
-            if (XRRig != null)
+            if (XROrigin != null)
             {
-                XRRig.transform.position = fp.FirstPersonBone.position + fp.FirstPersonBone.rotation * fp.FirstPersonOffset;
-                XRRig.transform.rotation = transform.rotation;  // face forward
+                XROrigin.transform.position = fp.FirstPersonBone.position + fp.FirstPersonBone.rotation * fp.FirstPersonOffset;
+                XROrigin.transform.rotation = transform.rotation;  // face forward
                 // Do not render layer "VRMThirdPersonOnly" on first person camera
                 xrCamera.cullingMask &= ~LayerMask.GetMask("VRMThirdPersonOnly");
                 SetHeadShadow();
