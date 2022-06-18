@@ -17,13 +17,13 @@ public class UnityLogOutput : MonoBehaviour
         // If graphics is available, log is written into Unity debug console.
         if (!Application.isBatchMode)
         {
-            Logger.OnLog += async (type, component, msg) => {
+            Logger.OnLog += (type, component, msg) => {
                 context.Post(_ => Debug.Log($"[{Logger.LogTypeToString(type)}] {component}: {msg}"), null);
             };
         }
         else
         {
-            Logger.OnLog += async (type, component, msg) => {
+            Logger.OnLog += (type, component, msg) => {
                 context.Post(_ => Console.WriteLine($"[{Logger.LogTypeToString(type)}] {component}: {msg}"), null);
             };
         }

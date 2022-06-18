@@ -109,8 +109,8 @@ public class Menu : MonoBehaviour
         }
 
         // Wait until recentered
-        await UniTask.WaitForEndOfFrame();
-        await UniTask.WaitForEndOfFrame();
+        await UniTask.WaitForEndOfFrame(this);
+        await UniTask.WaitForEndOfFrame(this);
 
         MoveMenu();
     }

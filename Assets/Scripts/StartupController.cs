@@ -174,7 +174,7 @@ public class StartupController : MonoBehaviour
         // Rebuild Vertical Layout Group using new size of AvatarInfo (changed according to its content by Content Size Filter)
         //  https://docs.unity3d.com/ja/2019.4/Manual/UIAutoLayout.html
         //  https://docs.unity3d.com/ja/2019.4/Manual/HOWTO-UIFitContentSize.html
-        await UniTask.WaitForEndOfFrame();  // Somehow, frame wait is needed before MarkLayoutForRebuild
+        await UniTask.WaitForEndOfFrame(this);  // Somehow, frame wait is needed before MarkLayoutForRebuild
         LayoutRebuilder.MarkLayoutForRebuild(AvatarInfo.transform.parent.GetComponent<RectTransform>());
     }
 

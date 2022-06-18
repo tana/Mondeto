@@ -326,7 +326,7 @@ public class SyncBehaviour : MonoBehaviour
                 renderer.material.SetFloat("_Opacity", opacity);
             }
 
-            await UniTask.WaitForEndOfFrame();
+            await UniTask.WaitForEndOfFrame(this);
             t += Time.deltaTime;
         }
 
