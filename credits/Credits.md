@@ -3,7 +3,7 @@
 Mondeto itself is licensed under [MIT License](../LICENSE).
 
 ### Acknowledgements
-This project is supported by [The MITOU Program](https://www.ipa.go.jp/english/about/about_2_3.html) of [Information-technology Promotion Agency (IPA)](https://www.ipa.go.jp/index-e.html).
+This project was supported by [The MITOU Program](https://www.ipa.go.jp/english/about/about_2_3.html) of [Information-technology Promotion Agency (IPA)](https://www.ipa.go.jp/index-e.html) in fiscal year 2020.
 
 ## Third-party libraries and data
 Mondeto uses many third-party libraries and data.
