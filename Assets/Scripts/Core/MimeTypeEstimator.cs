@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
-using System.Text;
 
 // Class for estimating MIME type from file extension
 public class MimeTypeEstimator

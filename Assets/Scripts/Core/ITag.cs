@@ -1,5 +1,3 @@
-using System;
-
 public interface ITag
 {
     void Setup(SyncObject syncObject);

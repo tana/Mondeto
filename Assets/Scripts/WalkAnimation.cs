@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 // Controls animation of an avatar.
 // For UnityChanLocomotions animation controller of "Unity-Chan" animation data.

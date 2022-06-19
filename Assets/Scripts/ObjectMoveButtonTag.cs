@@ -1,5 +1,3 @@
-using System;
-
 public class ObjectMoveButtonTag : SimpleTag
 {
     SyncObject obj;

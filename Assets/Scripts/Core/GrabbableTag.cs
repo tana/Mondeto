@@ -1,5 +1,3 @@
-using System;
-
 public class GrabbableTag : SimpleTag
 {
     SyncObject obj;
