@@ -30,9 +30,13 @@ public class ObjectWasmRunner : WasmRunner
         AddImportFunction("mondeto", "delete_self", (Action)DeleteSelf);
         // Field manipulation functions
         AddImportFunction("mondeto", "get_field", (Func<int, int, long>)GetField);
+        AddImportFunction("mondeto", "get_field_utf16", (Func<int, int, long>)GetFieldUtf16);
         AddImportFunction("mondeto", "set_field", (Action<int, int, int>)SetField);
+        AddImportFunction("mondeto", "set_field_utf16", (Action<int, int, int>)SetFieldUtf16);
         AddImportFunction("mondeto", "object_get_field", (Func<int, int, int, long>)ObjectGetField);
+        AddImportFunction("mondeto", "object_get_field_utf16", (Func<int, int, int, long>)ObjectGetFieldUtf16);
         AddImportFunction("mondeto", "object_set_field", (Func<int, int, int, int, int>)ObjectSetField);
+        AddImportFunction("mondeto", "object_set_field_utf16", (Func<int, int, int, int, int>)ObjectSetFieldUtf16);
         // IValue-related functions
         AddImportFunction("mondeto", "get_type", (Func<int, int>)GetValueType);
         AddImportFunction("mondeto", "read_vec", (Action<int, int, int, int>)ReadVec);
@@ -42,7 +46,9 @@ public class ObjectWasmRunner : WasmRunner
         AddImportFunction("mondeto", "read_float", (Func<int, float>)ReadPrimitive<float>);
         AddImportFunction("mondeto", "read_double", (Func<int, double>)ReadPrimitive<double>);
         AddImportFunction("mondeto", "get_string_length", (Func<int, int>)GetStringLength);
+        AddImportFunction("mondeto", "get_string_length_utf16", (Func<int, int>)GetStringLengthUtf16);
         AddImportFunction("mondeto", "read_string", (Func<int, int, int, int>)ReadString);
+        AddImportFunction("mondeto", "read_string_utf16", (Func<int, int, int, int>)ReadStringUtf16);
         AddImportFunction("mondeto", "read_object_ref", (Func<int, int>)ReadObjectRef);
         AddImportFunction("mondeto", "get_sequence_length", (Func<int, int>)GetSequenceLength);
         AddImportFunction("mondeto", "read_sequence", (Func<int, int, int, int>)ReadSequence);
@@ -53,10 +59,12 @@ public class ObjectWasmRunner : WasmRunner
         AddImportFunction("mondeto", "make_vec", (Func<float, float, float, int>)MakeVec);
         AddImportFunction("mondeto", "make_quat", (Func<float, float, float, float, int>)MakeQuat);
         AddImportFunction("mondeto", "make_string", (Func<int, int, int>)MakeString);
+        AddImportFunction("mondeto", "make_string_utf16", (Func<int, int, int>)MakeStringUtf16);
         AddImportFunction("mondeto", "make_sequence", (Func<int, int, int>)MakeSequence);
         AddImportFunction("mondeto", "make_object_ref", (Func<int, int>)MakeObjectRef);
         // Event-related functions
         AddImportFunction("mondeto", "send_event", (Func<int, int, int, int, int, int, int>)SendEvent);
+        AddImportFunction("mondeto", "send_event_utf16", (Func<int, int, int, int, int, int, int>)SendEventUtf16);
         AddImportFunction("mondeto", "get_event_args_count", (Func<int>)GetEventArgsCount);
         AddImportFunction("mondeto", "get_event_args", (Func<int, int, int>)GetEventArgs);
         // Other functions
@@ -217,7 +225,19 @@ public class ObjectWasmRunner : WasmRunner
     {
         // Read field name from WASM memory
         string name = ReadStringFromWasm(Instance.Exports.memory, namePtr, nameLen);
-        
+        return GetFieldCommon(name);
+    }
+
+    // i64 get_field_utf16(i32 name_ptr, i32 name_len)
+    long GetFieldUtf16(int namePtr, int nameLen)
+    {
+        // Read field name from WASM memory
+        string name = ReadUtf16StringFromWasm(Instance.Exports.memory, namePtr, nameLen);
+        return GetFieldCommon(name);
+    }
+
+    long GetFieldCommon(string name)
+    {
         if (Object.TryGetField<IValue>(name, out IValue value))
         {
             return RegisterValue(value);
@@ -231,12 +251,24 @@ public class ObjectWasmRunner : WasmRunner
     // i64 object_get_field(i32 obj_id, i32 name_ptr, i32 name_len)
     long ObjectGetField(int objId, int namePtr, int nameLen)
     {
+        string name = ReadStringFromWasm(Instance.Exports.memory, namePtr, nameLen);
+        return ObjectGetFieldCommon(objId, name);
+    }
+
+    // i64 object_get_field_utf16(i32 obj_id, i32 name_ptr, i32 name_len)
+    long ObjectGetFieldUtf16(int objId, int namePtr, int nameLen)
+    {
+        string name = ReadUtf16StringFromWasm(Instance.Exports.memory, namePtr, nameLen);
+        return ObjectGetFieldCommon(objId, name);
+    }
+
+    long ObjectGetFieldCommon(int objId, string name)
+    {
         if (!Object.Node.Objects.ContainsKey((uint)objId))
         {
             return -1;  // object not found
         }
 
-        string name = ReadStringFromWasm(Instance.Exports.memory, namePtr, nameLen);
         if (Object.Node.Objects[(uint)objId].TryGetField<IValue>(name, out IValue value))
         {
             return RegisterValue(value);
@@ -251,12 +283,37 @@ public class ObjectWasmRunner : WasmRunner
     void SetField(int namePtr, int nameLen, int valueId)
     {
         string name = ReadStringFromWasm(Instance.Exports.memory, namePtr, nameLen);
+        SetFieldCommon(name, valueId);
+    }
+
+    // void set_field_utf16(i32 name_ptr, i32 name_len, i32 value_id)
+    void SetFieldUtf16(int namePtr, int nameLen, int valueId)
+    {
+        string name = ReadUtf16StringFromWasm(Instance.Exports.memory, namePtr, nameLen);
+        SetFieldCommon(name, valueId);
+    }
+
+    void SetFieldCommon(string name, int valueId)
+    {
         // TODO: error check
         Object.SetField(name, FindValue((uint)valueId));
     }
     
     // i32 object_set_field(i32 obj_id, i32 name_ptr, i32 name_len, i32 value_id)
     int ObjectSetField(int objId, int namePtr, int nameLen, int valueId)
+    {
+        string name = ReadStringFromWasm(Instance.Exports.memory, namePtr, nameLen);
+        return ObjectSetFieldCommon(objId, name, valueId);
+    }
+    
+    // i32 object_set_field_utf16(i32 obj_id, i32 name_ptr, i32 name_len, i32 value_id)
+    int ObjectSetFieldUtf16(int objId, int namePtr, int nameLen, int valueId)
+    {
+        string name = ReadUtf16StringFromWasm(Instance.Exports.memory, namePtr, nameLen);
+        return ObjectSetFieldCommon(objId, name, valueId);
+    }
+
+    int ObjectSetFieldCommon(int objId, string name, int valueId)
     {
         if (!Object.Node.Objects.ContainsKey((uint)objId))
         {
@@ -267,7 +324,6 @@ public class ObjectWasmRunner : WasmRunner
             return Failure; // invalid value id
         }
 
-        string name = ReadStringFromWasm(Instance.Exports.memory, namePtr, nameLen);
         Object.Node.Objects[(uint)objId].SetField(name, FindValue((uint)valueId));
         return Success;
     }
@@ -311,11 +367,30 @@ public class ObjectWasmRunner : WasmRunner
         return Encoding.UTF8.GetByteCount(val.Value);
     }
 
+    // i32 get_string_length_utf16(i32 value_id)
+    int GetStringLengthUtf16(int valueId)
+    {
+        var val = (Primitive<string>)FindValue((uint)valueId);
+        return Encoding.Unicode.GetByteCount(val.Value);
+    }
+
     // i32 read_string(i32 value_id, i32 ptr, i32 max_len)
     int ReadString(int valueId, int ptr, int maxLen)
     {
         var val = (Primitive<string>)FindValue((uint)valueId);
         byte[] bytes = Encoding.UTF8.GetBytes(val.Value);
+
+        int len = Math.Min(bytes.Length, maxLen);
+        Marshal.Copy(bytes, 0, WasmToIntPtr(Instance.Exports.memory, ptr), len);
+
+        return len;
+    }
+
+    // i32 read_string_utf16(i32 value_id, i32 ptr, i32 max_len)
+    int ReadStringUtf16(int valueId, int ptr, int maxLen)
+    {
+        var val = (Primitive<string>)FindValue((uint)valueId);
+        byte[] bytes = Encoding.Unicode.GetBytes(val.Value);
 
         int len = Math.Min(bytes.Length, maxLen);
         Marshal.Copy(bytes, 0, WasmToIntPtr(Instance.Exports.memory, ptr), len);
@@ -374,8 +449,17 @@ public class ObjectWasmRunner : WasmRunner
     // i32 make_string(i32 ptr, i32 len)
     int MakeString(int ptr, int len)
     {
-        string str = ReadStringFromWasm(Instance.Exports.memory, ptr, len);
+        return MakeStringCommon(ReadStringFromWasm(Instance.Exports.memory, ptr, len));
+    }
 
+    // i32 make_string_utf16(i32 ptr, i32 len)
+    int MakeStringUtf16(int ptr, int len)
+    {
+        return MakeStringCommon(ReadUtf16StringFromWasm(Instance.Exports.memory, ptr, len));
+    }
+
+    int MakeStringCommon(string str)
+    {
         return (int)RegisterValue(new Primitive<string>(str));
     }
 
@@ -399,9 +483,21 @@ public class ObjectWasmRunner : WasmRunner
     // i32 send_event(i32 receiver_id, i32 name_ptr, i32 name_len, i32 args_ptr, i32 args_len, i32 local_only)
     int SendEvent(int receiverId, int namePtr, int nameLen, int argsPtr, int argsLen, int localOnly)
     {
+        string name = ReadStringFromWasm(Instance.Exports.memory, namePtr, nameLen);
+        return SendEventCommon(receiverId, name, argsPtr, argsLen, localOnly);
+    }
+    
+    // i32 send_event_utf16(i32 receiver_id, i32 name_ptr, i32 name_len, i32 args_ptr, i32 args_len, i32 local_only)
+    int SendEventUtf16(int receiverId, int namePtr, int nameLen, int argsPtr, int argsLen, int localOnly)
+    {
+        string name = ReadUtf16StringFromWasm(Instance.Exports.memory, namePtr, nameLen);
+        return SendEventCommon(receiverId, name, argsPtr, argsLen, localOnly);
+    }
+
+    int SendEventCommon(int receiverId, string name, int argsPtr, int argsLen, int localOnly)
+    {
         if (Object.Node.Objects.TryGetValue((uint)receiverId, out SyncObject receiver))
         {
-            string name = ReadStringFromWasm(Instance.Exports.memory, namePtr, nameLen);
             uint[] argValueIds = ReadUIntArrayFromWasm(Instance.Exports.memory, argsPtr, argsLen);
 
             // TODO: error handling of invalid value ID
@@ -533,6 +629,19 @@ public class ObjectWasmRunner : WasmRunner
         unsafe
         {
             return Encoding.UTF8.GetString((byte*)WasmToIntPtr(memory, ptr), len);
+        }
+    }
+
+    // Read an UTF-16LE string (same as C# string format) from WASM memory
+    // len is number of bytes, not codepoints
+    string ReadUtf16StringFromWasm(UnmanagedMemory memory, int ptr, int len)
+    {
+        // boundary check
+        if (ptr < 0 || ptr + len >= memory.Size) throw new Exception();  // TODO: change exception
+        
+        unsafe
+        {
+            return Encoding.Unicode.GetString((byte*)WasmToIntPtr(memory, ptr), len);
         }
     }
 

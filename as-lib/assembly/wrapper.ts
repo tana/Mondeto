@@ -5,7 +5,7 @@
 // Note: @packageDocumentation is needed for file-level doc comment.
 // See: https://typedoc.org/guides/doccomments/#files
 
-import { get_event_args, get_event_args_count, get_field, get_sequence_length, get_string_length, get_world_coordinate, make_quat, make_sequence, make_string, make_vec, object_get_field, object_set_field, read_quat, read_sequence, read_string, read_vec, send_event, set_field, write_audio } from "./mondeto";
+import { get_event_args, get_event_args_count, get_field_utf16, set_field_utf16, get_sequence_length, get_string_length_utf16, get_world_coordinate, make_quat, make_sequence, make_string_utf16, make_vec, object_get_field_utf16, object_set_field_utf16, read_quat, read_sequence, read_string_utf16, read_vec, send_event_utf16, write_audio } from "./mondeto";
 import { Vec, Quat, Transform } from "./math";
 
 /**
@@ -14,18 +14,18 @@ import { Vec, Quat, Transform } from "./math";
  */
 export function getField(name: string): i64 {
     // https://www.assemblyscript.org/stdlib/string.html#encoding-api
-    const buf = String.UTF8.encode(name);
+    const buf = String.UTF16.encode(name);
     // https://www.assemblyscript.org/runtime.html#interface
     // https://www.assemblyscript.org/stdlib/arraybuffer.html#constructor
-    return get_field(changetype<usize>(buf), buf.byteLength);
+    return get_field_utf16(changetype<usize>(buf), buf.byteLength);
 }
 
 export function setField(name: string, valueID: u32): void {
     // https://www.assemblyscript.org/stdlib/string.html#encoding-api
-    const buf = String.UTF8.encode(name);
+    const buf = String.UTF16.encode(name);
     // https://www.assemblyscript.org/runtime.html#interface
     // https://www.assemblyscript.org/stdlib/arraybuffer.html#constructor
-    set_field(changetype<usize>(buf), buf.byteLength, valueID);
+    set_field_utf16(changetype<usize>(buf), buf.byteLength, valueID);
 }
 
 /**
@@ -35,34 +35,34 @@ export function setField(name: string, valueID: u32): void {
  */
 export function objectGetField(objId: u32, name: string): i64 {
     // https://www.assemblyscript.org/stdlib/string.html#encoding-api
-    const buf = String.UTF8.encode(name);
+    const buf = String.UTF16.encode(name);
     // https://www.assemblyscript.org/runtime.html#interface
     // https://www.assemblyscript.org/stdlib/arraybuffer.html#constructor
-    return object_get_field(objId, changetype<usize>(buf), buf.byteLength);
+    return object_get_field_utf16(objId, changetype<usize>(buf), buf.byteLength);
 }
 
 export function objectSetField(objId: u32, name: string, valueID: u32): i32 {
     // https://www.assemblyscript.org/stdlib/string.html#encoding-api
-    const buf = String.UTF8.encode(name);
+    const buf = String.UTF16.encode(name);
     // https://www.assemblyscript.org/runtime.html#interface
     // https://www.assemblyscript.org/stdlib/arraybuffer.html#constructor
-    return object_set_field(objId, changetype<usize>(buf), buf.byteLength, valueID);
+    return object_set_field_utf16(objId, changetype<usize>(buf), buf.byteLength, valueID);
 }
 
 export function readString(valueID: u32): string {
-    const len = get_string_length(valueID);
+    const len = get_string_length_utf16(valueID);
     const buf = new ArrayBuffer(len as i32);
-    read_string(valueID, changetype<usize>(buf), buf.byteLength);
+    read_string_utf16(valueID, changetype<usize>(buf), buf.byteLength);
     // https://www.assemblyscript.org/stdlib/string.html#encoding-api
-    return String.UTF8.decode(buf, false);
+    return String.UTF16.decode(buf);
 }
 
 export function makeString(str: string): u32 {
     // https://www.assemblyscript.org/stdlib/string.html#encoding-api
-    const buf = String.UTF8.encode(str);
+    const buf = String.UTF16.encode(str);
     // https://www.assemblyscript.org/runtime.html#interface
     // https://www.assemblyscript.org/stdlib/arraybuffer.html#constructor
-    return make_string(changetype<usize>(buf), buf.byteLength);
+    return make_string_utf16(changetype<usize>(buf), buf.byteLength);
 }
 
 export function readVec(valueID: u32): Vec {
@@ -159,12 +159,12 @@ export function getWorldCoordinate(objID: u32): Transform | null {
  * @param receiverID Object ID of the receiving object of the event.
  * @param name Name of the event.
  * @param args Arguments of the event. Array of Value IDs.
- * @param localOnly If true, the event is also broadcast to the receiver in another node.
+ * @param localOnly If true, the event is not broadcast to the receiver in another node.
  * @returns 0 when success. -1 when failure (e.g. receiverID is invalid).
  */
 export function sendEvent(receiverID: u32, name: string, args: u32[], localOnly: boolean = false): i32 {
     // https://www.assemblyscript.org/stdlib/string.html#encoding-api
-    const buf = String.UTF8.encode(name);
+    const buf = String.UTF16.encode(name);
     // https://www.assemblyscript.org/runtime.html#interface
     // https://www.assemblyscript.org/stdlib/arraybuffer.html#constructor
     const namePtr = changetype<usize>(buf);
@@ -177,7 +177,7 @@ export function sendEvent(receiverID: u32, name: string, args: u32[], localOnly:
     const argsPtr = changetype<usize>(args.buffer);
     const argsLen = args.length;
 
-    return send_event(receiverID, namePtr, nameLen, argsPtr, argsLen, localOnly ? 1 : 0);
+    return send_event_utf16(receiverID, namePtr, nameLen, argsPtr, argsLen, localOnly ? 1 : 0);
 }
 
 /**
