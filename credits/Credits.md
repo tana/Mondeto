@@ -50,14 +50,6 @@ There are some modified files (paths are relative to root directory of UnityChan
 - [LICENSE.txt](ThirdPartyLicenses/System.Threading.Channels/LICENSE.txt)
 - [THIRD-PARTY-NOTICES.txt](ThirdPartyLicenses/System.Threading.Channels/THIRD-PARTY-NOTICES.txt)
 
-### System.Threading.Tasks.Extensions
-- [LICENSE.txt](ThirdPartyLicenses/System.Threading.Tasks.Extensions/LICENSE.txt)
-- [THIRD-PARTY-NOTICES.txt](ThirdPartyLicenses/System.Threading.Tasks.Extensions/THIRD-PARTY-NOTICES.txt)
-
-### System.Runtime.CompilerServices.Unsafe
-- [LICENSE.txt](ThirdPartyLicenses/System.Runtime.CompilerServices.Unsafe/LICENSE.txt)
-- [THIRD-PARTY-NOTICES.txt](ThirdPartyLicenses/System.Runtime.CompilerServices.Unsafe/THIRD-PARTY-NOTICES.txt)
-
 ### WebAssembly for .NET
 - [LICENSE](ThirdPartyLicenses/dotnet-webassembly/LICENSE)
 
