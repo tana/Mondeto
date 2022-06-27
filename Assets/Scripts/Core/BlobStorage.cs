@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
 
+namespace Mondeto.Core
+{
+
 public class BlobStorage
 {
     ConcurrentDictionary<BlobHandle, TaskCompletionSource<Blob>> dict = new ConcurrentDictionary<BlobHandle, TaskCompletionSource<Blob>>();
@@ -25,3 +28,5 @@ public class BlobStorage
         return dict.GetOrAdd(handle, new TaskCompletionSource<Blob>()).Task;
     }
 }
+
+} // end namespace

@@ -1,5 +1,9 @@
 using System;
 using UnityEngine;
+using Mondeto.Core;
+
+namespace Mondeto
+{
 
 public class MicrophoneCapture : MonoBehaviour
 {
@@ -13,7 +17,7 @@ public class MicrophoneCapture : MonoBehaviour
         set
         {
             micEnabled = value;
-            Logger.Debug("MicrophoneCapture", "Microphone " + (micEnabled ? "on" : "off"));
+            Mondeto.Core.Logger.Debug("MicrophoneCapture", "Microphone " + (micEnabled ? "on" : "off"));
         }
     }
 
@@ -72,13 +76,13 @@ public class MicrophoneCapture : MonoBehaviour
         ObjectSync sync = GetComponent<ObjectSync>();
         if (sync.IsOriginal)
         {
-            Logger.Debug("MicrophoneCapture", $"MicrophoneCapture Original (obj={gameObject.name})");
+            Mondeto.Core.Logger.Debug("MicrophoneCapture", $"MicrophoneCapture Original (obj={gameObject.name})");
             micClip = Microphone.Start(DeviceName, true, ClipLength, SamplingRate);
             tempBuf = new float[micClip.samples];
         }
         else
         {
-            Logger.Debug("MicrophoneCapture", $"MicrophoneCapture Clone (obj={gameObject.name})");
+            Mondeto.Core.Logger.Debug("MicrophoneCapture", $"MicrophoneCapture Clone (obj={gameObject.name})");
         }
 
         ready = true;
@@ -89,3 +93,5 @@ public class MicrophoneCapture : MonoBehaviour
         Microphone.End(DeviceName);
     }
 }
+
+}   // end namespace

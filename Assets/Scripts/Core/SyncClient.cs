@@ -2,6 +2,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
+namespace Mondeto.Core
+{
+
 public class SyncClient : SyncNode
 {
     protected override Dictionary<uint, Connection> Connections { get; } = new Dictionary<uint, Connection>();
@@ -183,3 +186,5 @@ public class SyncClient : SyncNode
         signaler.Dispose();
     }
 }
+
+} // end namespace

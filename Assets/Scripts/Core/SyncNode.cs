@@ -5,6 +5,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+namespace Mondeto.Core
+{
+
 public abstract class SyncNode : IDisposable
 {
     protected abstract Dictionary<uint, Connection> Connections { get; }
@@ -418,3 +421,5 @@ public abstract class SyncNode : IDisposable
 
     public abstract void Dispose();
 }
+
+} // end namespace

@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using Mondeto.Core;
 
 class TestUtils
 {

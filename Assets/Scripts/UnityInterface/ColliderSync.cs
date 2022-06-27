@@ -1,5 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Mondeto.Core;
+
+namespace Mondeto
+{
 
 public class ColliderSync : MonoBehaviour, ITag
 {
@@ -208,3 +212,5 @@ public class ColliderSync : MonoBehaviour, ITag
         obj.DeleteFieldUpdateHandler("isStatic", HandleUpdate);
     }
 }
+
+}   // end namespace

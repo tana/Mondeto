@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
+using Mondeto.Core;
 
 [TestFixture]
 class SceneLoaderTests

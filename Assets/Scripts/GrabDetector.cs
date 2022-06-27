@@ -1,5 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Mondeto.Core;
+
+namespace Mondeto
+{
 
 // FIXME: more flexible approach (e.g. using collider tag with shape setting and collision events)
 public class GrabDetector : MonoBehaviour
@@ -70,3 +74,5 @@ public class GrabDetector : MonoBehaviour
         }
     }
 }
+
+}   // end namespace

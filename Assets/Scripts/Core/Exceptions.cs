@@ -1,5 +1,8 @@
 using System;
 
+namespace Mondeto.Core
+{
+
 public class SignalingException : Exception
 {
     public SignalingException(string message) : base(message)
@@ -23,3 +26,5 @@ public class ConnectionException : Exception
     {
     }
 }
+
+} // end namespace

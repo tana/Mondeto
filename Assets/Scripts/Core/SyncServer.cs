@@ -3,6 +3,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+namespace Mondeto.Core
+{
+
 public class SyncServer : SyncNode
 {
     Dictionary<uint, Connection> clients = new Dictionary<uint, Connection>();
@@ -261,3 +264,5 @@ public class SyncServer : SyncNode
         signaler.Dispose();
     }
 }
+
+} // end namespace

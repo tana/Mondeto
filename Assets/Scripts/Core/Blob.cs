@@ -1,5 +1,8 @@
 using System.Security.Cryptography;
 
+namespace Mondeto.Core
+{
+
 public struct Blob
 {
     public string MimeType { get; private set; }
@@ -30,3 +33,4 @@ public struct Blob
     }
 }
 
+} // end namespace

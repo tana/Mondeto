@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using Concentus.Structs;
 using Concentus.Enums;
 
+namespace Mondeto.Core
+{
+
 // TODO name change
 public class SyncObject
 {
@@ -384,3 +387,5 @@ public class SyncObject
         public uint LastUpdatedTick;
     }
 }
+
+} // end namespace

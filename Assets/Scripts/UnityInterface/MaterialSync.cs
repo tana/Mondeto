@@ -1,4 +1,8 @@
 using UnityEngine;
+using Mondeto.Core;
+
+namespace Mondeto
+{
 
 public class MaterialSync : MonoBehaviour, ITag
 {
@@ -180,3 +184,5 @@ public class MaterialSync : MonoBehaviour, ITag
         obj.DeleteFieldUpdateHandler("renderMode", HandleRenderModeUpdate);
     }
 }
+
+}   // end namespace

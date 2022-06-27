@@ -7,6 +7,9 @@ using Microsoft.MixedReality.WebRTC;
 using MessagePack;
 using System.Threading.Channels;
 
+namespace Mondeto.Core
+{
+
 public class Connection : IDisposable
 {
     public enum ChannelType
@@ -220,3 +223,5 @@ public class Connection : IDisposable
         pc.Dispose();
     }
 }
+
+} // end namespace

@@ -1,5 +1,9 @@
 ﻿using System.Linq;
 using UnityEngine;
+using Mondeto.Core;
+
+namespace Mondeto
+{
 
 public class ObjectSync : MonoBehaviour
 {
@@ -111,3 +115,5 @@ public class ObjectSync : MonoBehaviour
             transform.localScale = UnityUtil.FromVec(scale);
     }
 }
+
+}   // end namespace

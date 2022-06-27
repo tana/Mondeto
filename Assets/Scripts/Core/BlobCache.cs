@@ -1,6 +1,9 @@
 using System.IO;
 using System.Text;
 
+namespace Mondeto.Core
+{
+
 class BlobCache
 {
     string directory;
@@ -69,3 +72,5 @@ class BlobCache
         return directory + Path.DirectorySeparatorChar + sb.ToString();
     }
 }
+
+} // end namespace

@@ -1,5 +1,7 @@
 using NUnit.Framework;
 using UnityEngine;
+using Mondeto;
+using Mondeto.Core;
 
 // Compare results of our own quaternion math with Unity's functions
 [TestFixture]

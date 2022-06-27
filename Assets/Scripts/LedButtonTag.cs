@@ -1,6 +1,10 @@
 using System;
 using System.IO.Ports;
 using System.Threading.Tasks;
+using Mondeto.Core;
+
+namespace Mondeto
+{
 
 public class LedButtonTag : ITag
 {
@@ -43,3 +47,5 @@ public class LedButtonTag : ITag
         syncObject.DeleteEventHandler("clickStart", OnClickStart);
     }
 }
+
+}   // end namespace

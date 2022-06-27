@@ -6,6 +6,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using MessagePack;
 
+namespace Mondeto.Core
+{
+
 public enum TypeCode
 {
     Int = 0,
@@ -532,3 +535,5 @@ public class ProtocolUtil
         throw new TimeoutException(msg);
     }
 }
+
+} // end namespace

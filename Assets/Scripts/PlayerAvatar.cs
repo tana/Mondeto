@@ -4,6 +4,10 @@ using UnityEngine;
 using UnityEngine.XR;
 using VRM;
 using Cysharp.Threading.Tasks;
+using Mondeto.Core;
+
+namespace Mondeto
+{
 
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(WalkAnimation))]
@@ -624,3 +628,5 @@ public class PlayerAvatar : MonoBehaviour, ITag
         }
     }
 }
+
+}   // end namespace

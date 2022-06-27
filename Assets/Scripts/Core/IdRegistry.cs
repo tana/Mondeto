@@ -1,5 +1,8 @@
 using System.Collections.Generic;
 
+namespace Mondeto.Core
+{
+
 public class IdRegistry
 {
     uint lastId;
@@ -27,3 +30,5 @@ public class IdRegistry
         deleted.AddLast(id);
     }
 }
+
+} // end namespace

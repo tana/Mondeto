@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
+using Mondeto.Core;
+
+namespace Mondeto
+{
 
 public class SyncBehaviour : MonoBehaviour
 {
@@ -157,7 +161,7 @@ public class SyncBehaviour : MonoBehaviour
             if (countStartTime > 0)
             {
                 float fps = countPeriod / (Time.time - countStartTime);
-                Logger.Log("SyncBehaviour", $"Average frame rate = {fps} fps");
+                Mondeto.Core.Logger.Log("SyncBehaviour", $"Average frame rate = {fps} fps");
             }
             countStartTime = Time.time;
         }
@@ -177,12 +181,12 @@ public class SyncBehaviour : MonoBehaviour
     async void LoadBlobs()
     {
         var blobs = EnumerateBlobs();
-        Logger.Debug("SyncBehaviour", $"Number of initial blobs = {blobs.Count}");
+        Mondeto.Core.Logger.Debug("SyncBehaviour", $"Number of initial blobs = {blobs.Count}");
         foreach (var blobHandle in blobs)
         {
             await Node.ReadBlob(blobHandle);
         }
-        Logger.Debug("SyncBehaviour", "Received all blobs");
+        Mondeto.Core.Logger.Debug("SyncBehaviour", "Received all blobs");
         await UniTask.Delay(2500); // Fixed delay
         await FadeLoadingScreen();
     }
@@ -215,7 +219,7 @@ public class SyncBehaviour : MonoBehaviour
             if (GameObjects.ContainsKey(obj.Id))
             {
                 // Replace old GameObject
-                Logger.Log("SyncBehaviour", $"Replacing GameObject because a GameObject is already created for object {obj.Id}");
+                Mondeto.Core.Logger.Log("SyncBehaviour", $"Replacing GameObject because a GameObject is already created for object {obj.Id}");
                 ReplaceObject(obj, gameObj);
             }
             SetupObjectSync(gameObj, obj);
@@ -251,7 +255,7 @@ public class SyncBehaviour : MonoBehaviour
             sync.NetManager = this.gameObject;
             GameObjects[id] = gameObj;
             sync.Initialize(obj);
-            Logger.Debug("SyncBehaviour", "Created GameObject " + gameObj.ToString() + " for ObjectId=" + id);
+            Mondeto.Core.Logger.Debug("SyncBehaviour", "Created GameObject " + gameObj.ToString() + " for ObjectId=" + id);
         }
     }
 
@@ -336,3 +340,5 @@ public class SyncBehaviour : MonoBehaviour
         Node.Dispose();
     }
 }
+
+}   // end namespace

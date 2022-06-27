@@ -1,5 +1,9 @@
 using System.Linq;
 using UnityEngine;
+using Mondeto.Core;
+
+namespace Mondeto
+{
 
 public class UnityUtil
 {
@@ -37,3 +41,5 @@ public class UnityUtil
         ).ToArray();
     }
 }
+
+}   // end namespace

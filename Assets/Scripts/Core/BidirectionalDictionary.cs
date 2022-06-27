@@ -1,5 +1,8 @@
 using System.Collections.Generic;
 
+namespace Mondeto.Core
+{
+
 public class BidirectionalDictionary<TKey, TValue>
 {
     Dictionary<TKey, TValue> forwardDict = new Dictionary<TKey, TValue>();
@@ -32,3 +35,5 @@ public class BidirectionalDictionary<TKey, TValue>
         return true;
     }
 }
+
+} // end namespace

@@ -7,6 +7,9 @@ using System.Runtime.InteropServices;
 using WebAssembly;
 using WebAssembly.Runtime;
 
+namespace Mondeto.Core
+{
+
 public class ObjectWasmRunner : WasmRunner
 {
     public SyncObject Object;
@@ -650,3 +653,5 @@ public class ObjectWasmRunner : WasmRunner
         base.Dispose();
     }
 }
+
+} // end namespace

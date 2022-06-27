@@ -1,3 +1,8 @@
+using Mondeto.Core;
+
+namespace Mondeto
+{
+
 public class ObjectMoveButtonTag : SimpleTag
 {
     SyncObject obj;
@@ -44,3 +49,5 @@ public class ObjectMoveButtonTag : SimpleTag
         obj.DeleteEventHandler("collisionStart", OnCollisionStart);
     }
 }
+
+}   // end namespace

@@ -3,6 +3,9 @@ using System.Linq;
 using WebAssembly;
 using WebAssembly.Instructions;
 
+namespace Mondeto.Core
+{
+
 class WasmPatcher
 {
     // Modify WASM code to allow time-limiting.
@@ -91,3 +94,5 @@ class WasmPatcher
         code.Add(new End());    // end
     }
 }
+
+} // end namespace

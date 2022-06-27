@@ -1,5 +1,8 @@
 ﻿using UnityEngine;
 
+namespace Mondeto
+{
+
 // Controls animation of an avatar.
 // For UnityChanLocomotions animation controller of "Unity-Chan" animation data.
 [RequireComponent(typeof(Animator))]
@@ -32,3 +35,5 @@ public class WalkAnimation : MonoBehaviour
         }
     }
 }
+
+}   // end namespace

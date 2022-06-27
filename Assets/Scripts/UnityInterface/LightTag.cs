@@ -1,4 +1,8 @@
 using UnityEngine;
+using Mondeto.Core;
+
+namespace Mondeto
+{
 
 public class LightTag : MonoBehaviour, ITag
 {
@@ -34,3 +38,5 @@ public class LightTag : MonoBehaviour, ITag
     {
     }
 }
+
+}   // end namespace

@@ -1,4 +1,8 @@
 using UnityEngine;
+using Mondeto.Core;
+
+namespace Mondeto
+{
 
 // Tag for rendering 3D mesh specified by field value
 public class MeshTag : MonoBehaviour, ITag
@@ -71,3 +75,5 @@ public class MeshTag : MonoBehaviour, ITag
         obj.DeleteFieldUpdateHandler("indices", HandleUpdate);
     }
 }
+
+}   // end namespace

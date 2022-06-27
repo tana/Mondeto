@@ -1,4 +1,8 @@
 using UnityEngine;
+using Mondeto.Core;
+
+namespace Mondeto
+{
 
 // Extrapolate (predict) position and rotation
 // using assumptions that the object moves with constant velocity and angular velocity.
@@ -83,3 +87,5 @@ public class ConstantVelocity : MonoBehaviour, ITag
         obj.DeleteFieldUpdateHandler("angularVelocity", HandleUpdate);
     }
 }
+
+}   // end namespace

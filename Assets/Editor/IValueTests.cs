@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using System.Collections.Generic;
 using MessagePack;
+using Mondeto.Core;
 
 [TestFixture]
 class IValueTests

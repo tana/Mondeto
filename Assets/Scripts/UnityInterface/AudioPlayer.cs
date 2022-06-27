@@ -1,6 +1,10 @@
 using UnityEngine;
 using UnityEngine.Networking;
 using Cysharp.Threading.Tasks;
+using Mondeto.Core;
+
+namespace Mondeto
+{
 
 public class AudioPlayer : MonoBehaviour, ITag
 {
@@ -121,3 +125,5 @@ public class AudioPlayer : MonoBehaviour, ITag
         Destroy(audioSource);
     }
 }
+
+}   // end namespace

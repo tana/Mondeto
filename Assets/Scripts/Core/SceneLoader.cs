@@ -5,6 +5,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
 
+namespace Mondeto.Core
+{
+
 public class SceneLoader
 {
     SyncNode node;
@@ -371,3 +374,5 @@ public class SceneLoader
         }
     }
 }
+
+} // end namespace

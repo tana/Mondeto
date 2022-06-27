@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
+namespace Mondeto.Core
+{
+
 // TODO name
 public class Runner<T>
 {
@@ -29,3 +32,5 @@ public class Runner<T>
         return tcs.Task;
     }
 }
+
+} // end namespace

@@ -1,6 +1,9 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
+namespace Mondeto.Core
+{
+
 class CompletionNotifier<Key, Result>
 {
     Dictionary<Key, TaskCompletionSource<Result>> dict = new Dictionary<Key, TaskCompletionSource<Result>>();
@@ -34,3 +37,5 @@ class CompletionNotifier<Key, Result>
         tcs.SetResult(result);
     }
 }
+
+} // end namespace

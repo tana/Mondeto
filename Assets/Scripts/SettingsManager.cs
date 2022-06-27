@@ -2,6 +2,9 @@ using System;
 using System.IO;
 using UnityEngine;
 
+namespace Mondeto
+{
+
 public class SettingsManager
 {
     string settingsPath;
@@ -50,7 +53,7 @@ public class SettingsManager
         else
         {
             // If the settings file is broken, avoid overwriting to prevent unintended loss of settings
-            Logger.Error("SettingsManager", "Settings file is broken. New settings were NOT saved.");
+            Mondeto.Core.Logger.Error("SettingsManager", "Settings file is broken. New settings were NOT saved.");
         }
     }
 
@@ -66,7 +69,7 @@ public class SettingsManager
             }
             catch (Exception e) // Cannot load settings
             {
-                Logger.Error("SettingsManager", "Cannot load settings. " + e.ToString());
+                Mondeto.Core.Logger.Error("SettingsManager", "Cannot load settings. " + e.ToString());
                 return false;
             }
         }
@@ -80,3 +83,5 @@ public class SettingsManager
         }
     }
 }
+
+}   // end namespace

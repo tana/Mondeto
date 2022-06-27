@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Threading;
 using UnityEngine;
+using Mondeto.Core;
+
+namespace Mondeto
+{
 
 public class UnityLogOutput : MonoBehaviour
 {
@@ -14,15 +18,17 @@ public class UnityLogOutput : MonoBehaviour
         // If graphics is available, log is written into Unity debug console.
         if (!Application.isBatchMode)
         {
-            Logger.OnLog += (type, component, msg) => {
-                context.Post(_ => Debug.Log($"[{Logger.LogTypeToString(type)}] {component}: {msg}"), null);
+            Mondeto.Core.Logger.OnLog += (type, component, msg) => {
+                context.Post(_ => Debug.Log($"[{Mondeto.Core.Logger.LogTypeToString(type)}] {component}: {msg}"), null);
             };
         }
         else
         {
-            Logger.OnLog += (type, component, msg) => {
-                context.Post(_ => Console.WriteLine($"[{Logger.LogTypeToString(type)}] {component}: {msg}"), null);
+            Mondeto.Core.Logger.OnLog += (type, component, msg) => {
+                context.Post(_ => Console.WriteLine($"[{Mondeto.Core.Logger.LogTypeToString(type)}] {component}: {msg}"), null);
             };
         }
     }
 }
+
+}   // end namespace

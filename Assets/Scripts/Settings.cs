@@ -2,6 +2,9 @@ using System;
 using System.IO;
 using YamlDotNet.Serialization;
 
+namespace Mondeto
+{
+
 public class Settings
 {
     static Settings instance = new Settings();
@@ -66,3 +69,5 @@ public class Settings
         }
     }
 }
+
+}   // end namespace

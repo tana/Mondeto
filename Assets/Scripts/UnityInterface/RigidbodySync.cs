@@ -1,4 +1,8 @@
 ﻿using UnityEngine;
+using Mondeto.Core;
+
+namespace Mondeto
+{
 
 public class RigidbodySync : MonoBehaviour, ITag
 {
@@ -69,3 +73,5 @@ public class RigidbodySync : MonoBehaviour, ITag
         obj.DeleteFieldUpdateHandler("angularVelocity", HandleUpdate);
     }
 }
+
+}   // end namespace

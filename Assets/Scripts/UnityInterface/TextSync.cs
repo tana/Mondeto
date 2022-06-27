@@ -1,4 +1,8 @@
 using UnityEngine;
+using Mondeto.Core;
+
+namespace Mondeto
+{
 
 public class TextSync : MonoBehaviour, ITag
 {
@@ -47,3 +51,5 @@ public class TextSync : MonoBehaviour, ITag
         obj.DeleteFieldUpdateHandler("useRichText", HandleUpdate);
     }
 }
+
+}   // end namespace

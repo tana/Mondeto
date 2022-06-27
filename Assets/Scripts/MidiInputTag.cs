@@ -1,6 +1,10 @@
 using System.Collections.Concurrent;
 using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Devices;
+using Mondeto.Core;
+
+namespace Mondeto
+{
 
 public class MidiInputTag : ITag
 {
@@ -87,3 +91,5 @@ public class MidiInputTag : ITag
         syncObject.BeforeSync -= OnBeforeSync;
     }
 }
+
+}   // end namespace

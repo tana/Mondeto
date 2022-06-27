@@ -1,5 +1,8 @@
 ﻿using UnityEngine;
 
+namespace Mondeto
+{
+
 public class ResetPosition : MonoBehaviour
 {
     // Update is called once per frame
@@ -17,3 +20,5 @@ public class ResetPosition : MonoBehaviour
 		}
     }
 }
+
+}   // end namespace

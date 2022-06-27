@@ -1,5 +1,8 @@
 using UnityEngine.XR;
 
+namespace Mondeto
+{
+
 public class ButtonDetector
 {
     InputDevice device;
@@ -28,3 +31,5 @@ public class ButtonDetector
         }
     }
 }
+
+}   // end namespace

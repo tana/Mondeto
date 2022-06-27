@@ -1,3 +1,6 @@
+namespace Mondeto.Core
+{
+
 public class GrabbableTag : SimpleTag
 {
     SyncObject obj;
@@ -63,3 +66,5 @@ public class GrabbableTag : SimpleTag
         obj.DeleteEventHandler("ungrab", OnUngrab);
     }
 }
+
+} // end namespace

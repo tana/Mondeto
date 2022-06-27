@@ -1,4 +1,8 @@
 using UnityEngine;
+using Mondeto.Core;
+
+namespace Mondeto
+{
 
 public class WorldTag : MonoBehaviour, ITag
 {
@@ -62,3 +66,5 @@ public class WorldTag : MonoBehaviour, ITag
         obj.DeleteFieldUpdateHandler("skyboxType", HandleUpdate);
     }
 }
+
+}   // end namespace

@@ -9,6 +9,9 @@ using System.Security.Cryptography;
 using WebAssembly;
 using WebAssembly.Runtime;
 
+namespace Mondeto.Core
+{
+
 // A class for compiling and running WASM using dotnet-webassembly
 //  https://github.com/RyanLamansky/dotnet-webassembly
 public class WasmRunner : IDisposable
@@ -309,3 +312,5 @@ public class WasmRunner : IDisposable
         Logger.Write(type, component, message);
     }
 }
+
+} // end namespace

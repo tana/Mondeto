@@ -2,6 +2,9 @@
 using UnityEngine;
 using UnityEngine.XR;
 
+namespace Mondeto
+{
+
 public class Teleporter : MonoBehaviour
 {
     // Parabola is defined by two parameters.
@@ -138,3 +141,5 @@ public class Teleporter : MonoBehaviour
         ParabolaRenderer.SetPositions(points);
     }
 }
+
+}   // end namespace

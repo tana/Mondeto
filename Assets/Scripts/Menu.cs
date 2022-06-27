@@ -4,6 +4,10 @@ using UnityEngine;
 using UnityEngine.XR;
 using UnityEngine.UI;
 using Cysharp.Threading.Tasks;
+using Mondeto.Core;
+
+namespace Mondeto
+{
 
 public class Menu : MonoBehaviour
 {
@@ -194,3 +198,5 @@ public class Menu : MonoBehaviour
         MenuCanvas.transform.rotation = Camera.main.transform.rotation;
     }
 }
+
+}   // end namespace

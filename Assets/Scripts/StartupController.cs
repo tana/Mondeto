@@ -9,6 +9,9 @@ using UnityEngine.XR.Management;
 using VRM;
 using Cysharp.Threading.Tasks;
 
+namespace Mondeto
+{
+
 public class StartupController : MonoBehaviour
 {
     public Toggle ServerToggle;
@@ -86,7 +89,7 @@ public class StartupController : MonoBehaviour
 
         if (Application.isBatchMode)
         {
-            Logger.Log("StartupController", "Running as batch mode. Starting dedicated server scene");
+            Mondeto.Core.Logger.Log("StartupController", "Running as batch mode. Starting dedicated server scene");
             SceneManager.LoadScene("WalkServer");
         }
 
@@ -218,3 +221,5 @@ public class StartupController : MonoBehaviour
         ShowAvatarInfo();
     }
 }
+
+}   // end namespace

@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 using System.Net.WebSockets;
 using LitJson;
 
+namespace Mondeto.Core
+{
+
 public class Signaler : IDisposable
 {
     public delegate void ClientConnectedHandler(uint clientNodeID);
@@ -192,3 +195,5 @@ public class Signaler : IDisposable
         ws.Dispose();
     }
 }
+
+} // end namespace

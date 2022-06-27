@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Concurrent;
 using UnityEngine;
+using Mondeto.Core;
+
+namespace Mondeto
+{
 
 public class AudioSourceTag : MonoBehaviour, ITag
 {
@@ -18,7 +22,7 @@ public class AudioSourceTag : MonoBehaviour, ITag
         // Ensure Unity's output sampling rate is same as Mondeto's internal sampling rate (48kHz)
         if (AudioSettings.outputSampleRate != SyncObject.AudioSamplingRate)
         {
-            Logger.Error("AudioSourceTag", $"Output sample rate is not {SyncObject.AudioSamplingRate} Hz (actual value = {AudioSettings.outputSampleRate} Hz)");
+            Mondeto.Core.Logger.Error("AudioSourceTag", $"Output sample rate is not {SyncObject.AudioSamplingRate} Hz (actual value = {AudioSettings.outputSampleRate} Hz)");
             return;
         }
 
@@ -76,3 +80,5 @@ public class AudioSourceTag : MonoBehaviour, ITag
         Destroy(audioSource);
     }
 }
+
+}   // end namespace

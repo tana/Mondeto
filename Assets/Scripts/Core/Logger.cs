@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 
+namespace Mondeto.Core
+{
+
 public class Logger
 {
     public enum LogType
@@ -42,3 +45,5 @@ public class Logger
     public static void Log(string component, string msg) => Write(LogType.Log, component, msg);
     public static void Error(string component, string msg) => Write(LogType.Error, component, msg);
 }
+
+} // end namespace

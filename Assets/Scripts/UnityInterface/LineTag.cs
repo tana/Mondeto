@@ -1,4 +1,8 @@
 using UnityEngine;
+using Mondeto.Core;
+
+namespace Mondeto
+{
 
 // Tag for rendering a line specified by field value
 public class LineTag : MonoBehaviour, ITag
@@ -47,3 +51,5 @@ public class LineTag : MonoBehaviour, ITag
         obj.DeleteFieldUpdateHandler("width", HandleUpdate);
     }
 }
+
+}   // end namespace
