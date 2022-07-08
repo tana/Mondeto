@@ -9,7 +9,6 @@ public class SyncClient : SyncNode
 {
     protected override Dictionary<uint, Connection> Connections { get; } = new Dictionary<uint, Connection>();
     Connection conn;
-    Signaler signaler;
 
     public override uint NodeId { get; protected set; }
 
@@ -20,14 +19,16 @@ public class SyncClient : SyncNode
     const int NodeIdRetryTimeout = 10000;
 
     public SyncClient(string signalerUri)
+        : base()
     {
         conn = new Connection();
         Connections[0] = conn;
-        signaler = new Signaler(signalerUri, false);
     }
 
     public override async Task Initialize()
     {
+        throw new System.NotImplementedException();
+        /*
         await Task.Delay(1000);
         NodeId = await signaler.ConnectAsync();
         Logger.Log("Client", "Connected to signaling server");
@@ -54,6 +55,7 @@ public class SyncClient : SyncNode
         var cancelSource = new CancellationTokenSource();
         conn.OnDisconnect += () => cancelSource.Cancel();
         var _ = ProcessBlobMessagesAsync(ServerNodeId, conn, cancelSource.Token);
+        */
     }
 
     protected override void ProcessControlMessages()
@@ -183,7 +185,8 @@ public class SyncClient : SyncNode
     public override void Dispose()
     {
         conn.Dispose();
-        signaler.Dispose();
+
+        base.Dispose();
     }
 }
 

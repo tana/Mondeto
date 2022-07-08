@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Mondeto.Core.QuicWrapper;
 
 namespace Mondeto.Core
 {
@@ -17,6 +18,8 @@ public abstract class SyncNode : IDisposable
     public const uint ServerNodeId = 0;
 
     public const uint WorldObjectId = 0;    // Object ID 0 is reserved for World object (system object)
+
+    public static readonly byte[] Alpn = new byte[] { (byte)'m', (byte)'o', (byte)'n', (byte)'d', (byte)'e', (byte)'t', (byte)'o' };
 
     //public Dictionary<IPAddress, int> UdpEpToNodeId { get; } = new Dictionary<IPAddress, int>();
 
@@ -56,6 +59,11 @@ public abstract class SyncNode : IDisposable
 
     public SyncNode()
     {
+        if (!QuicLibrary.IsReady)
+        {
+            QuicLibrary.Initialize();
+        }
+
         // Register simple (Unity-independent) tags
         RegisterTag("grabbable", _ => new GrabbableTag());
         RegisterTag("objectMoveButton", _ => new ObjectMoveButtonTag());
@@ -419,7 +427,10 @@ public abstract class SyncNode : IDisposable
 
     public bool IsTagRegistered(string name) => TagCreators.ContainsKey(name);
 
-    public abstract void Dispose();
+    public virtual void Dispose()
+    {
+        QuicLibrary.Close();
+    }
 }
 
 } // end namespace

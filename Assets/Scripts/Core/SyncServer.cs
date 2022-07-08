@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Net;
+using Mondeto.Core.QuicWrapper;
 
 namespace Mondeto.Core
 {
@@ -10,10 +12,6 @@ public class SyncServer : SyncNode
 {
     Dictionary<uint, Connection> clients = new Dictionary<uint, Connection>();
     protected override Dictionary<uint, Connection> Connections { get => clients; }
-    Signaler signaler;
-
-    public readonly int UdpPort;
-    public readonly int TcpPort;
 
     public override uint NodeId { get; protected set; } = ServerNodeId; // Node ID for server is always 0
 
@@ -23,9 +21,11 @@ public class SyncServer : SyncNode
 
     Runner<uint> runner = new Runner<uint>();
 
+    QuicListener listener;
+
     public SyncServer(string signalerUri)
+        : base()
     {
-        signaler = new Signaler(signalerUri, true);
     }
 
     public override async Task Initialize()
@@ -34,16 +34,10 @@ public class SyncServer : SyncNode
         Objects[WorldObjectId] = new SyncObject(this, WorldObjectId, ServerNodeId);
         InvokeObjectCreated(WorldObjectId); // To invoke ObjectCreated event for World Object (ID=0)
 
-        // Start communication
-        await signaler.ConnectAsync();
-        Logger.Log("Server", "Connected to signaling server");
-        signaler.ClientConnected += async (uint clientNodeId) => {
-            Logger.Log("Server", $"Accepting client {clientNodeId}");
-            var conn = new Connection();
-            await conn.SetupAsync(signaler, true, clientNodeId);
-            // Node ID is assigned by signaling server
-            await InitClient(conn, clientNodeId);
-        };
+        listener = new QuicListener();
+
+        // Start accepting client connection
+        listener.Start(new byte[][] { SyncNode.Alpn }, new IPEndPoint(IPAddress.Any, 15903));   // TODO: addr and port from settings
     }
 
     async Task InitClient(Connection conn, uint clientId)
@@ -261,7 +255,12 @@ public class SyncServer : SyncNode
             conn.Dispose();
         }
 
-        signaler.Dispose();
+        if (listener != null)
+        {
+            listener.Dispose();
+        }
+
+        base.Dispose();
     }
 }
 

@@ -44,12 +44,6 @@ public class StartupController : MonoBehaviour
             Settings.Instance.SceneFile = extractedDir + "/scene.yml";
         }
 
-        // Initialize MixedReality-WebRTC on Android
-        if (Application.platform == RuntimePlatform.Android)
-        {
-            Microsoft.MixedReality.WebRTC.Unity.Android.Initialize();
-        }
-
         if (!Application.isEditor)
         {
             // Parse command line args using state machine

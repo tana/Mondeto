@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
-using Microsoft.MixedReality.WebRTC;
 using MessagePack;
 using System.Threading.Channels;
 
@@ -22,9 +21,9 @@ public class Connection : IDisposable
     public delegate void OnDisconnectHandler();
     public event OnDisconnectHandler OnDisconnect;
 
-    PeerConnection pc;
+    // PeerConnection pc;
 
-    DataChannel[] channels = new DataChannel[4];
+    // DataChannel[] channels = new DataChannel[4];
     ChannelType[] channelTypes = { ChannelType.Sync, ChannelType.Control, ChannelType.Blob, ChannelType.Audio };
     string[] channelLabels = { "sync", "control", "blob", "audio" };
 
@@ -36,6 +35,7 @@ public class Connection : IDisposable
 
     public Connection()
     {
+        /*
         pc = new PeerConnection();
 
         threadChannels = new Channel<byte[]>[channels.Length];
@@ -43,10 +43,12 @@ public class Connection : IDisposable
         {
             threadChannels[i] = Channel.CreateUnbounded<byte[]>();
         }
+        */
     }
 
     public async Task SetupAsync(Signaler signaler, bool isServer, uint clientNodeId = 0)
     {
+        /*
         await pc.InitializeAsync(new PeerConnectionConfiguration {
             IceServers = new List<IceServer> {
                 new IceServer { Urls = { signaler.IceServerUrl } }
@@ -187,13 +189,14 @@ public class Connection : IDisposable
             };
             await tcs.Task;
         }
+        */
     }
 
     // Generic type specification is necessary to specify msg is interface type, not message type itself
     public void SendMessage<T>(ChannelType type, T msg)
     {
         byte[] buf = MessagePackSerializer.Serialize<T>(msg);
-        channels[(int)type].SendMessage(buf);
+        // channels[(int)type].SendMessage(buf);
     }
 
     public bool TryReceiveMessage<T>(ChannelType type, out T msg)
@@ -219,8 +222,10 @@ public class Connection : IDisposable
 
     public void Dispose()
     {
+        /*
         pc.Close();
         pc.Dispose();
+        */
     }
 }
 
