@@ -21,8 +21,5 @@
     - [DryWetMIDI](https://github.com/melanchall/drywetmidi)
     - [version 5.1.2](https://github.com/melanchall/drywetmidi/releases/tag/v5.1.2) (for netstandard20)
 
-- `armeabi-v7a/libmrwebrtc.so`
-    - [MixedReality-WebRTC](https://github.com/microsoft/MixedReality-WebRTC) native library ([Built for 32-bit ARM architecture](https://github.com/tana/MixedReality-WebRTC/tree/armeabi-v7a))
-
 - `x86_64/msquic.dll`
     - [MsQuic](https://github.com/microsoft/msquic) native library for x86_64 Windows (compiled with OpenSSL)

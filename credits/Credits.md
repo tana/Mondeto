@@ -13,10 +13,6 @@ The following are credits for these third-party works.
 - [LICENSE](ThirdPartyLicenses/MsQuic/LICENSE)
 - [THIRD-PARTY-NOTICES](ThirdPartyLicenses/MsQuic/THIRD-PARTY-NOTICES) (including license of OpenSSL used in MsQuic library)
 
-### MixedReality-WebRTC
-- [LICENSE](ThirdPartyLicenses/MixedReality-WebRTC/LICENSE)
-- [NOTICE](ThirdPartyLicenses/MixedReality-WebRTC/NOTICE) (Because MixedReality-WebRTC itself uses other open source works)
-
 ### MessagePack for C\#
 - [LICENSE](ThirdPartyLicenses/MessagePack-CSharp/LICENSE)
 
