@@ -9,6 +9,10 @@ This project was supported by [The MITOU Program](https://www.ipa.go.jp/english/
 Mondeto uses many third-party libraries and data.
 The following are credits for these third-party works.
 
+### MsQuic
+- [LICENSE](ThirdPartyLicenses/MsQuic/LICENSE)
+- [THIRD-PARTY-NOTICES](ThirdPartyLicenses/MsQuic/THIRD-PARTY-NOTICES) (including license of OpenSSL used in MsQuic library)
+
 ### MixedReality-WebRTC
 - [LICENSE](ThirdPartyLicenses/MixedReality-WebRTC/LICENSE)
 - [NOTICE](ThirdPartyLicenses/MixedReality-WebRTC/NOTICE) (Because MixedReality-WebRTC itself uses other open source works)
