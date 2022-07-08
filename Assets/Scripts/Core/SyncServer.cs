@@ -59,15 +59,15 @@ public class SyncServer : SyncNode
 
         // Connection procedures
         // FIXME: this message has not meaningful but seems working as a kind of "ready"
-        conn.SendMessage<ITcpMessage>(Connection.ChannelType.Control, new NodeIdMessage { NodeId = clientId });
+        conn.SendMessage<IControlMessage>(Connection.ChannelType.Control, new NodeIdMessage { NodeId = clientId });
 
         // Send existing objects
         foreach (var pair in Objects)
         {
             var id = pair.Key;
             var obj = pair.Value;
-            ITcpMessage msg = new ObjectCreatedMessage { ObjectId = id, OriginalNodeId = obj.OriginalNodeId };
-            conn.SendMessage<ITcpMessage>(Connection.ChannelType.Control, msg);
+            IControlMessage msg = new ObjectCreatedMessage { ObjectId = id, OriginalNodeId = obj.OriginalNodeId };
+            conn.SendMessage<IControlMessage>(Connection.ChannelType.Control, msg);
         }
 
         var cancelSource = new CancellationTokenSource();
@@ -99,8 +99,8 @@ public class SyncServer : SyncNode
             var id = pair.Key;
             var conn = pair.Value;
 
-            ITcpMessage msg;
-            while (conn.TryReceiveMessage<ITcpMessage>(Connection.ChannelType.Control, out msg))
+            IControlMessage msg;
+            while (conn.TryReceiveMessage<IControlMessage>(Connection.ChannelType.Control, out msg))
             {
                 if (msg is CreateObjectMessage createObjectMessage)
                 {
@@ -137,7 +137,7 @@ public class SyncServer : SyncNode
 
             if (id == fromClientId) continue;   // Don't send back to the client that sent this msg
             
-            conn.SendMessage<ITcpMessage>(Connection.ChannelType.Control, msg);
+            conn.SendMessage<IControlMessage>(Connection.ChannelType.Control, msg);
         }
     }
 
@@ -177,7 +177,7 @@ public class SyncServer : SyncNode
         Objects[id] = obj;
 
         // Notify object creation to all clients
-        ITcpMessage msg = new ObjectCreatedMessage { ObjectId = id, OriginalNodeId = originalNodeId };
+        IControlMessage msg = new ObjectCreatedMessage { ObjectId = id, OriginalNodeId = originalNodeId };
         SendToAllClients(msg);
 
         Logger.Debug("Server", $"Created ObjectId={id}");
@@ -194,7 +194,7 @@ public class SyncServer : SyncNode
 
         Objects.Remove(id);
         
-        ITcpMessage msg = new ObjectDeletedMessage { ObjectId = id };
+        IControlMessage msg = new ObjectDeletedMessage { ObjectId = id };
         SendToAllClients(msg);
 
         Logger.Debug("Server", $"Deleted ObjectId={id}");
@@ -207,7 +207,7 @@ public class SyncServer : SyncNode
         var sid = symbolIdRegistry.Create();
         SymbolTable.Add(symbol, sid);
 
-        ITcpMessage msg = new SymbolRegisteredMessage { Symbol = symbol, SymbolId = sid };
+        IControlMessage msg = new SymbolRegisteredMessage { Symbol = symbol, SymbolId = sid };
         SendToAllClients(msg);
 
         Logger.Debug("Server", $"Registered Symbol {symbol}->{sid}");
@@ -215,11 +215,11 @@ public class SyncServer : SyncNode
         return sid;
     }
 
-    void SendToAllClients(ITcpMessage msg)
+    void SendToAllClients(IControlMessage msg)
     {
         foreach (Connection conn in clients.Values)
         {
-            conn.SendMessage<ITcpMessage>(Connection.ChannelType.Control, msg);
+            conn.SendMessage<IControlMessage>(Connection.ChannelType.Control, msg);
         }
     }
 

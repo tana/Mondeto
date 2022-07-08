@@ -88,8 +88,8 @@ public abstract class SyncNode : IDisposable
             uint connNodeId = connPair.Key;
             Connection conn = connPair.Value;
             
-            ISyncMessage msg;
-            while (conn.TryReceiveMessage<ISyncMessage>(Connection.ChannelType.Sync, out msg))
+            IDatagramMessage msg;
+            while (conn.TryReceiveMessage<IDatagramMessage>(Connection.ChannelType.Sync, out msg))
             {
                 switch (msg)
                 {
@@ -145,7 +145,7 @@ public abstract class SyncNode : IDisposable
                 Tick = Tick,
                 ObjectUpdates = updates
             };
-            conn.SendMessage<ISyncMessage>(Connection.ChannelType.Sync, msg);
+            conn.SendMessage<IDatagramMessage>(Connection.ChannelType.Sync, msg);
         }
 
         Tick += 1;
@@ -202,7 +202,7 @@ public abstract class SyncNode : IDisposable
         }
 
         // Notify the sender that this node have processed the message
-        conn.SendMessage<ISyncMessage>(
+        conn.SendMessage<IDatagramMessage>(
             Connection.ChannelType.Sync,
             new AckMessage { AcknowledgedTick = msg.Tick }
         );
@@ -356,7 +356,7 @@ public abstract class SyncNode : IDisposable
     {
         foreach (Connection conn in Connections.Values)
         {
-            conn.SendMessage<ITcpMessage>(Connection.ChannelType.Control, new EventSentMessage {
+            conn.SendMessage<IControlMessage>(Connection.ChannelType.Control, new EventSentMessage {
                 Name = name,
                 Sender = sender,
                 Receiver = receiver,

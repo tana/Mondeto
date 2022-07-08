@@ -44,7 +44,7 @@ public class SyncClient : SyncNode
         {
             nodeIdCancel.ThrowIfCancellationRequested();
             // FIXME: this message has not meaningful but seems working as a kind of "ready"
-            if (await conn.ReceiveMessageAsync<ITcpMessage>(Connection.ChannelType.Control, nodeIdCancel) is NodeIdMessage nodeIdMsg)
+            if (await conn.ReceiveMessageAsync<IControlMessage>(Connection.ChannelType.Control, nodeIdCancel) is NodeIdMessage nodeIdMsg)
             {
                 Logger.Debug("Client", $"Received NodeId={nodeIdMsg.NodeId}");
                 break;
@@ -59,8 +59,8 @@ public class SyncClient : SyncNode
     protected override void ProcessControlMessages()
     {
         if (!conn.Connected) return;
-        ITcpMessage msg;
-        while (conn.TryReceiveMessage<ITcpMessage>(Connection.ChannelType.Control, out msg))
+        IControlMessage msg;
+        while (conn.TryReceiveMessage<IControlMessage>(Connection.ChannelType.Control, out msg))
         {
             HandleTcpMessage(msg);
         }
@@ -69,7 +69,7 @@ public class SyncClient : SyncNode
         ProcessAudioMessages();
     }
 
-    void HandleTcpMessage(ITcpMessage msg)
+    void HandleTcpMessage(IControlMessage msg)
     {
         switch (msg)
         {
@@ -136,7 +136,7 @@ public class SyncClient : SyncNode
     public override async Task<uint> CreateObject()
     {
         Logger.Debug("Client", "Creating object");
-        conn.SendMessage<ITcpMessage>(Connection.ChannelType.Control, new CreateObjectMessage());
+        conn.SendMessage<IControlMessage>(Connection.ChannelType.Control, new CreateObjectMessage());
         var tcs = new TaskCompletionSource<uint>();
         lock (creationQueue)
         {
@@ -151,7 +151,7 @@ public class SyncClient : SyncNode
     public override void DeleteObject(uint id)
     {
         Logger.Debug("Client", $"Deleting ObjectId={id}");
-        conn.SendMessage<ITcpMessage>(Connection.ChannelType.Control, new DeleteObjectMessage { ObjectId = id });
+        conn.SendMessage<IControlMessage>(Connection.ChannelType.Control, new DeleteObjectMessage { ObjectId = id });
     }
 
     protected override async Task<uint> InternSymbol(string symbol)
@@ -162,7 +162,7 @@ public class SyncClient : SyncNode
             return SymbolTable.Forward[symbol];
         }
 
-        conn.SendMessage<ITcpMessage>(Connection.ChannelType.Control, new RegisterSymbolMessage { Symbol = symbol });
+        conn.SendMessage<IControlMessage>(Connection.ChannelType.Control, new RegisterSymbolMessage { Symbol = symbol });
 
         return await symbolNotifier.Wait(symbol);
     }
