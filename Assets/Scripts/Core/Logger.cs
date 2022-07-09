@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 
 namespace Mondeto.Core
 {
@@ -28,6 +29,8 @@ public class Logger
     public delegate void LogHandler(LogType type, string component, string msg);
     public static event LogHandler OnLog;
 
+    static ConcurrentQueue<LogEntry> queue = new();
+
     static Dictionary<LogType, string> TypeString = new Dictionary<LogType, String> {
         { LogType.Debug, "DBG" },
         { LogType.Log, "LOG" },
@@ -38,7 +41,23 @@ public class Logger
 
     public static void Write(LogType type, string component, string msg)
     {
-        OnLog?.Invoke(type, component, msg);
+        if (OnLog == null)
+        {
+            // Store log entries when output is not available
+            queue.Enqueue(new LogEntry(type, component, msg));
+        }
+        else
+        {
+            // Write stored log entries
+            LogEntry entry;
+            while (queue.TryDequeue(out entry))
+            {
+                OnLog?.Invoke(entry.Type, entry.Component, entry.Message);
+            }
+
+            // New log entry is directly written
+            OnLog?.Invoke(type, component, msg);
+        }
     }
     
     public static void Debug(string component, string msg) => Write(LogType.Debug, component, msg);
