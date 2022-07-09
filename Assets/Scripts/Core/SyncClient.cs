@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Mondeto.Core.QuicWrapper;
 
 namespace Mondeto.Core
 {
@@ -18,16 +19,24 @@ public class SyncClient : SyncNode
 
     const int NodeIdRetryTimeout = 10000;
 
-    public SyncClient(string signalerUri)
+    string serverHost;
+    int serverPort;
+
+    public SyncClient(string serverHost, int serverPort)
         : base()
     {
-        conn = new Connection(null);
-        Connections[0] = conn;
+        this.serverHost = serverHost;
+        this.serverPort = serverPort;
     }
 
     public override async Task Initialize()
     {
-        throw new System.NotImplementedException();
+        QuicConnection quicConnection = new();
+        quicConnection.Start(new byte[][] { SyncNode.Alpn }, serverHost, serverPort);
+
+        conn = new Connection(quicConnection);  // Disposal of QuicConnection is done by Connection
+        Connections[0] = conn;
+
         /*
         await Task.Delay(1000);
         NodeId = await signaler.ConnectAsync();

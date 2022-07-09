@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.InteropServices;
-using System.Text;
 using Microsoft.Quic;
 
 namespace Mondeto.Core.QuicWrapper
@@ -45,8 +44,8 @@ unsafe class QuicConfiguration : IDisposable
 
     public void SetCredentials(string privateKeyPath, string certificatePath)
     {
-        fixed (byte* privateKeyCStr = ToCString(privateKeyPath))
-        fixed (byte* certificateCStr = ToCString(certificatePath))
+        fixed (byte* privateKeyCStr = QuicLibrary.ToCString(privateKeyPath))
+        fixed (byte* certificateCStr = QuicLibrary.ToCString(certificatePath))
         {
             QUIC_CERTIFICATE_FILE certFile = new();
             certFile.PrivateKeyFile = (sbyte*)privateKeyCStr;
@@ -68,17 +67,6 @@ unsafe class QuicConfiguration : IDisposable
         {
             QuicLibrary.ApiTable->ConfigurationClose(Handle);
         }
-    }
-
-    // Convert a C# string to null-terminated UTF-8 string
-    static byte[] ToCString(string str)
-    {
-        int byteCount = Encoding.UTF8.GetByteCount(str);
-        byte[] buf = new byte[byteCount + 1];
-        Encoding.UTF8.GetBytes(str, 0, str.Length, buf, 0);
-        buf[byteCount] = 0;
-
-        return buf;
     }
 }
 

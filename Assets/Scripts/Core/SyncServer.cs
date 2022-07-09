@@ -25,9 +25,16 @@ public class SyncServer : SyncNode
 
     QuicListener listener;
 
-    public SyncServer(string signalerUri)
+    IPEndPoint endPoint;
+    string privateKeyPath;
+    string certificatePath;
+
+    public SyncServer(IPEndPoint endPoint, string privateKeyPath, string certificatePath)
         : base()
     {
+        this.endPoint = endPoint;
+        this.privateKeyPath = privateKeyPath;
+        this.certificatePath = certificatePath;
     }
 
     public override async Task Initialize()
@@ -50,12 +57,7 @@ public class SyncServer : SyncNode
         };
 
         // Start accepting client connection
-        listener.Start(
-            new byte[][] { SyncNode.Alpn },
-            new IPEndPoint(IPAddress.Any, 15903),   // TODO: addr and port from settings
-            @"C:\Users\tanaka\test-cert\test.key",  // TODO: load from settings
-            @"C:\Users\tanaka\test-cert\test.crt"   // TODO: load from settings
-        );
+        listener.Start(new byte[][] { SyncNode.Alpn }, endPoint, privateKeyPath, certificatePath);
     }
 
     async Task InitClient(Connection conn, uint clientId)

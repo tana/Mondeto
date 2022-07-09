@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Net;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 using Mondeto.Core;
@@ -47,11 +48,13 @@ public class SyncBehaviour : MonoBehaviour
 
         if (IsServer)
         {
-            Node = new SyncServer(Settings.Instance.SignalerUrlForServer);
+            // TODO: load from settings
+            Node = new SyncServer(new IPEndPoint(IPAddress.Any, 15902), @"C:\Users\tanaka\test-cert\test.key", @"C:\Users\tanaka\test-cert\test.crt");
         }
         else
         {
-            Node = new SyncClient(Settings.Instance.SignalerUrlForClient);
+            // TODO: load from settings
+            Node = new SyncClient("localhost", 15902);
         }
 
         Node.ObjectCreated += OnObjectCreated;

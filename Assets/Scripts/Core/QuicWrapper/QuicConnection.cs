@@ -11,9 +11,11 @@ unsafe class QuicConnection : IDisposable
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     delegate int CallbackDelegate(QUIC_HANDLE* connection, void* context, QUIC_CONNECTION_EVENT* evt);
 
-    public delegate void DatagramReceivedEventHandler(byte[] data);
+    public delegate void DatagramReceivedEventHandler(QuicConnection connection, byte[] data);
+    public delegate void ConnectedEventHandler(QuicConnection connection);
 
     public event DatagramReceivedEventHandler DatagramReceived;
+    public event ConnectedEventHandler Connected;
 
     public QUIC_HANDLE* Handle = null;
 
@@ -21,6 +23,22 @@ unsafe class QuicConnection : IDisposable
 
     static readonly CallbackDelegate cbDelegate = Callback; // This delegate is never garbage-collected
 
+    // Create a QuicConnection from scratch (for clients)
+    public QuicConnection()
+    {
+        var cbPtr = (delegate* unmanaged[Cdecl]<QUIC_HANDLE*, void*, QUIC_CONNECTION_EVENT*, int>)Marshal.GetFunctionPointerForDelegate<CallbackDelegate>(cbDelegate);
+
+        fixed (QUIC_HANDLE** handleAddr = &Handle)
+        {
+            MsQuic.ThrowIfFailure(
+                QuicLibrary.ApiTable->ConnectionOpen(QuicLibrary.Registration, cbPtr, null, handleAddr)
+            );
+        }
+
+        instances[(IntPtr)Handle] = this;
+    }
+
+    // Create a QuicConnection from an existing handle (used in servers to accept clients)
     public QuicConnection(QUIC_HANDLE* handle)
     {
         Handle = handle;
@@ -38,6 +56,23 @@ unsafe class QuicConnection : IDisposable
             QuicLibrary.ApiTable->ConnectionClose(Handle);
 
             instances.TryRemove((IntPtr)Handle, out _);
+        }
+    }
+
+    public void Start(byte[][] alpns, string serverName, int serverPort)
+    {
+        using var config = new QuicConfiguration(alpns, true);
+
+        fixed (byte* serverNameCStr = QuicLibrary.ToCString(serverName))
+        {
+            MsQuic.ThrowIfFailure(
+                QuicLibrary.ApiTable->ConnectionStart(
+                    Handle,
+                    config.Handle,
+                    (ushort)MsQuic.QUIC_ADDRESS_FAMILY_UNSPEC,
+                    (sbyte*)serverNameCStr, (ushort)serverPort
+                )
+            );
         }
     }
 
@@ -69,6 +104,10 @@ unsafe class QuicConnection : IDisposable
     {
         switch (evt->Type)
         {
+            case QUIC_CONNECTION_EVENT_TYPE.QUIC_CONNECTION_EVENT_CONNECTED:
+                Connected?.Invoke(this);
+                break;
+
             case QUIC_CONNECTION_EVENT_TYPE.QUIC_CONNECTION_EVENT_DATAGRAM_SEND_STATE_CHANGED:
                 if (evt->DATAGRAM_SEND_STATE_CHANGED.State == QUIC_DATAGRAM_SEND_STATE.QUIC_DATAGRAM_SEND_SENT || evt->DATAGRAM_SEND_STATE_CHANGED.State == QUIC_DATAGRAM_SEND_STATE.QUIC_DATAGRAM_SEND_CANCELED)
                 {
@@ -80,7 +119,7 @@ unsafe class QuicConnection : IDisposable
             case QUIC_CONNECTION_EVENT_TYPE.QUIC_CONNECTION_EVENT_DATAGRAM_RECEIVED:
                 byte[] data = new byte[evt->DATAGRAM_RECEIVED.Buffer->Length];
                 Marshal.Copy((IntPtr)evt->DATAGRAM_RECEIVED.Buffer->Buffer, data, 0, data.Length);
-                DatagramReceived?.Invoke(data);
+                DatagramReceived?.Invoke(this, data);
                 break;
         }
 

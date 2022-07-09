@@ -59,11 +59,6 @@ public abstract class SyncNode : IDisposable
 
     public SyncNode()
     {
-        if (!QuicLibrary.IsReady)
-        {
-            QuicLibrary.Initialize();
-        }
-
         // Register simple (Unity-independent) tags
         RegisterTag("grabbable", _ => new GrabbableTag());
         RegisterTag("objectMoveButton", _ => new ObjectMoveButtonTag());
@@ -429,7 +424,6 @@ public abstract class SyncNode : IDisposable
 
     public virtual void Dispose()
     {
-        QuicLibrary.Close();
     }
 }
 

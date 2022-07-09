@@ -2,6 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using Microsoft.Quic;
 
 namespace Mondeto.Core.QuicWrapper
@@ -15,8 +16,10 @@ unsafe class QuicLibrary
 
     public static bool IsReady { get => ApiTable != null; }
 
+    static QuicLibrary Instance = new QuicLibrary();
+
     // Initialize MsQuic library
-    public static void Initialize()
+    QuicLibrary()
     {
         ApiTable = MsQuic.Open();
 
@@ -78,6 +81,17 @@ unsafe class QuicLibrary
         {
             throw new ArgumentException("Unknown address family");
         }
+    }
+
+    // Convert a C# string to null-terminated UTF-8 string
+    public static byte[] ToCString(string str)
+    {
+        int byteCount = Encoding.UTF8.GetByteCount(str);
+        byte[] buf = new byte[byteCount + 1];
+        Encoding.UTF8.GetBytes(str, 0, str.Length, buf, 0);
+        buf[byteCount] = 0;
+
+        return buf;
     }
 }
 
