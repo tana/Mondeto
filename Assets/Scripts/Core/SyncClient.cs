@@ -21,7 +21,7 @@ public class SyncClient : SyncNode
     public SyncClient(string signalerUri)
         : base()
     {
-        conn = new Connection();
+        conn = new Connection(null);
         Connections[0] = conn;
     }
 

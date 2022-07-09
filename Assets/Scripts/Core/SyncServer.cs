@@ -15,6 +15,8 @@ public class SyncServer : SyncNode
 
     public override uint NodeId { get; protected set; } = ServerNodeId; // Node ID for server is always 0
 
+    IdRegistry nodeIdRegistry = new(ServerNodeId + 1);    // ServerNodeId (=0) is not assigned for clients
+
     IdRegistry objectIdRegistry = new IdRegistry(WorldObjectId + 1);
 
     IdRegistry symbolIdRegistry = new IdRegistry(0);
@@ -36,8 +38,15 @@ public class SyncServer : SyncNode
 
         listener = new QuicListener();
 
-        listener.ClientConnected += (connection, ep) => {
-            connection.Dispose();
+        listener.ClientConnected += async (quicConnection, ep) => {
+            // Create connection for a new client
+            var conn = new Connection(quicConnection);
+
+            uint clientNodeId = nodeIdRegistry.Create();  // Assign a new node ID
+            Logger.Log("Server", $"Accepting connection from {ep} as NodeId {clientNodeId}");
+            await conn.SetupAsync(false, clientNodeId);
+
+            await InitClient(conn, clientNodeId);
         };
 
         // Start accepting client connection
@@ -61,7 +70,6 @@ public class SyncServer : SyncNode
         await Task.Delay(1000); // FIXME
 
         // Connection procedures
-        // FIXME: this message has not meaningful but seems working as a kind of "ready"
         conn.SendMessage<IControlMessage>(Connection.ChannelType.Control, new NodeIdMessage { NodeId = clientId });
 
         // Send existing objects

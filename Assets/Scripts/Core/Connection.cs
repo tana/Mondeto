@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using MessagePack;
 using System.Threading.Channels;
+using Mondeto.Core.QuicWrapper;
 
 namespace Mondeto.Core
 {
@@ -21,7 +22,7 @@ public class Connection : IDisposable
     public delegate void OnDisconnectHandler();
     public event OnDisconnectHandler OnDisconnect;
 
-    // PeerConnection pc;
+    QuicConnection quicConnection;
 
     // DataChannel[] channels = new DataChannel[4];
     ChannelType[] channelTypes = { ChannelType.Sync, ChannelType.Control, ChannelType.Blob, ChannelType.Audio };
@@ -33,11 +34,11 @@ public class Connection : IDisposable
     //  (see https://yotiky.hatenablog.com/entry/unity_channels )
     Channel<byte[]>[] threadChannels;
 
-    public Connection()
+    internal Connection(QuicConnection quicConnection)
     {
-        /*
-        pc = new PeerConnection();
+        this.quicConnection = quicConnection;
 
+        /*
         threadChannels = new Channel<byte[]>[channels.Length];
         for (int i = 0; i < channels.Length; i++)
         {
@@ -46,8 +47,12 @@ public class Connection : IDisposable
         */
     }
 
-    public async Task SetupAsync(Signaler signaler, bool isServer, uint clientNodeId = 0)
+    public async Task SetupAsync(bool isServer, uint clientNodeId = 0)
     {
+        if (isServer)
+        {
+        }
+
         /*
         await pc.InitializeAsync(new PeerConnectionConfiguration {
             IceServers = new List<IceServer> {
@@ -192,6 +197,11 @@ public class Connection : IDisposable
         */
     }
 
+    public void SendControlMessage(IControlMessage msg)
+    {
+        // TODO:
+    }
+
     // Generic type specification is necessary to specify msg is interface type, not message type itself
     public void SendMessage<T>(ChannelType type, T msg)
     {
@@ -222,10 +232,7 @@ public class Connection : IDisposable
 
     public void Dispose()
     {
-        /*
-        pc.Close();
-        pc.Dispose();
-        */
+        quicConnection.Dispose();
     }
 }
 
