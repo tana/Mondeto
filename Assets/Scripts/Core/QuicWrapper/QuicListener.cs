@@ -2,7 +2,6 @@ using System;
 using System.Runtime.InteropServices;
 using System.Collections.Concurrent;
 using System.Net;
-using System.Net.Sockets;
 using Microsoft.Quic;
 
 namespace Mondeto.Core.QuicWrapper
@@ -13,7 +12,13 @@ unsafe class QuicListener : IDisposable
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     delegate int CallbackDelegate(QUIC_HANDLE* listener, void* context, QUIC_LISTENER_EVENT* evt);
 
-    QUIC_HANDLE* handle = null;
+    public delegate void ClientConnectedEventHandler(QuicConnection connection, IPEndPoint endPoint);
+    
+    public event ClientConnectedEventHandler ClientConnected;
+
+    public QUIC_HANDLE* Handle = null;
+
+    QuicConfiguration configuration;
 
     static ConcurrentDictionary<IntPtr, QuicListener> instances = new();
 
@@ -23,28 +28,37 @@ unsafe class QuicListener : IDisposable
     {
         var cbPtr = (delegate* unmanaged[Cdecl]<QUIC_HANDLE*, void*, QUIC_LISTENER_EVENT*, int>)Marshal.GetFunctionPointerForDelegate<CallbackDelegate>(cbDelegate);
 
-        fixed (QUIC_HANDLE** handleAddr = &handle)
+        fixed (QUIC_HANDLE** handleAddr = &Handle)
         {
             MsQuic.ThrowIfFailure(
                 QuicLibrary.ApiTable->ListenerOpen(QuicLibrary.Registration, cbPtr, null, handleAddr)
             );
         }
 
-        instances[(IntPtr)handle] = this;
+        instances[(IntPtr)Handle] = this;
     }
 
     public void Dispose()
     {
-        if (handle != null)
+        if (configuration != null)
         {
-            QuicLibrary.ApiTable->ListenerClose(handle);
+            configuration.Dispose();
+        }
 
-            instances.TryRemove((IntPtr)handle, out _);
+        if (Handle != null)
+        {
+            QuicLibrary.ApiTable->ListenerClose(Handle);
+
+            instances.TryRemove((IntPtr)Handle, out _);
         }
     }
 
-    public void Start(byte[][] alpns, IPEndPoint ep)
+    public void Start(byte[][] alpns, IPEndPoint ep, string privateKeyPath, string certificatePath)
     {
+        // Create configuration for connections
+        configuration = new QuicConfiguration(alpns, true);
+        configuration.SetCredentials(privateKeyPath, certificatePath);
+
         // Convert ALPNs
         QUIC_BUFFER* alpnBuffers = stackalloc QUIC_BUFFER[alpns.Length];
         for (int i = 0; i < alpns.Length; i++)
@@ -60,14 +74,14 @@ unsafe class QuicListener : IDisposable
 
         // Start listener
         MsQuic.ThrowIfFailure(
-            QuicLibrary.ApiTable->ListenerStart(handle, alpnBuffers, (uint)alpns.Length, &addr)
+            QuicLibrary.ApiTable->ListenerStart(Handle, alpnBuffers, (uint)alpns.Length, &addr)
         );
 
         // Get IP address and port actually listening on
         QuicAddr localAddr;
         uint localAddrSize = (uint)sizeof(QuicAddr);
         MsQuic.ThrowIfFailure(
-            QuicLibrary.ApiTable->GetParam(handle, MsQuic.QUIC_PARAM_LISTENER_LOCAL_ADDRESS, &localAddrSize, &localAddr)
+            QuicLibrary.ApiTable->GetParam(Handle, MsQuic.QUIC_PARAM_LISTENER_LOCAL_ADDRESS, &localAddrSize, &localAddr)
         );
         Logger.Debug("QuicListener", "Listening on " + QuicLibrary.QuicAddrToEndPoint(localAddr));
     }
@@ -77,7 +91,14 @@ unsafe class QuicListener : IDisposable
         switch (evt->Type)
         {
             case QUIC_LISTENER_EVENT_TYPE.QUIC_LISTENER_EVENT_NEW_CONNECTION:
-                Logger.Debug("QuicListener", "New connection");
+                IPEndPoint remoteEP = QuicLibrary.QuicAddrToEndPoint(*evt->NEW_CONNECTION.Info->RemoteAddress);
+                QUIC_HANDLE* connectionHandle = evt->NEW_CONNECTION.Connection;
+                Logger.Debug("QuicListener", "New connection from " + remoteEP);
+                MsQuic.ThrowIfFailure(
+                    QuicLibrary.ApiTable->ConnectionSetConfiguration(connectionHandle, configuration.Handle)
+                );
+                QuicConnection connection = new QuicConnection(connectionHandle);
+                ClientConnected?.Invoke(connection, remoteEP);
                 break;
             case QUIC_LISTENER_EVENT_TYPE.QUIC_LISTENER_EVENT_STOP_COMPLETE:
                 Logger.Debug("QuicListener", "Listener stop complete");

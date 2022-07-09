@@ -36,8 +36,17 @@ public class SyncServer : SyncNode
 
         listener = new QuicListener();
 
+        listener.ClientConnected += (connection, ep) => {
+            connection.Dispose();
+        };
+
         // Start accepting client connection
-        listener.Start(new byte[][] { SyncNode.Alpn }, new IPEndPoint(IPAddress.Any, 15903));   // TODO: addr and port from settings
+        listener.Start(
+            new byte[][] { SyncNode.Alpn },
+            new IPEndPoint(IPAddress.Any, 15903),   // TODO: addr and port from settings
+            @"C:\Users\tanaka\test-cert\test.key",  // TODO: load from settings
+            @"C:\Users\tanaka\test-cert\test.crt"   // TODO: load from settings
+        );
     }
 
     async Task InitClient(Connection conn, uint clientId)

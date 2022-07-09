@@ -66,13 +66,13 @@ unsafe class QuicLibrary
         {
             byte[] addrBytes = new byte[4];
             Marshal.Copy((IntPtr)addr.Ipv4.sin_addr, addrBytes, 0, 4);
-            return new IPEndPoint(new IPAddress(addrBytes), IPAddress.NetworkToHostOrder((short)addr.Ipv4.sin_port));
+            return new IPEndPoint(new IPAddress(addrBytes), (ushort)IPAddress.NetworkToHostOrder((short)addr.Ipv4.sin_port));
         }
         else if (addr.Family == MsQuic.QUIC_ADDRESS_FAMILY_INET6)   // IPv6
         {
             byte[] addrBytes = new byte[16];
             Marshal.Copy((IntPtr)addr.Ipv6.sin6_addr, addrBytes, 0, 16);
-            return new IPEndPoint(new IPAddress(addrBytes), IPAddress.NetworkToHostOrder((short)addr.Ipv6.sin6_port));
+            return new IPEndPoint(new IPAddress(addrBytes), (ushort)IPAddress.NetworkToHostOrder((short)addr.Ipv6.sin6_port));
         }
         else
         {
