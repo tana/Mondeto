@@ -56,26 +56,34 @@ unsafe class QuicListener : IDisposable
         }
 
         // Convert IP address and port
-        QuicAddr addr = new();
-        if (ep.Address.AddressFamily == AddressFamily.InterNetwork) // IPv4
-        {
-            addr.Family = MsQuic.QUIC_ADDRESS_FAMILY_INET;
-            Marshal.Copy(ep.Address.GetAddressBytes(), 0, (IntPtr)addr.Ipv4.sin_addr, 4);
-            addr.Ipv4.sin_port = (ushort)IPAddress.HostToNetworkOrder((short)ep.Port);
-        } else if (ep.Address.AddressFamily == AddressFamily.InterNetworkV6)    // IPv6
-        {
-            addr.Family = MsQuic.QUIC_ADDRESS_FAMILY_INET6;
-            Marshal.Copy(ep.Address.GetAddressBytes(), 0, (IntPtr)addr.Ipv6.sin6_addr, 16);
-            addr.Ipv6.sin6_port = (ushort)IPAddress.HostToNetworkOrder((short)ep.Port);
-        }
+        QuicAddr addr = QuicLibrary.EndPointToQuicAddr(ep);
 
+        // Start listener
         MsQuic.ThrowIfFailure(
             QuicLibrary.ApiTable->ListenerStart(handle, alpnBuffers, (uint)alpns.Length, &addr)
         );
+
+        // Get IP address and port actually listening on
+        QuicAddr localAddr;
+        uint localAddrSize = (uint)sizeof(QuicAddr);
+        MsQuic.ThrowIfFailure(
+            QuicLibrary.ApiTable->GetParam(handle, MsQuic.QUIC_PARAM_LISTENER_LOCAL_ADDRESS, &localAddrSize, &localAddr)
+        );
+        Logger.Debug("QuicListener", "Listening on " + QuicLibrary.QuicAddrToEndPoint(localAddr));
     }
 
     int HandleEvent(QUIC_LISTENER_EVENT* evt)
     {
+        switch (evt->Type)
+        {
+            case QUIC_LISTENER_EVENT_TYPE.QUIC_LISTENER_EVENT_NEW_CONNECTION:
+                Logger.Debug("QuicListener", "New connection");
+                break;
+            case QUIC_LISTENER_EVENT_TYPE.QUIC_LISTENER_EVENT_STOP_COMPLETE:
+                Logger.Debug("QuicListener", "Listener stop complete");
+                break;
+        }
+
         return MsQuic.QUIC_STATUS_SUCCESS;
     }
 
