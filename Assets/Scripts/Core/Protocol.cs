@@ -334,7 +334,6 @@ public class FieldUpdate
 }
 
 // Messages sent through control stream (reliable communication channel)
-[MessagePack.Union(0, typeof(HelloMessage))]
 [MessagePack.Union(1, typeof(NodeIdMessage))]
 [MessagePack.Union(2, typeof(CreateObjectMessage))]
 [MessagePack.Union(3, typeof(ObjectCreatedMessage))]
@@ -345,14 +344,6 @@ public class FieldUpdate
 [MessagePack.Union(8, typeof(EventSentMessage))]
 public interface IControlMessage
 {
-}
-
-// (Client ot Server)
-[MessagePackObject]
-public class HelloMessage : IControlMessage
-{
-    [Key(0)]
-    public int UdpPort;
 }
 
 // (Server to Client) Tell the Node ID of a client

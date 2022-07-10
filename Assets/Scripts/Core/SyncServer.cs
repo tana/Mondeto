@@ -51,7 +51,7 @@ public class SyncServer : SyncNode
 
             uint clientNodeId = nodeIdRegistry.Create();  // Assign a new node ID
             Logger.Log("Server", $"Accepting connection from {ep} as NodeId {clientNodeId}");
-            await conn.SetupAsync(false, clientNodeId);
+            await conn.SetupServerAsync();
 
             await InitClient(conn, clientNodeId);
         };
@@ -65,14 +65,12 @@ public class SyncServer : SyncNode
         lock (clients)
         {
             clients[clientId] = conn;
-            Logger.Log("Server", $"Registered client NodeId={clientId}");
         }
 
-        // NodeIdMessage have to be sent after client become ready to receive it.
-        await Task.Delay(1000); // FIXME
+        Logger.Log("Server", $"Registered client NodeId={clientId}");
 
-        // Connection procedures
-        conn.SendMessage<IControlMessage>(Connection.ChannelType.Control, new NodeIdMessage { NodeId = clientId });
+        // Tell node id to the client
+        conn.SendControlMessage(new NodeIdMessage { NodeId = clientId });
 
         // Send existing objects
         foreach (var pair in Objects)
@@ -80,7 +78,7 @@ public class SyncServer : SyncNode
             var id = pair.Key;
             var obj = pair.Value;
             IControlMessage msg = new ObjectCreatedMessage { ObjectId = id, OriginalNodeId = obj.OriginalNodeId };
-            conn.SendMessage<IControlMessage>(Connection.ChannelType.Control, msg);
+            conn.SendControlMessage(msg);
         }
 
         var cancelSource = new CancellationTokenSource();

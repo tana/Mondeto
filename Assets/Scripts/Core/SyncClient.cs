@@ -22,40 +22,44 @@ public class SyncClient : SyncNode
     string serverHost;
     int serverPort;
 
-    public SyncClient(string serverHost, int serverPort)
+    bool noCertValidation;
+
+    public SyncClient(string serverHost, int serverPort, bool noCertValidation = false)
         : base()
     {
         this.serverHost = serverHost;
         this.serverPort = serverPort;
+        this.noCertValidation = noCertValidation;
+
+        if (this.noCertValidation)
+        {
+            Logger.Log("SyncClient", "Skipping TLS certificate validation");
+        }
     }
 
     public override async Task Initialize()
     {
+        var connectCancelSource = new CancellationTokenSource();
+        connectCancelSource.CancelAfter(NodeIdRetryTimeout);
+        var connectCancel = connectCancelSource.Token;
+
         QuicConnection quicConnection = new();
-        quicConnection.Start(new byte[][] { SyncNode.Alpn }, serverHost, serverPort);
+        quicConnection.Start(new byte[][] { SyncNode.Alpn }, serverHost, serverPort, noCertValidation);
 
         conn = new Connection(quicConnection);  // Disposal of QuicConnection is done by Connection
         Connections[0] = conn;
 
-        /*
-        await Task.Delay(1000);
-        NodeId = await signaler.ConnectAsync();
-        Logger.Log("Client", "Connected to signaling server");
-        Logger.Debug("Client", $"My NodeId is {NodeId}");
-        await Task.Delay(1000);
-        await conn.SetupAsync(signaler, false);
-        Logger.Log("Client", "Connected to server");
+        await conn.SetupClientAsync(connectCancel);
 
-        var nodeIdCancelSource = new CancellationTokenSource();
-        nodeIdCancelSource.CancelAfter(NodeIdRetryTimeout);
-        var nodeIdCancel = nodeIdCancelSource.Token;
+        // TODO: authentication (e.g. password)
 
         while (true)
         {
-            nodeIdCancel.ThrowIfCancellationRequested();
-            // FIXME: this message has not meaningful but seems working as a kind of "ready"
-            if (await conn.ReceiveMessageAsync<IControlMessage>(Connection.ChannelType.Control, nodeIdCancel) is NodeIdMessage nodeIdMsg)
+            connectCancel.ThrowIfCancellationRequested();
+
+            if (await conn.ReceiveControlMessageAsync(connectCancel) is NodeIdMessage nodeIdMsg)
             {
+                NodeId = nodeIdMsg.NodeId;
                 Logger.Debug("Client", $"Received NodeId={nodeIdMsg.NodeId}");
                 break;
             }
@@ -64,7 +68,6 @@ public class SyncClient : SyncNode
         var cancelSource = new CancellationTokenSource();
         conn.OnDisconnect += () => cancelSource.Cancel();
         var _ = ProcessBlobMessagesAsync(ServerNodeId, conn, cancelSource.Token);
-        */
     }
 
     protected override void ProcessControlMessages()
@@ -193,7 +196,10 @@ public class SyncClient : SyncNode
 
     public override void Dispose()
     {
-        conn.Dispose();
+        if (conn != null)
+        {
+            conn.Dispose();
+        }
 
         base.Dispose();
     }

@@ -13,9 +13,11 @@ unsafe class QuicConnection : IDisposable
 
     public delegate void DatagramReceivedEventHandler(QuicConnection connection, byte[] data);
     public delegate void ConnectedEventHandler(QuicConnection connection);
+    public delegate void PeerStreamStartedEventHandler(QuicConnection connection, QuicStream stream);
 
     public event DatagramReceivedEventHandler DatagramReceived;
     public event ConnectedEventHandler Connected;
+    public event PeerStreamStartedEventHandler PeerStreamStarted;
 
     public QUIC_HANDLE* Handle = null;
 
@@ -51,6 +53,7 @@ unsafe class QuicConnection : IDisposable
 
     public void Dispose()
     {
+        Logger.Debug("QuicConnection", "Closing");
         if (Handle != null)
         {
             QuicLibrary.ApiTable->ConnectionClose(Handle);
@@ -59,9 +62,9 @@ unsafe class QuicConnection : IDisposable
         }
     }
 
-    public void Start(byte[][] alpns, string serverName, int serverPort)
+    public void Start(byte[][] alpns, string serverName, int serverPort, bool noCertValidation = false)
     {
-        using var config = new QuicConfiguration(alpns, true);
+        using var config = QuicConfiguration.CreateClientConfiguration(alpns, true, 1, noCertValidation);
 
         fixed (byte* serverNameCStr = QuicLibrary.ToCString(serverName))
         {
@@ -100,8 +103,23 @@ unsafe class QuicConnection : IDisposable
         );
     }
 
+    public QuicStream OpenStream()
+    {
+        QUIC_HANDLE* stream;
+        MsQuic.ThrowIfFailure(
+            QuicLibrary.ApiTable->StreamOpen(
+                Handle,
+                QUIC_STREAM_OPEN_FLAGS.QUIC_STREAM_OPEN_FLAG_NONE,  // bidirectional (default)
+                QuicStream.CallbackFunctionPointer, null,
+                &stream
+            )
+        );
+        return new QuicStream(stream, false);
+    }
+
     int HandleEvent(QUIC_CONNECTION_EVENT* evt)
     {
+        //Logger.Debug("QuicConnection", $"{(IntPtr)Handle} {evt->Type}");
         switch (evt->Type)
         {
             case QUIC_CONNECTION_EVENT_TYPE.QUIC_CONNECTION_EVENT_CONNECTED:
@@ -120,6 +138,11 @@ unsafe class QuicConnection : IDisposable
                 byte[] data = new byte[evt->DATAGRAM_RECEIVED.Buffer->Length];
                 Marshal.Copy((IntPtr)evt->DATAGRAM_RECEIVED.Buffer->Buffer, data, 0, data.Length);
                 DatagramReceived?.Invoke(this, data);
+                break;
+            
+            case QUIC_CONNECTION_EVENT_TYPE.QUIC_CONNECTION_EVENT_PEER_STREAM_STARTED:
+                var stream = new QuicStream(evt->PEER_STREAM_STARTED.Stream, true);
+                PeerStreamStarted?.Invoke(this, stream);
                 break;
         }
 

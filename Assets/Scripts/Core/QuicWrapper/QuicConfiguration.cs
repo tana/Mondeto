@@ -9,7 +9,7 @@ unsafe class QuicConfiguration : IDisposable
 {
     public QUIC_HANDLE* Handle;
 
-    public QuicConfiguration(byte[][] alpns, bool datagramReceiveEnabled)
+    QuicConfiguration(byte[][] alpns, bool datagramReceiveEnabled, int peerBidiStreamCount)
     {
         // Convert ALPNs
         QUIC_BUFFER* alpnBuffers = stackalloc QUIC_BUFFER[alpns.Length];
@@ -26,6 +26,8 @@ unsafe class QuicConfiguration : IDisposable
         settings.IsSetFlags = 0;
         settings.DatagramReceiveEnabled = datagramReceiveEnabled ? (byte)1 : (byte)0;
         settings.IsSet.DatagramReceiveEnabled = 1;
+        settings.PeerBidiStreamCount = (ushort)peerBidiStreamCount;
+        settings.IsSet.PeerBidiStreamCount = 1;
 
         // Create configuration
         fixed (QUIC_HANDLE** handleAddr = &Handle)
@@ -42,7 +44,16 @@ unsafe class QuicConfiguration : IDisposable
         }
     }
 
-    public void SetCredentials(string privateKeyPath, string certificatePath)
+    void SetCredentialsForClient(bool noCertValidation = false)
+    {
+        QUIC_CREDENTIAL_CONFIG credConfig = new();
+        credConfig.Type = QUIC_CREDENTIAL_TYPE.QUIC_CREDENTIAL_TYPE_NONE;
+        credConfig.Flags = QUIC_CREDENTIAL_FLAGS.QUIC_CREDENTIAL_FLAG_CLIENT;
+        if (noCertValidation) credConfig.Flags |= QUIC_CREDENTIAL_FLAGS.QUIC_CREDENTIAL_FLAG_NO_CERTIFICATE_VALIDATION;
+        MsQuic.ThrowIfFailure(QuicLibrary.ApiTable->ConfigurationLoadCredential(Handle, &credConfig));
+    }
+
+    void SetCredentialsForServer(string privateKeyPath, string certificatePath)
     {
         fixed (byte* privateKeyCStr = QuicLibrary.ToCString(privateKeyPath))
         fixed (byte* certificateCStr = QuicLibrary.ToCString(certificatePath))
@@ -59,6 +70,20 @@ unsafe class QuicConfiguration : IDisposable
                 QuicLibrary.ApiTable->ConfigurationLoadCredential(Handle, &credConfig)
             );
         }
+    }
+
+    public static QuicConfiguration CreateClientConfiguration(byte[][] alpns, bool datagramReceiveEnabled = true, int peerBidiStreamCount = 1, bool noCertValidation = false)
+    {
+        var config = new QuicConfiguration(alpns, datagramReceiveEnabled, peerBidiStreamCount);
+        config.SetCredentialsForClient(noCertValidation);
+        return config;
+    }
+
+    public static QuicConfiguration CreateServerConfiguration(byte[][] alpns, string privateKeyPath, string certificatePath, bool datagramReceiveEnabled = true, int peerBidiStreamCount = 1)
+    {
+        var config = new QuicConfiguration(alpns, datagramReceiveEnabled, peerBidiStreamCount);
+        config.SetCredentialsForServer(privateKeyPath, certificatePath);
+        return config;
     }
     
     public void Dispose()

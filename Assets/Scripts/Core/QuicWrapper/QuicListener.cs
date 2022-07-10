@@ -56,8 +56,7 @@ unsafe class QuicListener : IDisposable
     public void Start(byte[][] alpns, IPEndPoint ep, string privateKeyPath, string certificatePath)
     {
         // Create configuration for connections
-        configuration = new QuicConfiguration(alpns, true);
-        configuration.SetCredentials(privateKeyPath, certificatePath);
+        configuration = QuicConfiguration.CreateServerConfiguration(alpns, privateKeyPath, certificatePath, true, 1);
 
         // Convert ALPNs
         QUIC_BUFFER* alpnBuffers = stackalloc QUIC_BUFFER[alpns.Length];
@@ -100,6 +99,7 @@ unsafe class QuicListener : IDisposable
                 QuicConnection connection = new QuicConnection(connectionHandle);
                 ClientConnected?.Invoke(connection, remoteEP);
                 break;
+
             case QUIC_LISTENER_EVENT_TYPE.QUIC_LISTENER_EVENT_STOP_COMPLETE:
                 Logger.Debug("QuicListener", "Listener stop complete");
                 break;
