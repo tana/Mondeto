@@ -5,8 +5,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Buffers;
-using MessagePack;
 using System.Threading.Channels;
+using System.IO.Pipelines;
+using MessagePack;
 using Mondeto.Core.QuicWrapper;
 
 namespace Mondeto.Core
@@ -27,9 +28,10 @@ public class Connection : IDisposable
     QuicConnection quicConnection;
 
     QuicStream controlStream;
-    MemoryStream controlMemoryStream = new MemoryStream();
-    MessagePackStreamReader controlReader;
-    TaskCompletionSource<int> controlStreamDataWaitTCS = new TaskCompletionSource<int>();
+    Pipe controlPipe = new Pipe();
+    PipeReader controlReader => controlPipe.Reader;
+    PipeWriter controlWriter => controlPipe.Writer;
+    MessagePackStreamReader controlMsgPackReader;
 
     TaskCompletionSource<QuicStream> controlStreamTCS;
 
@@ -42,6 +44,8 @@ public class Connection : IDisposable
     internal Connection(QuicConnection quicConnection)
     {
         this.quicConnection = quicConnection;
+
+        controlMsgPackReader = new MessagePackStreamReader(controlReader.AsStream());
     }
 
     public async Task SetupServerAsync()
@@ -81,8 +85,6 @@ public class Connection : IDisposable
         controlStream = quicConnection.OpenStream();
         controlStream.Received += OnControlStreamReceived;
 
-        controlReader = new MessagePackStreamReader(controlMemoryStream);
-
         controlStream.Start(immediate: true);   // immediately notify to server even if no data is transmitted
 
         Logger.Debug("Connection", "Client setup complete");
@@ -90,10 +92,12 @@ public class Connection : IDisposable
 
     void OnControlStreamReceived(QuicStream stream, byte[] data)
     {
-        // TODO: Fix infinite expansion of MemoryStream by regularly clearing.
-        controlMemoryStream.Write(data, 0, data.Length);
+        // TODO: Fix infinite expansion of the pipe by regularly clearing.
+        Memory<byte> memory = controlWriter.GetMemory(data.Length);
+        new Span<byte>(data).CopyTo(memory.Span);
+        controlWriter.Advance(data.Length);
 
-        controlStreamDataWaitTCS.SetResult(data.Length);
+        controlWriter.FlushAsync(); // Ignore whether the writer should pause or not
     }
 
     public void SendControlMessage(IControlMessage msg)
@@ -131,23 +135,15 @@ public class Connection : IDisposable
 
     public async Task<IControlMessage> ReceiveControlMessageAsync(CancellationToken cancel = default)
     {
-        cancel.Register(() => controlStreamDataWaitTCS.SetCanceled());
-
-        while (true)
+        // MessagePackStreamReader detects boundary of MessagePack-encoded messages
+        // See: https://github.com/neuecc/MessagePack-CSharp#multiple-messagepack-structures-on-a-single-stream
+        if (await controlMsgPackReader.ReadAsync(cancel) is ReadOnlySequence<byte> msgpack)
         {
-            cancel.ThrowIfCancellationRequested();
-
-            // MessagePackStreamReader detects boundary of MessagePack-encoded messages
-            // See: https://github.com/neuecc/MessagePack-CSharp#multiple-messagepack-structures-on-a-single-stream
-            if (await controlReader.ReadAsync(cancel) is ReadOnlySequence<byte> msgpack)
-            {
-                return MessagePackSerializer.Deserialize<IControlMessage>(msgpack);
-            }
-            else
-            {
-                await controlStreamDataWaitTCS.Task;
-                controlStreamDataWaitTCS = new TaskCompletionSource<int>();
-            }
+            return MessagePackSerializer.Deserialize<IControlMessage>(msgpack);
+        }
+        else
+        {
+            throw new EndOfStreamException();
         }
     }
 

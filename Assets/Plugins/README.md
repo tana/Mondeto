@@ -4,6 +4,8 @@
     - [Binary released on NuGet](https://www.nuget.org/packages/LitJson/0.15.0) (for net45) is used.
 - `System.Threading.Channels.dll`
     - [System.Threading.Channels](https://www.nuget.org/packages/System.Threading.Channels) version 4.7.1 (for net461)
+- `System.IO.Pipelines.dll`
+    - [System.IO.Pipelines](https://www.nuget.org/packages/System.IO.Pipelines/) version 6.0.3 (for netstandard2.0)
 - `WebAssembly.dll`
     - [dotnet-webassembly](https://github.com/RyanLamansky/dotnet-webassembly)
     - This DLL is a modified version. Source code is available at ["mondeto" branch of tana/dotnet-webassembly](https://github.com/tana/dotnet-webassembly/tree/mondeto).

@@ -40,7 +40,7 @@ unsafe class QuicStream : IDisposable
 
     public void Dispose()
     {
-        Logger.Debug("QuicStream", "Closing");
+        //Logger.Debug("QuicStream", "Closing");
         if (Handle != null)
         {
             QuicLibrary.ApiTable->StreamClose(Handle);
@@ -84,7 +84,7 @@ unsafe class QuicStream : IDisposable
 
     int HandleEvent(QUIC_STREAM_EVENT* evt)
     {
-        Logger.Debug("QuicStream", $"{(IntPtr)Handle} {evt->Type}");
+        //Logger.Debug("QuicStream", $"{(IntPtr)Handle} {evt->Type}");
         switch (evt->Type)
         {
             case QUIC_STREAM_EVENT_TYPE.QUIC_STREAM_EVENT_SEND_COMPLETE:

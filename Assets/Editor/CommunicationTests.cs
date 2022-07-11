@@ -42,25 +42,17 @@ class CommunicationTests
     public void ConnectionTest()
     {
         // FIXME: Fail to connect (ALPN negotiation error) when server uses IPAddress.Loopback or client uses localhost. Probably related to IPv6.
-        var serverTask = Task.Run(async () => {
+        Task.Run(async () => {
             using var server = new SyncServer(
                 new IPEndPoint(IPAddress.Any, Port),
                 @"Assets/Editor/testCert/test.key", @"Assets/Editor/testCert/test.crt"
             );
             await server.Initialize();
 
-            await Task.Delay(10000);
-        });
-
-        var clientTask = Task.Run(async () => {
-            await Task.Delay(1000);
-
             using var client = new SyncClient("127.0.0.1", Port, noCertValidation: true);
             await client.Initialize();
 
             Assert.That(client.NodeId, Is.EqualTo(1));
-        });
-
-        Task.WaitAll(serverTask, clientTask);
+        }).Wait();
     }
 }

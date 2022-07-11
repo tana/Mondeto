@@ -53,7 +53,7 @@ unsafe class QuicConnection : IDisposable
 
     public void Dispose()
     {
-        Logger.Debug("QuicConnection", "Closing");
+        //Logger.Debug("QuicConnection", "Closing");
         if (Handle != null)
         {
             QuicLibrary.ApiTable->ConnectionClose(Handle);
