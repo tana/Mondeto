@@ -77,7 +77,7 @@ unsafe class QuicStream : IDisposable
                 Handle,
                 buf, 1,
                 QUIC_SEND_FLAGS.QUIC_SEND_FLAG_NONE,
-                null    // client sned ocntext
+                buf    // client send ocntext
             )
         );
     }
