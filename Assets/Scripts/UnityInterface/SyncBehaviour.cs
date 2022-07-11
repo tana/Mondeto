@@ -54,7 +54,7 @@ public class SyncBehaviour : MonoBehaviour
         else
         {
             // TODO: load from settings
-            Node = new SyncClient("localhost", 15902);
+            Node = new SyncClient("127.0.0.1", 15902, noCertValidation: true, keyLogFile: UnityEngine.Application.temporaryCachePath + System.IO.Path.DirectorySeparatorChar + "key_log.txt");
         }
 
         Node.ObjectCreated += OnObjectCreated;
