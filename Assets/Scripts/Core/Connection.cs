@@ -1,12 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Linq;
-using System.Buffers;
-using System.Threading.Channels;
-using System.IO.Pipelines;
 using MessagePack;
 using Mondeto.Core.QuicWrapper;
 
@@ -15,11 +9,6 @@ namespace Mondeto.Core
 
 public class Connection : IDisposable
 {
-    public enum ChannelType
-    {
-        Sync = 0, Control = 1, Blob = 2, Audio = 3
-    }
-
     public bool Connected { get; private set; } = false;
 
     public delegate void OnDisconnectHandler();
@@ -28,45 +17,45 @@ public class Connection : IDisposable
     QuicConnection quicConnection;
 
     QuicStream controlStream;
-    Pipe controlPipe = new Pipe();
-    PipeReader controlReader => controlPipe.Reader;
-    PipeWriter controlWriter => controlPipe.Writer;
-    MessagePackStreamReader controlMsgPackReader;
-
     TaskCompletionSource<QuicStream> controlStreamTCS;
+    MessagePackReceiver<IControlMessage> controlReceiver;
 
-    // System.Threading.Channels.Channel for inter-thread communications
-    //  (For usage, see https://devblogs.microsoft.com/dotnet/an-introduction-to-system-threading-channels/ )
-    // This is not a built-in class, but (in Unity) can be installed by adding three DLLs.
-    //  (see https://yotiky.hatenablog.com/entry/unity_channels )
-    Channel<byte[]>[] threadChannels;
+    QuicStream blobStream;
+    TaskCompletionSource<QuicStream> blobStreamTCS;
+    MessagePackReceiver<IBlobMessage> blobReceiver;
 
     internal Connection(QuicConnection quicConnection)
     {
         this.quicConnection = quicConnection;
-
-        controlMsgPackReader = new MessagePackStreamReader(controlReader.AsStream());
     }
 
     public async Task SetupServerAsync()
     {
         Logger.Debug("Connection", "Server setup start");
 
-        // Server waits client to create the control stream
+        // Server waits client to create streams
+        // The first created stream is the control stream, and the second is the blob stream
         controlStreamTCS = new TaskCompletionSource<QuicStream>();
-        quicConnection.PeerStreamStarted += OnClientStartedControlStream;
+        blobStreamTCS = new TaskCompletionSource<QuicStream>();
+
+        quicConnection.PeerStreamStarted += (_, stream) => {
+            if (controlStream == null)
+            {
+                controlStreamTCS.SetResult(stream);
+            }
+            else if (blobStream == null)
+            {
+                blobStreamTCS.SetResult(stream);
+            }
+        };
 
         controlStream = await controlStreamTCS.Task;
+        controlReceiver = new MessagePackReceiver<IControlMessage>(controlStream);
+
+        blobStream = await blobStreamTCS.Task;
+        blobReceiver = new MessagePackReceiver<IBlobMessage>(blobStream);
 
         Logger.Debug("Connection", "Server setup complete");
-    }
-
-    void OnClientStartedControlStream(QuicConnection _, QuicStream stream)
-    {
-        // This handler is used only once
-        quicConnection.PeerStreamStarted -= OnClientStartedControlStream;
-
-        controlStreamTCS.SetResult(stream);
     }
 
     public async Task SetupClientAsync(CancellationToken cancel)
@@ -81,23 +70,23 @@ public class Connection : IDisposable
         };
         await connectTCS.Task;
 
-        // Client creates the control stream
+        // Client creates streams
         controlStream = quicConnection.OpenStream();
-        controlStream.Received += OnControlStreamReceived;
+        controlReceiver = new MessagePackReceiver<IControlMessage>(controlStream);
 
         controlStream.Start(immediate: true);   // immediately notify to server even if no data is transmitted
+
+        blobStream = quicConnection.OpenStream();
+        blobReceiver = new MessagePackReceiver<IBlobMessage>(blobStream);
+
+        blobStream.Start(immediate: true);   // immediately notify to server even if no data is transmitted
 
         Logger.Debug("Connection", "Client setup complete");
     }
 
-    void OnControlStreamReceived(QuicStream stream, byte[] data)
+    public void SendDatagramMessage(IDatagramMessage msg)
     {
-        // TODO: Fix infinite expansion of the pipe by regularly clearing.
-        Memory<byte> memory = controlWriter.GetMemory(data.Length);
-        new Span<byte>(data).CopyTo(memory.Span);
-        controlWriter.Advance(data.Length);
-
-        controlWriter.FlushAsync(); // Ignore whether the writer should pause or not
+        // TODO:
     }
 
     public void SendControlMessage(IControlMessage msg)
@@ -105,53 +94,64 @@ public class Connection : IDisposable
         controlStream.Send(MessagePackSerializer.Serialize(msg));
     }
 
-    // Generic type specification is necessary to specify msg is interface type, not message type itself
-    public void SendMessage<T>(ChannelType type, T msg)
+    public void SendBlobMessage(IBlobMessage msg)
     {
-        byte[] buf = MessagePackSerializer.Serialize<T>(msg);
-        // channels[(int)type].SendMessage(buf);
+        blobStream.Send(MessagePackSerializer.Serialize(msg));
     }
 
-    public bool TryReceiveMessage<T>(ChannelType type, out T msg)
+    public bool TryReceiveDatagramMessage(out IDatagramMessage msg)
     {
-        byte[] buf;
-        if (threadChannels[(int)type].Reader.TryRead(out buf))
-        {
-            msg = MessagePackSerializer.Deserialize<T>(buf);
-            return true;
-        }
-        else
-        {
-            msg = default(T);
-            return false;
-        }
+        // TODO:
+        msg = null;
+        return false;
     }
 
-    public async Task<T> ReceiveMessageAsync<T>(ChannelType type, CancellationToken cancel = default)
+    public bool TryReceiveControlMessage(out IControlMessage msg)
     {
-        byte[] buf = await threadChannels[(int)type].Reader.ReadAsync(cancel);
-        return MessagePackSerializer.Deserialize<T>(buf);
+        return controlReceiver.TryReceive(out msg);
+    }
+
+    public bool TryReceiveBlobMessage(out IBlobMessage msg)
+    {
+        return blobReceiver.TryReceive(out msg);
+    }
+
+    public async Task<IDatagramMessage> ReceiveDatagramMessageAsync(CancellationToken cancel = default)
+    {
+        // TODO:
+        return null;
     }
 
     public async Task<IControlMessage> ReceiveControlMessageAsync(CancellationToken cancel = default)
     {
-        // MessagePackStreamReader detects boundary of MessagePack-encoded messages
-        // See: https://github.com/neuecc/MessagePack-CSharp#multiple-messagepack-structures-on-a-single-stream
-        if (await controlMsgPackReader.ReadAsync(cancel) is ReadOnlySequence<byte> msgpack)
-        {
-            return MessagePackSerializer.Deserialize<IControlMessage>(msgpack);
-        }
-        else
-        {
-            throw new EndOfStreamException();
-        }
+        return await controlReceiver.ReceiveAsync(cancel);
+    }
+
+    public async Task<IBlobMessage> ReceiveBlobMessageAsync(CancellationToken cancel = default)
+    {
+        return await blobReceiver.ReceiveAsync(cancel);
     }
 
     public void Dispose()
     {
+        if (controlReceiver != null)
+        {
+            controlReceiver.Dispose();
+        }
+
+        if (blobReceiver != null)
+        {
+            blobReceiver.Dispose();
+        }
+
         if (controlStream != null)
         {
             controlStream.Dispose();
+        }
+
+        if (blobStream != null)
+        {
+            blobStream.Dispose();
         }
 
         quicConnection.Dispose();

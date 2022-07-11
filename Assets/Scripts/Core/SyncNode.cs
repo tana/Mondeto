@@ -4,7 +4,6 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Mondeto.Core.QuicWrapper;
 
 namespace Mondeto.Core
 {
@@ -20,8 +19,6 @@ public abstract class SyncNode : IDisposable
     public const uint WorldObjectId = 0;    // Object ID 0 is reserved for World object (system object)
 
     public static readonly byte[] Alpn = new byte[] { (byte)'m', (byte)'o', (byte)'n', (byte)'d', (byte)'e', (byte)'t', (byte)'o' };
-
-    //public Dictionary<IPAddress, int> UdpEpToNodeId { get; } = new Dictionary<IPAddress, int>();
 
     // Do not modify Objects outside main loop! Otherwise data corrupts (e.g. strange null)
     public Dictionary<uint, SyncObject> Objects { get; } = new Dictionary<uint, SyncObject>();
@@ -92,7 +89,7 @@ public abstract class SyncNode : IDisposable
             Connection conn = connPair.Value;
             
             IDatagramMessage msg;
-            while (conn.TryReceiveMessage<IDatagramMessage>(Connection.ChannelType.Sync, out msg))
+            while (conn.TryReceiveDatagramMessage(out msg))
             {
                 switch (msg)
                 {
@@ -148,7 +145,7 @@ public abstract class SyncNode : IDisposable
                 Tick = Tick,
                 ObjectUpdates = updates
             };
-            conn.SendMessage<IDatagramMessage>(Connection.ChannelType.Sync, msg);
+            conn.SendDatagramMessage(msg);
         }
 
         Tick += 1;
@@ -205,8 +202,7 @@ public abstract class SyncNode : IDisposable
         }
 
         // Notify the sender that this node have processed the message
-        conn.SendMessage<IDatagramMessage>(
-            Connection.ChannelType.Sync,
+        conn.SendDatagramMessage(
             new AckMessage { AcknowledgedTick = msg.Tick }
         );
     }
@@ -265,8 +261,7 @@ public abstract class SyncNode : IDisposable
             Logger.Debug("Node", $"Sending Blob {handle} to NodeId={nodeId}");
 
             Connection conn = Connections[nodeId];
-            conn.SendMessage<IBlobMessage>(
-                Connection.ChannelType.Blob,
+            conn.SendBlobMessage(
                 new BlobInfoMessage { Handle = handle, Size = (uint)blob.Data.Length, MimeType = blob.MimeType }
             );
             int pos = 0;
@@ -275,8 +270,7 @@ public abstract class SyncNode : IDisposable
                 int len = Math.Min(BlobChunkSize, blob.Data.Length - pos);
                 byte[] chunk = new byte[len];
                 Array.Copy(blob.Data, pos, chunk, 0, len);
-                conn.SendMessage<IBlobMessage>(
-                    Connection.ChannelType.Blob,
+                conn.SendBlobMessage(
                     new BlobBodyMessage { Handle = handle, Offset = (uint)pos, Data = chunk }
                 );
                 pos += len;
@@ -291,7 +285,7 @@ public abstract class SyncNode : IDisposable
         while (true)
         {
             cancel.ThrowIfCancellationRequested();
-            var msg = await conn.ReceiveMessageAsync<IBlobMessage>(Connection.ChannelType.Blob, cancel);
+            var msg = await conn.ReceiveBlobMessageAsync(cancel);
             if (msg is BlobInfoMessage infoMsg)
             {
                 Logger.Debug("Node", $"Receiving Blob {infoMsg.Handle} (size={infoMsg.Size}) from Node {nodeId}");
@@ -329,7 +323,7 @@ public abstract class SyncNode : IDisposable
         int pos = 0;
         do {
             cancel.ThrowIfCancellationRequested();
-            var msg = await conn.ReceiveMessageAsync<IBlobMessage>(Connection.ChannelType.Blob, cancel);
+            var msg = await conn.ReceiveBlobMessageAsync(cancel);
             if (msg is BlobBodyMessage bodyMsg)
             {
                 // TODO check bodyMsg.Handle
@@ -359,7 +353,7 @@ public abstract class SyncNode : IDisposable
     {
         foreach (Connection conn in Connections.Values)
         {
-            conn.SendMessage<IControlMessage>(Connection.ChannelType.Control, new EventSentMessage {
+            conn.SendControlMessage(new EventSentMessage {
                 Name = name,
                 Sender = sender,
                 Receiver = receiver,
@@ -396,7 +390,7 @@ public abstract class SyncNode : IDisposable
         foreach (var conn in Connections.Values)
         {
             var msg = new AudioDataMessage { ObjectId = oid, OpusData = opusData };
-            conn.SendMessage<AudioDataMessage>(Connection.ChannelType.Audio, msg);
+            conn.SendDatagramMessage(msg);
         }
     }
 

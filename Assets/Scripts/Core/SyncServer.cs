@@ -111,7 +111,7 @@ public class SyncServer : SyncNode
             var conn = pair.Value;
 
             IControlMessage msg;
-            while (conn.TryReceiveMessage<IControlMessage>(Connection.ChannelType.Control, out msg))
+            while (conn.TryReceiveControlMessage(out msg))
             {
                 if (msg is CreateObjectMessage createObjectMessage)
                 {
@@ -135,7 +135,7 @@ public class SyncServer : SyncNode
             }
 
             // FIXME
-            ProcessAudioMessages(id, conn);
+            //ProcessAudioMessages(id, conn);
         }
     }
 
@@ -148,18 +148,11 @@ public class SyncServer : SyncNode
 
             if (id == fromClientId) continue;   // Don't send back to the client that sent this msg
             
-            conn.SendMessage<IControlMessage>(Connection.ChannelType.Control, msg);
+            conn.SendControlMessage(msg);
         }
     }
 
     /*
-    async Task ProcessAudioMessagesAsync(uint clientId, Connection conn, CancellationToken cancel)
-    {
-        while (true)
-        {
-            cancel.ThrowIfCancellationRequested();
-            var msg = await conn.ReceiveMessageAsync<AudioDataMessage>(Connection.ChannelType.Audio);
-    */
     void ProcessAudioMessages(uint clientId, Connection conn)
     {
         AudioDataMessage msg;
@@ -180,6 +173,7 @@ public class SyncServer : SyncNode
             }
         }
     }
+    */
 
     uint CreateObjectAndNotify(uint originalNodeId)
     {
@@ -230,7 +224,7 @@ public class SyncServer : SyncNode
     {
         foreach (Connection conn in clients.Values)
         {
-            conn.SendMessage<IControlMessage>(Connection.ChannelType.Control, msg);
+            conn.SendControlMessage(msg);
         }
     }
 

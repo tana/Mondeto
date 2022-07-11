@@ -84,7 +84,7 @@ unsafe class QuicConnection : IDisposable
 
     public void Start(byte[][] alpns, string serverName, int serverPort, bool noCertValidation = false)
     {
-        using var config = QuicConfiguration.CreateClientConfiguration(alpns, true, 1, noCertValidation);
+        using var config = QuicConfiguration.CreateClientConfiguration(alpns, true, 2, noCertValidation);
 
         fixed (byte* serverNameCStr = QuicLibrary.ToCString(serverName))
         {

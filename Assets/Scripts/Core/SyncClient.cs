@@ -81,16 +81,16 @@ public class SyncClient : SyncNode
     {
         if (!conn.Connected) return;
         IControlMessage msg;
-        while (conn.TryReceiveMessage<IControlMessage>(Connection.ChannelType.Control, out msg))
+        while (conn.TryReceiveControlMessage(out msg))
         {
-            HandleTcpMessage(msg);
+            HandleControlMessage(msg);
         }
 
         // FIXME
-        ProcessAudioMessages();
+        // ProcessAudioMessages();
     }
 
-    void HandleTcpMessage(IControlMessage msg)
+    void HandleControlMessage(IControlMessage msg)
     {
         switch (msg)
         {
@@ -145,6 +145,7 @@ public class SyncClient : SyncNode
         }
     }
 
+    /*
     void ProcessAudioMessages()
     {
         AudioDataMessage msg;
@@ -153,11 +154,12 @@ public class SyncClient : SyncNode
             HandleAudioDataMessage(msg);
         }
     }
+    */
 
     public override async Task<uint> CreateObject()
     {
         Logger.Debug("Client", "Creating object");
-        conn.SendMessage<IControlMessage>(Connection.ChannelType.Control, new CreateObjectMessage());
+        conn.SendControlMessage(new CreateObjectMessage());
         var tcs = new TaskCompletionSource<uint>();
         lock (creationQueue)
         {
@@ -172,7 +174,7 @@ public class SyncClient : SyncNode
     public override void DeleteObject(uint id)
     {
         Logger.Debug("Client", $"Deleting ObjectId={id}");
-        conn.SendMessage<IControlMessage>(Connection.ChannelType.Control, new DeleteObjectMessage { ObjectId = id });
+        conn.SendControlMessage(new DeleteObjectMessage { ObjectId = id });
     }
 
     protected override async Task<uint> InternSymbol(string symbol)
@@ -183,7 +185,7 @@ public class SyncClient : SyncNode
             return SymbolTable.Forward[symbol];
         }
 
-        conn.SendMessage<IControlMessage>(Connection.ChannelType.Control, new RegisterSymbolMessage { Symbol = symbol });
+        conn.SendControlMessage(new RegisterSymbolMessage { Symbol = symbol });
 
         return await symbolNotifier.Wait(symbol);
     }
@@ -195,8 +197,7 @@ public class SyncClient : SyncNode
 
     protected override void RequestBlob(BlobHandle handle)
     {
-        conn.SendMessage<IBlobMessage>(
-            Connection.ChannelType.Blob,
+        conn.SendBlobMessage(
             new BlobRequestMessage { Handle = handle }
         );
     }
