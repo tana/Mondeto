@@ -9,6 +9,8 @@ class CommunicationTests
 {
     const int Port = 15902;
 
+    //string keyLogFile = UnityEngine.Application.temporaryCachePath + System.IO.Path.DirectorySeparatorChar + "key_log.txt";
+
     [SetUp]
     public void SetUp()
     {
@@ -49,7 +51,12 @@ class CommunicationTests
             );
             await server.Initialize();
 
-            using var client = new SyncClient("127.0.0.1", Port, noCertValidation: true);
+            using var client = new SyncClient(
+                "127.0.0.1", Port,
+                noCertValidation: true,
+                //keyLogFile: keyLogFile
+                keyLogFile: ""  // No key logging
+            );
             await client.Initialize();
 
             Assert.That(client.NodeId, Is.EqualTo(1));

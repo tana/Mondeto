@@ -23,17 +23,24 @@ public class SyncClient : SyncNode
     int serverPort;
 
     bool noCertValidation;
+    string keyLogFile = "";
 
-    public SyncClient(string serverHost, int serverPort, bool noCertValidation = false)
+    public SyncClient(string serverHost, int serverPort, bool noCertValidation = false, string keyLogFile = "")
         : base()
     {
         this.serverHost = serverHost;
         this.serverPort = serverPort;
         this.noCertValidation = noCertValidation;
+        this.keyLogFile = keyLogFile;
 
         if (this.noCertValidation)
         {
             Logger.Log("SyncClient", "Skipping TLS certificate validation");
+        }
+
+        if (this.keyLogFile != "")
+        {
+            Logger.Log("SyncClient", $"TLS key log will be saved as {keyLogFile}");
         }
     }
 
@@ -43,7 +50,7 @@ public class SyncClient : SyncNode
         connectCancelSource.CancelAfter(NodeIdRetryTimeout);
         var connectCancel = connectCancelSource.Token;
 
-        QuicConnection quicConnection = new();
+        QuicConnection quicConnection = new(enableKeyLog: this.keyLogFile != "");
         quicConnection.Start(new byte[][] { SyncNode.Alpn }, serverHost, serverPort, noCertValidation);
 
         conn = new Connection(quicConnection);  // Disposal of QuicConnection is done by Connection
@@ -198,6 +205,14 @@ public class SyncClient : SyncNode
     {
         if (conn != null)
         {
+            if (keyLogFile != "")
+            {
+                using (var writer = new System.IO.StreamWriter(keyLogFile))
+                {
+                    writer.WriteLine(conn.GetKeyLog());
+                }
+            }
+
             conn.Dispose();
         }
 

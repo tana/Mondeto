@@ -156,6 +156,8 @@ public class Connection : IDisposable
 
         quicConnection.Dispose();
     }
+
+    public string GetKeyLog() => quicConnection.GetKeyLog();
 }
 
 } // end namespace

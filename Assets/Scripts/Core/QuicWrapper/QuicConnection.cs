@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Collections.Concurrent;
+using System.Text;
 using Microsoft.Quic;
 
 namespace Mondeto.Core.QuicWrapper
@@ -21,12 +22,14 @@ unsafe class QuicConnection : IDisposable
 
     public QUIC_HANDLE* Handle = null;
 
+    QUIC_TLS_SECRETS* secretsPtr = null;
+
     static ConcurrentDictionary<IntPtr, QuicConnection> instances = new();
 
     static readonly CallbackDelegate cbDelegate = Callback; // This delegate is never garbage-collected
 
     // Create a QuicConnection from scratch (for clients)
-    public QuicConnection()
+    public QuicConnection(bool enableKeyLog = false)
     {
         var cbPtr = (delegate* unmanaged[Cdecl]<QUIC_HANDLE*, void*, QUIC_CONNECTION_EVENT*, int>)Marshal.GetFunctionPointerForDelegate<CallbackDelegate>(cbDelegate);
 
@@ -38,6 +41,17 @@ unsafe class QuicConnection : IDisposable
         }
 
         instances[(IntPtr)Handle] = this;
+
+        if (enableKeyLog)
+        {
+            secretsPtr = (QUIC_TLS_SECRETS*)Marshal.AllocHGlobal(sizeof(QUIC_TLS_SECRETS));
+            MsQuic.ThrowIfFailure(
+                QuicLibrary.ApiTable->SetParam(
+                    Handle, MsQuic.QUIC_PARAM_CONN_TLS_SECRETS,
+                    (uint)sizeof(QUIC_TLS_SECRETS), secretsPtr
+                )
+            );
+        }
     }
 
     // Create a QuicConnection from an existing handle (used in servers to accept clients)
@@ -54,6 +68,12 @@ unsafe class QuicConnection : IDisposable
     public void Dispose()
     {
         //Logger.Debug("QuicConnection", "Closing");
+
+        if (secretsPtr != null)
+        {
+            Marshal.FreeHGlobal((IntPtr)secretsPtr);
+        }
+
         if (Handle != null)
         {
             QuicLibrary.ApiTable->ConnectionClose(Handle);
@@ -115,6 +135,54 @@ unsafe class QuicConnection : IDisposable
             )
         );
         return new QuicStream(stream, false);
+    }
+
+    // Get TLS secrets of current connection as SSLKEYLOGFILE format
+    // (Reference: https://firefox-source-docs.mozilla.org/security/nss/legacy/key_log_format/index.html )
+    public string GetKeyLog()
+    {
+        if (secretsPtr == null)
+        {
+            throw new NotSupportedException();
+        }
+
+        string clientRandom = BytesToHex(new Span<byte>(secretsPtr->ClientRandom, 32));
+
+        StringBuilder sb = new();
+        if (secretsPtr->IsSet.ClientEarlyTrafficSecret != 0)
+        {
+            sb.Append($"CLIENT_EARLY_TRAFFIC_SECRET {clientRandom} {BytesToHex(new Span<byte>(secretsPtr->ClientEarlyTrafficSecret, secretsPtr->SecretLength))}\n");
+        }
+        if (secretsPtr->IsSet.ClientHandshakeTrafficSecret != 0)
+        {
+            sb.Append($"CLIENT_HANDSHAKE_TRAFFIC_SECRET {clientRandom} {BytesToHex(new Span<byte>(secretsPtr->ClientHandshakeTrafficSecret, secretsPtr->SecretLength))}\n");
+        }
+        if (secretsPtr->IsSet.ServerHandshakeTrafficSecret != 0)
+        {
+            sb.Append($"SERVER_HANDSHAKE_TRAFFIC_SECRET {clientRandom} {BytesToHex(new Span<byte>(secretsPtr->ServerHandshakeTrafficSecret, secretsPtr->SecretLength))}\n");
+        }
+        if (secretsPtr->IsSet.ClientTrafficSecret0 != 0)
+        {
+            sb.Append($"CLIENT_TRAFFIC_SECRET_0 {clientRandom} {BytesToHex(new Span<byte>(secretsPtr->ClientTrafficSecret0, secretsPtr->SecretLength))}\n");
+        }
+        if (secretsPtr->IsSet.ServerTrafficSecret0 != 0)
+        {
+            sb.Append($"SERVER_TRAFFIC_SECRET_0 {clientRandom} {BytesToHex(new Span<byte>(secretsPtr->ServerTrafficSecret0, secretsPtr->SecretLength))}\n");
+        }
+
+        return sb.ToString();
+    }
+
+    string BytesToHex(Span<byte> data)
+    {
+        StringBuilder sb = new();
+
+        foreach (byte b in data)
+        {
+            sb.Append($"{b:x2}");
+        }
+
+        return sb.ToString();
     }
 
     int HandleEvent(QUIC_CONNECTION_EVENT* evt)
