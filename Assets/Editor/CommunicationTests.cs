@@ -14,15 +14,32 @@ class CommunicationTests
     //string keyLogFile = UnityEngine.Application.temporaryCachePath + System.IO.Path.DirectorySeparatorChar + "key_log.txt";
     string keyLogFile = ""; // No key logging
 
+    SyncServer server;
+    SyncClient client;
+
     [SetUp]
     public void SetUp()
     {
         Logger.OnLog += WriteLog;
+
+        // FIXME: Fail to connect (ALPN negotiation error) when server uses IPAddress.Loopback or client uses localhost. Probably related to IPv6.
+        server = new SyncServer(
+            new IPEndPoint(IPAddress.Any, Port),
+            @"Assets/Editor/testCert/test.key", @"Assets/Editor/testCert/test.crt"
+        );
+        client = new SyncClient(
+            "127.0.0.1", Port,
+            noCertValidation: true,
+            keyLogFile: keyLogFile
+        );
     }
 
     [TearDown]
     public void TearDown()
     {
+        server.Dispose();
+        client.Dispose();
+
         Logger.OnLog -= WriteLog;
     }
 
@@ -32,33 +49,10 @@ class CommunicationTests
     }
 
     [Test]
-    public void ServerInitTest()
-    {
-        Task.Run(async () => {
-            using var server = new SyncServer(
-                new IPEndPoint(IPAddress.Any, Port),
-                @"Assets/Editor/testCert/test.key", @"Assets/Editor/testCert/test.crt"
-            );
-            await server.Initialize();
-        }).Wait();
-    }
-
-    [Test]
     public void ConnectionTest()
     {
-        // FIXME: Fail to connect (ALPN negotiation error) when server uses IPAddress.Loopback or client uses localhost. Probably related to IPv6.
         Task.Run(async () => {
-            using var server = new SyncServer(
-                new IPEndPoint(IPAddress.Any, Port),
-                @"Assets/Editor/testCert/test.key", @"Assets/Editor/testCert/test.crt"
-            );
             await server.Initialize();
-
-            using var client = new SyncClient(
-                "127.0.0.1", Port,
-                noCertValidation: true,
-                keyLogFile: keyLogFile
-            );
             await client.Initialize();
 
             Assert.That(client.NodeId, Is.EqualTo(1));
@@ -68,19 +62,8 @@ class CommunicationTests
     [Test]
     public void BlobTransferTest()
     {
-        // FIXME: Fail to connect (ALPN negotiation error) when server uses IPAddress.Loopback or client uses localhost. Probably related to IPv6.
         Task.Run(async () => {
-            using var server = new SyncServer(
-                new IPEndPoint(IPAddress.Any, Port),
-                @"Assets/Editor/testCert/test.key", @"Assets/Editor/testCert/test.crt"
-            );
             await server.Initialize();
-
-            using var client = new SyncClient(
-                "127.0.0.1", Port,
-                noCertValidation: true,
-                keyLogFile: keyLogFile
-            );
             await client.Initialize();
 
             // Server to client
@@ -98,6 +81,34 @@ class CommunicationTests
 
             Blob receivedClientBlob = await server.ReadBlob(clientBlobHandle);
             Assert.That(receivedClientBlob.Data, Is.EqualTo(clientBlob.Data));  // Compared element-wise. See: https://docs.nunit.org/articles/nunit/writing-tests/constraints/EqualConstraint.html#comparing-arrays-collections-and-ienumerables
+        }).Wait();
+    }
+
+    [Test]
+    public void SyncTest()
+    {
+        var position = new Vec(1.0f, 2.0f, 3.0f);
+
+        Task.Run(async () => {
+            await server.Initialize();
+            await client.Initialize();
+
+            var createObjectTask = client.CreateObject();
+
+            uint? objId = null;
+            for (int i = 0; i < 10; i++)
+            {
+                if (createObjectTask.IsCompletedSuccessfully)
+                {
+                    objId = createObjectTask.Result;
+                    client.Objects[objId.Value].SetField("position", position);
+                }
+                server.SyncFrame(0.2f);
+                client.SyncFrame(0.2f);
+                await Task.Delay(20);
+            }
+
+            TestUtils.AssertVec(server.Objects[objId.Value].GetField("position"), position.X, position.Y, position.Z);
         }).Wait();
     }
 

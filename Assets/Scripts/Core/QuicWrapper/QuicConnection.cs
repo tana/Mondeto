@@ -118,7 +118,7 @@ unsafe class QuicConnection : IDisposable
                 Handle,
                 buf, 1,
                 QUIC_SEND_FLAGS.QUIC_SEND_FLAG_NONE,
-                buf->Buffer // client context
+                buf // client context
             )
         );
     }

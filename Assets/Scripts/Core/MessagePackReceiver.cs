@@ -70,6 +70,8 @@ class MessagePackReceiver<T> : IDisposable
     public void Dispose()
     {
         stopTokenSource.Cancel();
+
+        stream.Received -= OnReceived;
     }
 }
 

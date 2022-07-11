@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Channels;
 using MessagePack;
 using Mondeto.Core.QuicWrapper;
 
@@ -16,6 +17,8 @@ public class Connection : IDisposable
 
     QuicConnection quicConnection;
 
+    Channel<IDatagramMessage> datagramReceiveChannel = Channel.CreateUnbounded<IDatagramMessage>();
+
     QuicStream controlStream;
     TaskCompletionSource<QuicStream> controlStreamTCS;
     MessagePackReceiver<IControlMessage> controlReceiver;
@@ -27,6 +30,11 @@ public class Connection : IDisposable
     internal Connection(QuicConnection quicConnection)
     {
         this.quicConnection = quicConnection;
+
+        this.quicConnection.DatagramReceived += (_, data) => {
+            var msg = MessagePackSerializer.Deserialize<IDatagramMessage>(data);
+            datagramReceiveChannel.Writer.WriteAsync(msg);
+        };
     }
 
     public async Task SetupServerAsync()
@@ -55,6 +63,8 @@ public class Connection : IDisposable
         blobStream = await blobStreamTCS.Task;
         blobReceiver = new MessagePackReceiver<IBlobMessage>(blobStream);
 
+        Connected = true;
+
         Logger.Debug("Connection", "Server setup complete");
     }
 
@@ -81,12 +91,14 @@ public class Connection : IDisposable
 
         blobStream.Start(immediate: true);   // immediately notify to server even if no data is transmitted
 
+        Connected = true;
+
         Logger.Debug("Connection", "Client setup complete");
     }
 
     public void SendDatagramMessage(IDatagramMessage msg)
     {
-        // TODO:
+        quicConnection.SendDatagram(MessagePackSerializer.Serialize(msg));
     }
 
     public void SendControlMessage(IControlMessage msg)
@@ -101,9 +113,7 @@ public class Connection : IDisposable
 
     public bool TryReceiveDatagramMessage(out IDatagramMessage msg)
     {
-        // TODO:
-        msg = null;
-        return false;
+        return datagramReceiveChannel.Reader.TryRead(out msg);
     }
 
     public bool TryReceiveControlMessage(out IControlMessage msg)
@@ -118,8 +128,7 @@ public class Connection : IDisposable
 
     public async Task<IDatagramMessage> ReceiveDatagramMessageAsync(CancellationToken cancel = default)
     {
-        // TODO:
-        return null;
+        return await datagramReceiveChannel.Reader.ReadAsync(cancel);
     }
 
     public async Task<IControlMessage> ReceiveControlMessageAsync(CancellationToken cancel = default)
