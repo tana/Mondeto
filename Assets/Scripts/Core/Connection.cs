@@ -96,9 +96,16 @@ public class Connection : IDisposable
         Logger.Debug("Connection", "Client setup complete");
     }
 
-    public void SendDatagramMessage(IDatagramMessage msg)
+    public void SendDatagramMessage(IDatagramMessage msg, Action acknowledgeCallback = null)
     {
-        quicConnection.SendDatagram(MessagePackSerializer.Serialize(msg));
+        var msgBinary = MessagePackSerializer.Serialize(msg);
+        if (msgBinary.Length > quicConnection.DatagramMaxLength)
+        {
+            // Ignore message that is too long.
+            // Because acknowledgeCallback is not called, it is same as a packet loss for callers of this function.
+            return;
+        }
+        quicConnection.SendDatagram(msgBinary, acknowledgeCallback);
     }
 
     public void SendControlMessage(IControlMessage msg)

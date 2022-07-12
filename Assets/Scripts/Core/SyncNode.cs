@@ -39,11 +39,11 @@ public abstract class SyncNode : IDisposable
 
     private ConcurrentDictionary<uint, object> blobSendLockTokens = new ConcurrentDictionary<uint, object>();
 
+    // TODO: garbage collection of these two dictionaries
     // Latest Tick received from a particular node
-    private Dictionary<uint, uint> LatestTickReceived = new Dictionary<uint, uint>();
-
+    private ConcurrentDictionary<(uint nodeId, uint objectId, string fieldName), uint> LastReceivedTick = new();
     // Last tick acknowledged by a particular node
-    private Dictionary<uint, uint> LastTickAcknowledged = new Dictionary<uint, uint>();
+    private ConcurrentDictionary<(uint nodeId, uint objectId, string fieldName), uint> LastAcknowledgedTick = new();
 
     public delegate void ObjectCreatedHandler(uint objId);
     // Fired when an object is created 
@@ -96,56 +96,34 @@ public abstract class SyncNode : IDisposable
                     case UpdateMessage updateMsg:
                         ProcessUpdateMessage(updateMsg, connNodeId, conn);
                         break;
-                    case AckMessage ackMsg:
-                        ProcessAckMessage(ackMsg, connNodeId);
-                        break;
                 }
             }
         }
 
         // Send states of objects
-        foreach (var connPair in pairs)
+        foreach (var (connNodeId, conn) in pairs)
         {
-            uint connNodeId = connPair.Key;
-            Connection conn = connPair.Value;
-            // If no ACK has came from the connection yet (e.g. new connection), send all fields (any uint is larger than -1)
-            long ackedTick = LastTickAcknowledged.ContainsKey(connNodeId)
-                                ? (long)LastTickAcknowledged[connNodeId] : -1;
-
-            // Collect object updates
-            var updates = new List<ObjectUpdate>();
-            foreach (var pair in Objects)
+            foreach (var (id, obj) in Objects)
             {
-                var id = pair.Key;
-                var obj = pair.Value;
                 // If this is the server, don't send object to the node which has original
                 // If this is a client, don't send objects that this node does not have original
                 if (obj.OriginalNodeId == connNodeId || (NodeId != ServerNodeId && obj.OriginalNodeId != NodeId))
                     continue;
 
-                // field updates
-                var fields = obj.Fields.Where(field =>
+                foreach (var (fieldName, field) in obj.Fields)
+                {
                     // Send fields which have been updated
-                    // Because updates run after sending, lastUpdatedTick==ackedTick must be included.
-                    field.Value.LastUpdatedTick >= ackedTick
-                ).Select(field =>
-                    new FieldUpdate { Name = field.Key, Value = field.Value.Value }
-                ).ToList();
-
-                if (fields.Count == 0) continue;    // When no field have to be sent, skip entire object
-
-                ObjectUpdate update = new ObjectUpdate { ObjectId = id, Fields = fields };
-                updates.Add(update);
+                    // Because updates run after sending, lastUpdatedTick==lastTickAcknowledged must be included.
+                    var key = (connNodeId, id, fieldName);
+                    if (!LastAcknowledgedTick.ContainsKey(key) || field.LastUpdatedTick >= LastAcknowledgedTick[key])
+                    {
+                        var msg = new UpdateMessage { Tick = Tick, ObjectId = id, FieldName = fieldName, FieldValue = field.Value };
+                        conn.SendDatagramMessage(msg, () => {
+                            LastAcknowledgedTick[key] = Tick;
+                        });
+                    }
+                }
             }
-
-            if (updates.Count == 0) continue;   // When no object have to be sent, skip the receiving node
-
-            // Construct message and send
-            UpdateMessage msg = new UpdateMessage {
-                Tick = Tick,
-                ObjectUpdates = updates
-            };
-            conn.SendDatagramMessage(msg);
         }
 
         Tick += 1;
@@ -158,67 +136,31 @@ public abstract class SyncNode : IDisposable
 
     private void ProcessUpdateMessage(UpdateMessage msg, uint connNodeId, Connection conn)
     {
+        var id = msg.ObjectId;
+        if (!Objects.ContainsKey(id))
+        {
+            Logger.Log("Node", $"Ignoring update for non-registered ObjectId={id}");
+            return;
+        }
+
+        var obj = Objects[id];
+
+        if (obj.OriginalNodeId != connNodeId && connNodeId != ServerNodeId)
+        {
+            Logger.Error("Node", $"Blocked invalid update for ObjectId={id}");
+            return;   // Original object cannot be updated by nodes other than OriginalNodeId or the server (NodeId=0)
+        }
+
+        var key = (connNodeId, id, msg.FieldName);
+
         // Ignore out-of-order updates
-        if (LatestTickReceived.ContainsKey(connNodeId)
-            && LatestTickReceived[connNodeId] > msg.Tick)
+        if (LastReceivedTick.ContainsKey(key) && LastReceivedTick[key] > msg.Tick)
         {
             return;
         }
-        LatestTickReceived[connNodeId] = msg.Tick;
+        LastReceivedTick[key] = msg.Tick;
 
-        foreach (ObjectUpdate update in msg.ObjectUpdates)
-        {
-            var id = update.ObjectId;
-            if (!Objects.ContainsKey(id))
-            {
-                Logger.Log("Node", $"Ignoring update for non-registered ObjectId={id}");
-                continue;
-            }
-            if (Objects[id].OriginalNodeId != connNodeId && connNodeId != ServerNodeId)
-            {
-                Logger.Error("Node", $"Blocked invalid update for ObjectId={id}");
-                continue;   // Original object cannot be updated by nodes other than OriginalNodeId or the server (NodeId=0)
-            }
-
-            //Logger.Log("Node", $"ObjectId={id} updated");
-
-            // fields
-            foreach (var field in update.Fields)
-            {
-                //Logger.Log("Node", $"object {id} Field {field.Name} = {field.Value}");
-                /*
-                if (field.Name == "tags" && field.Value is Sequence seq)
-                {
-                    foreach (var elem in seq.Elements)
-                    {
-                        if (elem is Primitive<string> tag)
-                            Logger.Debug("Node", $"{connNodeId} {id} {tag.Value}");
-                    }
-                }
-                */
-                //Objects[id].Fields[field.Name] = field.Value;
-                Objects[id].SetField(field.Name, field.Value);
-            }
-        }
-
-        // Notify the sender that this node have processed the message
-        conn.SendDatagramMessage(
-            new AckMessage { AcknowledgedTick = msg.Tick }
-        );
-    }
-
-    private void ProcessAckMessage(AckMessage msg, uint connNodeId)
-    {
-        if (!LastTickAcknowledged.ContainsKey(connNodeId)
-            || LastTickAcknowledged[connNodeId] < msg.AcknowledgedTick)
-        {
-            LastTickAcknowledged[connNodeId] = msg.AcknowledgedTick;
-        }
-        else
-        {
-            // If AcknowledgedTick is decreasing, something is wrong
-            Logger.Debug("SyncNode", $"Acknowledged Tick from NodeId={connNodeId} is decreasing. It's strange!");
-        }
+        obj.SetField(msg.FieldName, msg.FieldValue);
     }
 
     private void InitBlobCache()

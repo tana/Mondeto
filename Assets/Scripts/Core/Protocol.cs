@@ -284,7 +284,6 @@ public class ObjectRef : IValue
 
 // Messages sent through the unreliable datagram
 [MessagePack.Union(0, typeof(UpdateMessage))]
-[MessagePack.Union(1, typeof(AckMessage))]
 [MessagePack.Union(2, typeof(AudioDataMessage))]
 public interface IDatagramMessage
 {
@@ -296,14 +295,11 @@ public class UpdateMessage : IDatagramMessage
     [Key(0)]
     public uint Tick;
     [Key(1)]
-    public List<ObjectUpdate> ObjectUpdates;
-}
-
-[MessagePackObject]
-public class AckMessage : IDatagramMessage
-{
-    [Key(0)]
-    public uint AcknowledgedTick;
+    public uint ObjectId;
+    [Key(2)]
+    public string FieldName;    // TODO: use number if possible
+    [Key(3)]
+    public IValue FieldValue;
 }
 
 [MessagePackObject]
@@ -313,24 +309,6 @@ public class AudioDataMessage : IDatagramMessage
     public uint ObjectId;
     [Key(2)]
     public byte[] OpusData;
-}
-
-[MessagePackObject]
-public class ObjectUpdate
-{
-    [Key(0)]
-    public uint ObjectId;
-    [Key(1)]
-    public List<FieldUpdate> Fields;
-}
-
-[MessagePackObject]
-public class FieldUpdate
-{
-    [Key(0)]
-    public string Name; // TODO
-    [Key(1)]
-    public IValue Value;
 }
 
 // Messages sent through control stream (reliable communication channel)

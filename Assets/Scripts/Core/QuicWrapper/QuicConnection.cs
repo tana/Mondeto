@@ -15,14 +15,21 @@ unsafe class QuicConnection : IDisposable
     public delegate void DatagramReceivedEventHandler(QuicConnection connection, byte[] data);
     public delegate void ConnectedEventHandler(QuicConnection connection);
     public delegate void PeerStreamStartedEventHandler(QuicConnection connection, QuicStream stream);
+    public delegate void DatagramStateChangedEventHandler(QuicConnection connection, bool sendEnabled, int maxLength);
 
     public event DatagramReceivedEventHandler DatagramReceived;
     public event ConnectedEventHandler Connected;
     public event PeerStreamStartedEventHandler PeerStreamStarted;
+    public event DatagramStateChangedEventHandler DatagramStateChanged;
 
     public QUIC_HANDLE* Handle = null;
 
+    public bool DatagramSendEnabled { get; private set; } = false;
+    public int DatagramMaxLength { get; private set; } = 0;
+
     QUIC_TLS_SECRETS* secretsPtr = null;
+
+    ConcurrentDictionary<IntPtr, Action> datagramAcknowledgeCallbacks = new();
 
     static ConcurrentDictionary<IntPtr, QuicConnection> instances = new();
 
@@ -99,7 +106,7 @@ unsafe class QuicConnection : IDisposable
         }
     }
 
-    public void SendDatagram(byte[] data)
+    public void SendDatagram(byte[] data, Action acknowledgeCallback = null)
     {
         // Dynamically allocate QUIC_BUFFER structure along with buffer for content
         // https://github.com/microsoft/msquic/blob/47ee814b4dc0d113d983f9bc71222ba4025c2825/src/tools/sample/sample.c#L203
@@ -109,6 +116,11 @@ unsafe class QuicConnection : IDisposable
         buf->Length = (uint)data.Length;
 
         Marshal.Copy(data, 0, (IntPtr)buf->Buffer, data.Length);
+
+        if (acknowledgeCallback != null)
+        {
+            datagramAcknowledgeCallbacks[(IntPtr)buf] = acknowledgeCallback;
+        }
 
         // The memory allocated above will be released in the event handler
         // because it is passed as a client context (last argument of DatagramSend).
@@ -193,12 +205,26 @@ unsafe class QuicConnection : IDisposable
             case QUIC_CONNECTION_EVENT_TYPE.QUIC_CONNECTION_EVENT_CONNECTED:
                 Connected?.Invoke(this);
                 break;
+            
+            case QUIC_CONNECTION_EVENT_TYPE.QUIC_CONNECTION_EVENT_DATAGRAM_STATE_CHANGED:
+                DatagramSendEnabled = evt->DATAGRAM_STATE_CHANGED.SendEnabled != 0;
+                DatagramMaxLength = evt->DATAGRAM_STATE_CHANGED.MaxSendLength;
+                DatagramStateChanged?.Invoke(this, DatagramSendEnabled, DatagramMaxLength);
+                break;
 
             case QUIC_CONNECTION_EVENT_TYPE.QUIC_CONNECTION_EVENT_DATAGRAM_SEND_STATE_CHANGED:
                 if (evt->DATAGRAM_SEND_STATE_CHANGED.State == QUIC_DATAGRAM_SEND_STATE.QUIC_DATAGRAM_SEND_SENT || evt->DATAGRAM_SEND_STATE_CHANGED.State == QUIC_DATAGRAM_SEND_STATE.QUIC_DATAGRAM_SEND_CANCELED)
                 {
                     // Buffer allocated to send a datagram is no longer needed
                     Marshal.FreeHGlobal((IntPtr)evt->DATAGRAM_SEND_STATE_CHANGED.ClientContext);
+                }
+                else if (evt->DATAGRAM_SEND_STATE_CHANGED.State == QUIC_DATAGRAM_SEND_STATE.QUIC_DATAGRAM_SEND_ACKNOWLEDGED)
+                {
+                    Action acknowledgeCallback;
+                    if (datagramAcknowledgeCallbacks.TryRemove((IntPtr)evt->DATAGRAM_SEND_STATE_CHANGED.ClientContext, out acknowledgeCallback))
+                    {
+                        acknowledgeCallback();
+                    }
                 }
                 break;
 
