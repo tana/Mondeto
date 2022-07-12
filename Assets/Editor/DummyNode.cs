@@ -28,8 +28,6 @@ class DummyNode : SyncNode
 
     public override void DeleteObject(uint id) => throw new NotImplementedException();
 
-    protected override Task<uint> InternSymbol(string symbol) => throw new NotImplementedException();
-
     protected override void RequestBlob(BlobHandle handle)
     {
     }

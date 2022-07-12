@@ -1,7 +1,4 @@
 # Description of DLLs
-- `LitJSON.dll`
-    - [LitJSON](https://github.com/LitJSON/litjson) version 0.15.0
-    - [Binary released on NuGet](https://www.nuget.org/packages/LitJson/0.15.0) (for net45) is used.
 - `System.Threading.Channels.dll`
     - [System.Threading.Channels](https://www.nuget.org/packages/System.Threading.Channels) version 4.7.1 (for net461)
 - `System.IO.Pipelines.dll`

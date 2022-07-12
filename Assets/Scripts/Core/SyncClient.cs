@@ -121,15 +121,6 @@ public class SyncClient : SyncNode
 
                 break;
             }
-            case SymbolRegisteredMessage symMsg:
-            {
-                SymbolTable.Add(symMsg.Symbol, symMsg.SymbolId);
-                if (symbolNotifier.IsWaiting(symMsg.Symbol))
-                    symbolNotifier.Notify(symMsg.Symbol, symMsg.SymbolId);
-
-                Logger.Debug("Client", $"Received Symbol {symMsg.Symbol}->{symMsg.SymbolId}");
-                break;
-            }
             case EventSentMessage eventSentMessage:
             {
                 HandleEventSentMessage(
@@ -161,19 +152,6 @@ public class SyncClient : SyncNode
     {
         Logger.Debug("Client", $"Deleting ObjectId={id}");
         conn.SendControlMessage(new DeleteObjectMessage { ObjectId = id });
-    }
-
-    protected override async Task<uint> InternSymbol(string symbol)
-    {
-        if (SymbolTable.Forward.ContainsKey(symbol))
-        {
-            // No wait if the symbol is already registered
-            return SymbolTable.Forward[symbol];
-        }
-
-        conn.SendControlMessage(new RegisterSymbolMessage { Symbol = symbol });
-
-        return await symbolNotifier.Wait(symbol);
     }
 
     protected override void OnNewBlob(BlobHandle handle, Blob blob)

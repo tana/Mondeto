@@ -23,8 +23,6 @@ public abstract class SyncNode : IDisposable
     // Do not modify Objects outside main loop! Otherwise data corrupts (e.g. strange null)
     public Dictionary<uint, SyncObject> Objects { get; } = new Dictionary<uint, SyncObject>();
 
-    public BidirectionalDictionary<string, uint> SymbolTable { get; } = new BidirectionalDictionary<string, uint>();
-
     // 2^32 * 1/50 s = approx. 994 days
     public uint Tick { get; protected set; } = 0;
 
@@ -324,8 +322,6 @@ public abstract class SyncNode : IDisposable
             Logger.Log("SyncNode", $"Event receiver (object {receiver}) not found");
         }
     }
-
-    protected abstract Task<uint> InternSymbol(string symbol);
 
     protected abstract void OnNewBlob(BlobHandle handle, Blob blob);
     protected abstract void RequestBlob(BlobHandle handle);

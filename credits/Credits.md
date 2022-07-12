@@ -25,9 +25,6 @@ The following are credits for these third-party works.
 ### UniTask
 - [LICENSE](ThirdPartyLicenses/UniTask/LICENSE)
 
-### LitJSON
-- [COPYING](ThirdPartyLicenses/LitJSON/COPYING)
-
 ### YamlDotNet
 - [LICENSE.txt](ThirdPartyLicenses/YamlDotNet/LICENSE.txt)
 - [LICENSE-libyaml](ThirdPartyLicenses/YamlDotNet/LICENSE-libyaml)

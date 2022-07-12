@@ -37,6 +37,8 @@ public class SyncServer : SyncNode
         this.certificatePath = certificatePath;
     }
 
+#pragma warning disable CS1998
+
     public override async Task Initialize()
     {
         // Create World object
@@ -85,6 +87,8 @@ public class SyncServer : SyncNode
         conn.OnDisconnect += () => cancelSource.Cancel();
         var _ = ProcessBlobMessagesAsync(clientId, conn, cancelSource.Token);
     }
+
+#pragma warning restore CS1998
 
     protected override void ProcessControlMessages()
     {
@@ -180,19 +184,6 @@ public class SyncServer : SyncNode
         InvokeObjectDeleted(id);
     }
 
-    uint RegisterSymbolAndNotify(string symbol)
-    {
-        var sid = symbolIdRegistry.Create();
-        SymbolTable.Add(symbol, sid);
-
-        IControlMessage msg = new SymbolRegisteredMessage { Symbol = symbol, SymbolId = sid };
-        SendToAllClients(msg);
-
-        Logger.Debug("Server", $"Registered Symbol {symbol}->{sid}");
-
-        return sid;
-    }
-
     void SendToAllClients(IControlMessage msg)
     {
         foreach (Connection conn in clients.Values)
@@ -209,17 +200,6 @@ public class SyncServer : SyncNode
     public override void DeleteObject(uint id)
     {
         runner.Schedule(() => { DeleteObjectAndNotify(id, NodeId); return 0; });
-    }
-
-    protected override async Task<uint> InternSymbol(string symbol)
-    {
-        if (SymbolTable.Forward.ContainsKey(symbol))
-        {
-            // No wait if the symbol is already registered
-            return SymbolTable.Forward[symbol];
-        }
-
-        return await runner.Schedule(() => RegisterSymbolAndNotify(symbol));
     }
 
     protected override void OnNewBlob(BlobHandle handle, Blob blob)
