@@ -94,7 +94,10 @@ public abstract class SyncNode : IDisposable
                 switch (msg)
                 {
                     case UpdateMessage updateMsg:
-                        ProcessUpdateMessage(updateMsg, connNodeId, conn);
+                        ProcessUpdateMessage(updateMsg, connNodeId);
+                        break;
+                    case AudioDataMessage audioDataMsg:
+                        ProcessAudioDataMessage(audioDataMsg, connNodeId);
                         break;
                 }
             }
@@ -134,7 +137,7 @@ public abstract class SyncNode : IDisposable
         }
     }
 
-    private void ProcessUpdateMessage(UpdateMessage msg, uint connNodeId, Connection conn)
+    private void ProcessUpdateMessage(UpdateMessage msg, uint connNodeId)
     {
         var id = msg.ObjectId;
         if (!Objects.ContainsKey(id))
@@ -336,12 +339,23 @@ public abstract class SyncNode : IDisposable
         }
     }
 
-    protected void HandleAudioDataMessage(AudioDataMessage msg)
+    void ProcessAudioDataMessage(AudioDataMessage msg, uint connNodeId)
     {
         if (!Objects.ContainsKey(msg.ObjectId)) return;  // Something is wrong
-        SyncObject obj = Objects[msg.ObjectId];
-        if (obj.OriginalNodeId == NodeId) return;
+        SyncObject obj = Objects[msg.ObjectId]; // The object which generated the sound
+        if (obj.OriginalNodeId == NodeId) return;   // Receiving sound of original object from other node means something is wrong
 
+        // Server forwards audio to other nodes (expect the node which has original of the object generated the sound)
+        if (NodeId == ServerNodeId)
+        {
+            foreach (var (otherNodeId, otherConn) in Connections)
+            {
+                if (obj.OriginalNodeId == otherNodeId) continue;
+                otherConn.SendDatagramMessage(msg);
+            }
+        }
+
+        // Handle audio data locally
         obj.HandleAudio(msg.OpusData);
     }
 

@@ -85,9 +85,6 @@ public class SyncClient : SyncNode
         {
             HandleControlMessage(msg);
         }
-
-        // FIXME
-        // ProcessAudioMessages();
     }
 
     void HandleControlMessage(IControlMessage msg)
@@ -144,17 +141,6 @@ public class SyncClient : SyncNode
             }
         }
     }
-
-    /*
-    void ProcessAudioMessages()
-    {
-        AudioDataMessage msg;
-        while (conn.TryReceiveMessage<AudioDataMessage>(Connection.ChannelType.Audio, out msg))
-        {
-            HandleAudioDataMessage(msg);
-        }
-    }
-    */
 
     public override async Task<uint> CreateObject()
     {

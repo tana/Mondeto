@@ -84,7 +84,6 @@ public class SyncServer : SyncNode
         var cancelSource = new CancellationTokenSource();
         conn.OnDisconnect += () => cancelSource.Cancel();
         var _ = ProcessBlobMessagesAsync(clientId, conn, cancelSource.Token);
-        //_ = ProcessAudioMessagesAsync(clientId, conn, cancelSource.Token);
     }
 
     protected override void ProcessControlMessages()
@@ -133,9 +132,6 @@ public class SyncServer : SyncNode
                     );
                 }
             }
-
-            // FIXME
-            //ProcessAudioMessages(id, conn);
         }
     }
 
@@ -151,29 +147,6 @@ public class SyncServer : SyncNode
             conn.SendControlMessage(msg);
         }
     }
-
-    /*
-    void ProcessAudioMessages(uint clientId, Connection conn)
-    {
-        AudioDataMessage msg;
-        while (conn.TryReceiveMessage<AudioDataMessage>(Connection.ChannelType.Audio, out msg)) {
-            if (!Objects.ContainsKey(msg.ObjectId)) return;  // Something is wrong
-
-            // forward to other nodes
-            foreach (var pair in clients)
-            {
-                if (pair.Key == clientId) continue;  // Avoid sending the message back to the sender
-                pair.Value.SendMessage<AudioDataMessage>(Connection.ChannelType.Audio, msg);
-            }
-
-            if (Objects[msg.ObjectId].OriginalNodeId != NodeId)
-            {
-                // when original is not on the server
-                HandleAudioDataMessage(msg);
-            }
-        }
-    }
-    */
 
     uint CreateObjectAndNotify(uint originalNodeId)
     {
