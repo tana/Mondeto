@@ -37,7 +37,6 @@ public abstract class SyncNode : IDisposable
 
     private ConcurrentDictionary<uint, object> blobSendLockTokens = new ConcurrentDictionary<uint, object>();
 
-    // TODO: garbage collection of these two dictionaries
     // Latest Tick received from a particular node
     private ConcurrentDictionary<(uint nodeId, uint objectId, string fieldName), uint> LastReceivedTick = new();
     // Last tick acknowledged by a particular node
@@ -355,9 +354,22 @@ public abstract class SyncNode : IDisposable
         obj.HandleAudio(msg.OpusData);
     }
 
-    protected void InvokeObjectCreated(uint objId) => ObjectCreated?.Invoke(objId);
+    protected void AfterObjectCreated(uint objId) => ObjectCreated?.Invoke(objId);
 
-    protected void InvokeObjectDeleted(uint objId) => ObjectDeleted?.Invoke(objId);
+    protected void AfterObjectDeleted(uint objId)
+    {
+        ObjectDeleted?.Invoke(objId);
+
+        foreach (var (key, _) in LastAcknowledgedTick)
+        {
+            if (key.objectId == objId) LastAcknowledgedTick.TryRemove(key, out _);
+        }
+
+        foreach (var (key, _) in LastReceivedTick)
+        {
+            if (key.objectId == objId) LastReceivedTick.TryRemove(key, out _);
+        }
+    }
 
     public void RegisterTag(string name, Func<SyncObject, ITag> creator)
     {

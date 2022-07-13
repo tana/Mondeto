@@ -106,7 +106,7 @@ public class SyncClient : SyncNode
 
                 Logger.Debug("Client", $"Received ObjectId={id}");
 
-                InvokeObjectCreated(id);
+                AfterObjectCreated(id);
 
                 break;
             }
@@ -117,7 +117,7 @@ public class SyncClient : SyncNode
 
                 Logger.Debug("Client", $"Received Deletion of ObjectId={id}");
 
-                InvokeObjectDeleted(id);
+                AfterObjectDeleted(id);
 
                 break;
             }

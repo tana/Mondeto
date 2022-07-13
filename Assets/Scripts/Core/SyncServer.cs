@@ -43,7 +43,7 @@ public class SyncServer : SyncNode
     {
         // Create World object
         Objects[WorldObjectId] = new SyncObject(this, WorldObjectId, ServerNodeId);
-        InvokeObjectCreated(WorldObjectId); // To invoke ObjectCreated event for World Object (ID=0)
+        AfterObjectCreated(WorldObjectId); // To invoke ObjectCreated event for World Object (ID=0)
 
         listener = new QuicListener();
 
@@ -165,7 +165,7 @@ public class SyncServer : SyncNode
 
         Logger.Debug("Server", $"Created ObjectId={id}");
 
-        InvokeObjectCreated(id);
+        AfterObjectCreated(id);
 
         return id;
     }
@@ -182,7 +182,7 @@ public class SyncServer : SyncNode
 
         Logger.Debug("Server", $"Deleted ObjectId={id}");
 
-        InvokeObjectDeleted(id);
+        AfterObjectDeleted(id);
     }
 
     void SendToAllClients(IControlMessage msg)
