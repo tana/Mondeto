@@ -14,9 +14,18 @@ public class Settings
         private set => instance = value;
     }
 
-    public string SignalerUrlForServer = "wss://devel.luftmensch.info:15902/server";
-    public string SignalerUrlForClient = "wss://devel.luftmensch.info:15902/client";
+    // Server settings
+    public string IPAddressToListen = "0.0.0.0";
+    public int PortToListen = 15902;
+    public string TlsPrivateKeyFile = "";
+    public string TlsCertificateFile = "";
 
+    // Client settings
+    public string HostToConnect = "127.0.0.1";
+    public int PortToConnect = 15902;
+    public bool SkipCertificateValidation = false;
+
+    // Other settings
     public string AvatarPath = "Assets/StreamingAssets/default_avatar.vrm";
     public string MimeTypesPath = "Assets/StreamingAssets/config/mime.types";
     public string SceneFile = "Assets/StreamingAssets/scene.yml";

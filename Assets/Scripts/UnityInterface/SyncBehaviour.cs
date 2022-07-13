@@ -48,13 +48,18 @@ public class SyncBehaviour : MonoBehaviour
 
         if (IsServer)
         {
-            // TODO: load from settings
-            Node = new SyncServer(new IPEndPoint(IPAddress.Any, 15902), @"C:\Users\tanaka\test-cert\test.key", @"C:\Users\tanaka\test-cert\test.crt");
+            Node = new SyncServer(
+                new IPEndPoint(IPAddress.Parse(Settings.Instance.IPAddressToListen), Settings.Instance.PortToListen),
+                Settings.Instance.TlsPrivateKeyFile, Settings.Instance.TlsCertificateFile
+            );
         }
         else
         {
-            // TODO: load from settings
-            Node = new SyncClient("127.0.0.1", 15902, noCertValidation: true, keyLogFile: UnityEngine.Application.temporaryCachePath + System.IO.Path.DirectorySeparatorChar + "key_log.txt");
+            Node = new SyncClient(
+                Settings.Instance.HostToConnect, Settings.Instance.PortToConnect,
+                noCertValidation: Settings.Instance.SkipCertificateValidation,
+                keyLogFile: Environment.GetEnvironmentVariable("SSLKEYLOGFILE") ?? ""
+            );
         }
 
         Node.ObjectCreated += OnObjectCreated;
