@@ -96,6 +96,7 @@ public class SyncServer : SyncNode
         var closedClients = clients.Where(pair => !pair.Value.Connected).Select(pair => pair.Key).ToList();
         foreach (uint id in closedClients)
         {
+            clients[id].Dispose();
             clients.Remove(id);
             Logger.Log("Server", $"Client id={id} disconnected");
             // Delete objects which is original in disconnected clients
@@ -216,6 +217,7 @@ public class SyncServer : SyncNode
     {
         foreach (var conn in Connections.Values)
         {
+            conn.Disconnect();
             conn.Dispose();
         }
 

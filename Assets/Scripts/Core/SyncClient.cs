@@ -170,6 +170,8 @@ public class SyncClient : SyncNode
     {
         if (conn != null)
         {
+            conn.Disconnect();
+
             if (keyLogFile != "")
             {
                 using (var writer = new System.IO.StreamWriter(keyLogFile))

@@ -16,11 +16,13 @@ unsafe class QuicConnection : IDisposable
     public delegate void ConnectedEventHandler(QuicConnection connection);
     public delegate void PeerStreamStartedEventHandler(QuicConnection connection, QuicStream stream);
     public delegate void DatagramStateChangedEventHandler(QuicConnection connection, bool sendEnabled, int maxLength);
+    public delegate void DisconnectedEventHandler(QuicConnection connection);
 
     public event DatagramReceivedEventHandler DatagramReceived;
     public event ConnectedEventHandler Connected;
     public event PeerStreamStartedEventHandler PeerStreamStarted;
     public event DatagramStateChangedEventHandler DatagramStateChanged;
+    public event DisconnectedEventHandler Disconnected;
 
     public QUIC_HANDLE* Handle = null;
 
@@ -149,6 +151,11 @@ unsafe class QuicConnection : IDisposable
         return new QuicStream(stream, false);
     }
 
+    public void Shutdown(ulong errorCode)
+    {
+        QuicLibrary.ApiTable->ConnectionShutdown(Handle, QUIC_CONNECTION_SHUTDOWN_FLAGS.QUIC_CONNECTION_SHUTDOWN_FLAG_NONE, errorCode);
+    }
+
     // Get TLS secrets of current connection as SSLKEYLOGFILE format
     // (Reference: https://firefox-source-docs.mozilla.org/security/nss/legacy/key_log_format/index.html )
     public string GetKeyLog()
@@ -237,6 +244,11 @@ unsafe class QuicConnection : IDisposable
             case QUIC_CONNECTION_EVENT_TYPE.QUIC_CONNECTION_EVENT_PEER_STREAM_STARTED:
                 var stream = new QuicStream(evt->PEER_STREAM_STARTED.Stream, true);
                 PeerStreamStarted?.Invoke(this, stream);
+                break;
+            
+            case QUIC_CONNECTION_EVENT_TYPE.QUIC_CONNECTION_EVENT_SHUTDOWN_INITIATED_BY_TRANSPORT:
+            case QUIC_CONNECTION_EVENT_TYPE.QUIC_CONNECTION_EVENT_SHUTDOWN_INITIATED_BY_PEER:
+                Disconnected?.Invoke(this);
                 break;
         }
 

@@ -35,6 +35,12 @@ public class Connection : IDisposable
             var msg = MessagePackSerializer.Deserialize<IDatagramMessage>(data);
             datagramReceiveChannel.Writer.WriteAsync(msg);
         };
+
+        this.quicConnection.Disconnected += _ => {
+            Logger.Debug("Connection", "disconnected");
+            Connected = false;
+            OnDisconnect?.Invoke();
+        };
     }
 
     public async Task SetupServerAsync()
@@ -98,6 +104,8 @@ public class Connection : IDisposable
 
     public void SendDatagramMessage(IDatagramMessage msg, Action acknowledgeCallback = null)
     {
+        if (!Connected) return;
+
         var msgBinary = MessagePackSerializer.Serialize(msg);
         if (msgBinary.Length > quicConnection.DatagramMaxLength)
         {
@@ -146,6 +154,11 @@ public class Connection : IDisposable
     public async Task<IBlobMessage> ReceiveBlobMessageAsync(CancellationToken cancel = default)
     {
         return await blobReceiver.ReceiveAsync(cancel);
+    }
+
+    public void Disconnect()
+    {
+        quicConnection.Shutdown(0);
     }
 
     public void Dispose()
