@@ -8,7 +8,7 @@ namespace Mondeto
 
 public class UnityLogOutput : MonoBehaviour
 {
-    public void Start()
+    public void Awake()
     {
         // Log output is done in main thread
         //  https://qiita.com/toRisouP/items/a2c1bb1b0c4f73366bc6

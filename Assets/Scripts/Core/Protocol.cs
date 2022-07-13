@@ -282,90 +282,49 @@ public class ObjectRef : IValue
     public TypeCode Type { get => TypeCode.ObjectRef; }
 }
 
-// State of an object
-/*
-[MessagePackObject]
-public class ObjectState
-{
-    [Key(0)]
-    public int ObjectTag;
-    [Key(1)]
-    public Vec Position = new Vec();
-    [Key(2)]
-    public Quat Rotation = new Quat();
-    [Key(3)]
-    public Vec Velocity = new Vec();
-    [Key(4)]
-    public Vec AngularVelocity = new Vec();
-}
-*/
-
-// Messages sent through unreliable and unordered Sync Channel
+// Messages sent through the unreliable datagram
 [MessagePack.Union(0, typeof(UpdateMessage))]
-[MessagePack.Union(1, typeof(AckMessage))]
-public interface ISyncMessage
+[MessagePack.Union(2, typeof(AudioDataMessage))]
+public interface IDatagramMessage
 {
 }
 
 [MessagePackObject]
-public class UpdateMessage : ISyncMessage
+public class UpdateMessage : IDatagramMessage
 {
     [Key(0)]
     public uint Tick;
     [Key(1)]
-    public List<ObjectUpdate> ObjectUpdates;
+    public uint ObjectId;
+    [Key(2)]
+    public string FieldName;    // TODO: use number if possible
+    [Key(3)]
+    public IValue FieldValue;
 }
 
 [MessagePackObject]
-public class AckMessage : ISyncMessage
-{
-    [Key(0)]
-    public uint AcknowledgedTick;
-}
-
-[MessagePackObject]
-public class ObjectUpdate
+public class AudioDataMessage : IDatagramMessage
 {
     [Key(0)]
     public uint ObjectId;
-    [Key(1)]
-    public List<FieldUpdate> Fields;
+    [Key(2)]
+    public byte[] OpusData;
 }
 
-[MessagePackObject]
-public class FieldUpdate
-{
-    [Key(0)]
-    public string Name; // TODO
-    [Key(1)]
-    public IValue Value;
-}
-
-// Messages sent through reliable communication channel (TCP)
-[MessagePack.Union(0, typeof(HelloMessage))]
+// Messages sent through control stream (reliable communication channel)
 [MessagePack.Union(1, typeof(NodeIdMessage))]
 [MessagePack.Union(2, typeof(CreateObjectMessage))]
 [MessagePack.Union(3, typeof(ObjectCreatedMessage))]
 [MessagePack.Union(4, typeof(DeleteObjectMessage))]
 [MessagePack.Union(5, typeof(ObjectDeletedMessage))]
-[MessagePack.Union(6, typeof(RegisterSymbolMessage))]
-[MessagePack.Union(7, typeof(SymbolRegisteredMessage))]
 [MessagePack.Union(8, typeof(EventSentMessage))]
-public interface ITcpMessage
+public interface IControlMessage
 {
-}
-
-// (Client ot Server)
-[MessagePackObject]
-public class HelloMessage : ITcpMessage
-{
-    [Key(0)]
-    public int UdpPort;
 }
 
 // (Server to Client) Tell the Node ID of a client
 [MessagePackObject]
-public class NodeIdMessage : ITcpMessage
+public class NodeIdMessage : IControlMessage
 {
     [Key(0)]
     public uint NodeId;
@@ -373,13 +332,13 @@ public class NodeIdMessage : ITcpMessage
 
 // (Client to Server) Request creation of a new object
 [MessagePackObject]
-public class CreateObjectMessage : ITcpMessage
+public class CreateObjectMessage : IControlMessage
 {
 }
 
 // (Server to Client) Notify that an object is created
 [MessagePackObject]
-public class ObjectCreatedMessage : ITcpMessage
+public class ObjectCreatedMessage : IControlMessage
 {
     [Key(0)]
     public uint ObjectId;
@@ -389,7 +348,7 @@ public class ObjectCreatedMessage : ITcpMessage
 
 // (Client to Server) Request deletion an object
 [MessagePackObject]
-public class DeleteObjectMessage : ITcpMessage
+public class DeleteObjectMessage : IControlMessage
 {
     [Key(0)]
     public uint ObjectId;
@@ -397,33 +356,15 @@ public class DeleteObjectMessage : ITcpMessage
 
 // (Server to Client) Notify that an object is deleted
 [MessagePackObject]
-public class ObjectDeletedMessage : ITcpMessage
+public class ObjectDeletedMessage : IControlMessage
 {
     [Key(0)]
     public uint ObjectId;
 }
 
-// (Client to Server) Request registration of new symbol
-[MessagePackObject]
-public class RegisterSymbolMessage : ITcpMessage
-{
-    [Key(0)]
-    public string Symbol;
-}
-
-// (Server to Client) 
-[MessagePackObject]
-public class SymbolRegisteredMessage : ITcpMessage
-{
-    [Key(0)]
-    public string Symbol;
-    [Key(1)]
-    public uint SymbolId;
-}
-
 // (Both directions)
 [MessagePackObject]
-public class EventSentMessage : ITcpMessage
+public class EventSentMessage : IControlMessage
 {
     [Key(0)]
     public string Name; // Name of the event
@@ -435,6 +376,8 @@ public class EventSentMessage : ITcpMessage
     public IValue[] Args;
 }
 
+// Messages for blob transfer on blob stream (reliable)
+// TODO: Use multiple streams to avoid head-of-line blocking
 [MessagePack.Union(0, typeof(BlobBodyMessage))]
 [MessagePack.Union(1, typeof(BlobInfoMessage))]
 [MessagePack.Union(2, typeof(BlobRequestMessage))]
@@ -469,71 +412,6 @@ public class BlobRequestMessage : IBlobMessage
 {
     [Key(0)]
     public BlobHandle Handle;
-}
-
-[MessagePackObject]
-public class AudioDataMessage
-{
-    [Key(0)]
-    public uint ObjectId;
-    // Key of OpusData is intentionally changed from one of previous Data field.
-    // This is to prevent noise (playing Opus data as 8-bit raw PCM) when older nodes are connected.
-    [Key(2)]
-    public byte[] OpusData;
-}
-
-// Utility functions
-public class ProtocolUtil
-{
-    public static async Task<short> ReadShortAsync(Stream s)
-    {
-        byte[] buf = new byte[2];
-        await s.ReadAsync(buf, 0, 2);
-        return (short)((buf[0] << 8) | (buf[1]));
-    }
-
-    public static async Task WriteShortAsync(Stream s, short value)
-    {
-        byte[] buf = new byte[] { (byte)((value & 0xFF00) >> 8), (byte)(value & 0x00FF) };
-        await s.WriteAsync(buf, 0, 2);
-    }
-
-    public static void WriteShort(Stream s, short value)
-    {
-        byte[] buf = new byte[] { (byte)((value & 0xFF00) >> 8), (byte)(value & 0x00FF) };
-        s.Write(buf, 0, 2);
-    }
-
-    public static async Task<ITcpMessage> ReadTcpMessageAsync(Stream stream)
-    {
-        // MessagePackSerializer.DeserializeAsync is not available in Unity.
-        // (see https://github.com/neuecc/MessagePack-CSharp/issues/362 )
-        // Therefore, we use ReadAsync and Deserialize(byte[]) instead.
-        short msgSize = await ProtocolUtil.ReadShortAsync(stream);
-        byte[] buf = new byte[msgSize];
-        await stream.ReadAsync(buf, 0, msgSize);
-        return MessagePackSerializer.Deserialize<ITcpMessage>(buf);
-    }
-
-    public static async Task WriteTcpMessageAsync(Stream stream, ITcpMessage msg)
-    {
-        byte[] buf = MessagePackSerializer.Serialize(msg);
-        await ProtocolUtil.WriteShortAsync(stream, (short)buf.Length);
-        await stream.WriteAsync(buf, 0, buf.Length);
-    }
-
-    public static void WriteTcpMessage(Stream stream, ITcpMessage msg)
-    {
-        byte[] buf = MessagePackSerializer.Serialize(msg);
-        ProtocolUtil.WriteShort(stream, (short)buf.Length);
-        stream.Write(buf, 0, buf.Length);
-    }
-
-    public static Task<T> Timeout<T>(int milliseconds, string msg)
-    {
-        Task.Delay(milliseconds);
-        throw new TimeoutException(msg);
-    }
 }
 
 } // end namespace

@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Net;
+using Mondeto.Core.QuicWrapper;
 
 namespace Mondeto.Core
 {
@@ -10,12 +12,10 @@ public class SyncServer : SyncNode
 {
     Dictionary<uint, Connection> clients = new Dictionary<uint, Connection>();
     protected override Dictionary<uint, Connection> Connections { get => clients; }
-    Signaler signaler;
-
-    public readonly int UdpPort;
-    public readonly int TcpPort;
 
     public override uint NodeId { get; protected set; } = ServerNodeId; // Node ID for server is always 0
+
+    IdRegistry nodeIdRegistry = new(ServerNodeId + 1);    // ServerNodeId (=0) is not assigned for clients
 
     IdRegistry objectIdRegistry = new IdRegistry(WorldObjectId + 1);
 
@@ -23,27 +23,43 @@ public class SyncServer : SyncNode
 
     Runner<uint> runner = new Runner<uint>();
 
-    public SyncServer(string signalerUri)
+    QuicListener listener;
+
+    IPEndPoint endPoint;
+    string privateKeyPath;
+    string certificatePath;
+
+    public SyncServer(IPEndPoint endPoint, string privateKeyPath, string certificatePath)
+        : base()
     {
-        signaler = new Signaler(signalerUri, true);
+        this.endPoint = endPoint;
+        this.privateKeyPath = privateKeyPath;
+        this.certificatePath = certificatePath;
     }
+
+#pragma warning disable CS1998
 
     public override async Task Initialize()
     {
         // Create World object
         Objects[WorldObjectId] = new SyncObject(this, WorldObjectId, ServerNodeId);
-        InvokeObjectCreated(WorldObjectId); // To invoke ObjectCreated event for World Object (ID=0)
+        AfterObjectCreated(WorldObjectId); // To invoke ObjectCreated event for World Object (ID=0)
 
-        // Start communication
-        await signaler.ConnectAsync();
-        Logger.Log("Server", "Connected to signaling server");
-        signaler.ClientConnected += async (uint clientNodeId) => {
-            Logger.Log("Server", $"Accepting client {clientNodeId}");
-            var conn = new Connection();
-            await conn.SetupAsync(signaler, true, clientNodeId);
-            // Node ID is assigned by signaling server
+        listener = new QuicListener();
+
+        listener.ClientConnected += async (quicConnection, ep) => {
+            // Create connection for a new client
+            var conn = new Connection(quicConnection);
+
+            uint clientNodeId = nodeIdRegistry.Create();  // Assign a new node ID
+            Logger.Log("Server", $"Accepting connection from {ep} as NodeId {clientNodeId}");
+            await conn.SetupServerAsync();
+
             await InitClient(conn, clientNodeId);
         };
+
+        // Start accepting client connection
+        listener.Start(new byte[][] { SyncNode.Alpn }, endPoint, privateKeyPath, certificatePath);
     }
 
     async Task InitClient(Connection conn, uint clientId)
@@ -51,30 +67,28 @@ public class SyncServer : SyncNode
         lock (clients)
         {
             clients[clientId] = conn;
-            Logger.Log("Server", $"Registered client NodeId={clientId}");
         }
 
-        // NodeIdMessage have to be sent after client become ready to receive it.
-        await Task.Delay(1000); // FIXME
+        Logger.Log("Server", $"Registered client NodeId={clientId}");
 
-        // Connection procedures
-        // FIXME: this message has not meaningful but seems working as a kind of "ready"
-        conn.SendMessage<ITcpMessage>(Connection.ChannelType.Control, new NodeIdMessage { NodeId = clientId });
+        // Tell node id to the client
+        conn.SendControlMessage(new NodeIdMessage { NodeId = clientId });
 
         // Send existing objects
         foreach (var pair in Objects)
         {
             var id = pair.Key;
             var obj = pair.Value;
-            ITcpMessage msg = new ObjectCreatedMessage { ObjectId = id, OriginalNodeId = obj.OriginalNodeId };
-            conn.SendMessage<ITcpMessage>(Connection.ChannelType.Control, msg);
+            IControlMessage msg = new ObjectCreatedMessage { ObjectId = id, OriginalNodeId = obj.OriginalNodeId };
+            conn.SendControlMessage(msg);
         }
 
         var cancelSource = new CancellationTokenSource();
         conn.OnDisconnect += () => cancelSource.Cancel();
         var _ = ProcessBlobMessagesAsync(clientId, conn, cancelSource.Token);
-        //_ = ProcessAudioMessagesAsync(clientId, conn, cancelSource.Token);
     }
+
+#pragma warning restore CS1998
 
     protected override void ProcessControlMessages()
     {
@@ -82,6 +96,7 @@ public class SyncServer : SyncNode
         var closedClients = clients.Where(pair => !pair.Value.Connected).Select(pair => pair.Key).ToList();
         foreach (uint id in closedClients)
         {
+            clients[id].Dispose();
             clients.Remove(id);
             Logger.Log("Server", $"Client id={id} disconnected");
             // Delete objects which is original in disconnected clients
@@ -99,8 +114,8 @@ public class SyncServer : SyncNode
             var id = pair.Key;
             var conn = pair.Value;
 
-            ITcpMessage msg;
-            while (conn.TryReceiveMessage<ITcpMessage>(Connection.ChannelType.Control, out msg))
+            IControlMessage msg;
+            while (conn.TryReceiveControlMessage(out msg))
             {
                 if (msg is CreateObjectMessage createObjectMessage)
                 {
@@ -122,9 +137,6 @@ public class SyncServer : SyncNode
                     );
                 }
             }
-
-            // FIXME
-            ProcessAudioMessages(id, conn);
         }
     }
 
@@ -137,36 +149,7 @@ public class SyncServer : SyncNode
 
             if (id == fromClientId) continue;   // Don't send back to the client that sent this msg
             
-            conn.SendMessage<ITcpMessage>(Connection.ChannelType.Control, msg);
-        }
-    }
-
-    /*
-    async Task ProcessAudioMessagesAsync(uint clientId, Connection conn, CancellationToken cancel)
-    {
-        while (true)
-        {
-            cancel.ThrowIfCancellationRequested();
-            var msg = await conn.ReceiveMessageAsync<AudioDataMessage>(Connection.ChannelType.Audio);
-    */
-    void ProcessAudioMessages(uint clientId, Connection conn)
-    {
-        AudioDataMessage msg;
-        while (conn.TryReceiveMessage<AudioDataMessage>(Connection.ChannelType.Audio, out msg)) {
-            if (!Objects.ContainsKey(msg.ObjectId)) return;  // Something is wrong
-
-            // forward to other nodes
-            foreach (var pair in clients)
-            {
-                if (pair.Key == clientId) continue;  // Avoid sending the message back to the sender
-                pair.Value.SendMessage<AudioDataMessage>(Connection.ChannelType.Audio, msg);
-            }
-
-            if (Objects[msg.ObjectId].OriginalNodeId != NodeId)
-            {
-                // when original is not on the server
-                HandleAudioDataMessage(msg);
-            }
+            conn.SendControlMessage(msg);
         }
     }
 
@@ -177,12 +160,12 @@ public class SyncServer : SyncNode
         Objects[id] = obj;
 
         // Notify object creation to all clients
-        ITcpMessage msg = new ObjectCreatedMessage { ObjectId = id, OriginalNodeId = originalNodeId };
+        IControlMessage msg = new ObjectCreatedMessage { ObjectId = id, OriginalNodeId = originalNodeId };
         SendToAllClients(msg);
 
         Logger.Debug("Server", $"Created ObjectId={id}");
 
-        InvokeObjectCreated(id);
+        AfterObjectCreated(id);
 
         return id;
     }
@@ -194,32 +177,19 @@ public class SyncServer : SyncNode
 
         Objects.Remove(id);
         
-        ITcpMessage msg = new ObjectDeletedMessage { ObjectId = id };
+        IControlMessage msg = new ObjectDeletedMessage { ObjectId = id };
         SendToAllClients(msg);
 
         Logger.Debug("Server", $"Deleted ObjectId={id}");
 
-        InvokeObjectDeleted(id);
+        AfterObjectDeleted(id);
     }
 
-    uint RegisterSymbolAndNotify(string symbol)
-    {
-        var sid = symbolIdRegistry.Create();
-        SymbolTable.Add(symbol, sid);
-
-        ITcpMessage msg = new SymbolRegisteredMessage { Symbol = symbol, SymbolId = sid };
-        SendToAllClients(msg);
-
-        Logger.Debug("Server", $"Registered Symbol {symbol}->{sid}");
-
-        return sid;
-    }
-
-    void SendToAllClients(ITcpMessage msg)
+    void SendToAllClients(IControlMessage msg)
     {
         foreach (Connection conn in clients.Values)
         {
-            conn.SendMessage<ITcpMessage>(Connection.ChannelType.Control, msg);
+            conn.SendControlMessage(msg);
         }
     }
 
@@ -231,17 +201,6 @@ public class SyncServer : SyncNode
     public override void DeleteObject(uint id)
     {
         runner.Schedule(() => { DeleteObjectAndNotify(id, NodeId); return 0; });
-    }
-
-    protected override async Task<uint> InternSymbol(string symbol)
-    {
-        if (SymbolTable.Forward.ContainsKey(symbol))
-        {
-            // No wait if the symbol is already registered
-            return SymbolTable.Forward[symbol];
-        }
-
-        return await runner.Schedule(() => RegisterSymbolAndNotify(symbol));
     }
 
     protected override void OnNewBlob(BlobHandle handle, Blob blob)
@@ -258,10 +217,16 @@ public class SyncServer : SyncNode
     {
         foreach (var conn in Connections.Values)
         {
+            conn.Disconnect();
             conn.Dispose();
         }
 
-        signaler.Dispose();
+        if (listener != null)
+        {
+            listener.Dispose();
+        }
+
+        base.Dispose();
     }
 }
 

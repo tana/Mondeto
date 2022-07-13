@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Mondeto.Core.QuicWrapper;
 
 namespace Mondeto.Core
 {
@@ -9,7 +10,6 @@ public class SyncClient : SyncNode
 {
     protected override Dictionary<uint, Connection> Connections { get; } = new Dictionary<uint, Connection>();
     Connection conn;
-    Signaler signaler;
 
     public override uint NodeId { get; protected set; }
 
@@ -19,33 +19,54 @@ public class SyncClient : SyncNode
 
     const int NodeIdRetryTimeout = 10000;
 
-    public SyncClient(string signalerUri)
+    string serverHost;
+    int serverPort;
+
+    bool noCertValidation;
+    string keyLogFile = "";
+
+    public SyncClient(string serverHost, int serverPort, bool noCertValidation = false, string keyLogFile = "")
+        : base()
     {
-        conn = new Connection();
-        Connections[0] = conn;
-        signaler = new Signaler(signalerUri, false);
+        this.serverHost = serverHost;
+        this.serverPort = serverPort;
+        this.noCertValidation = noCertValidation;
+        this.keyLogFile = keyLogFile;
+
+        if (this.noCertValidation)
+        {
+            Logger.Log("SyncClient", "Skipping TLS certificate validation");
+        }
+
+        if (this.keyLogFile != "")
+        {
+            Logger.Log("SyncClient", $"TLS key log will be saved as {keyLogFile}");
+        }
     }
 
     public override async Task Initialize()
     {
-        await Task.Delay(1000);
-        NodeId = await signaler.ConnectAsync();
-        Logger.Log("Client", "Connected to signaling server");
-        Logger.Debug("Client", $"My NodeId is {NodeId}");
-        await Task.Delay(1000);
-        await conn.SetupAsync(signaler, false);
-        Logger.Log("Client", "Connected to server");
+        var connectCancelSource = new CancellationTokenSource();
+        connectCancelSource.CancelAfter(NodeIdRetryTimeout);
+        var connectCancel = connectCancelSource.Token;
 
-        var nodeIdCancelSource = new CancellationTokenSource();
-        nodeIdCancelSource.CancelAfter(NodeIdRetryTimeout);
-        var nodeIdCancel = nodeIdCancelSource.Token;
+        QuicConnection quicConnection = new(enableKeyLog: this.keyLogFile != "");
+        quicConnection.Start(new byte[][] { SyncNode.Alpn }, serverHost, serverPort, noCertValidation);
+
+        conn = new Connection(quicConnection);  // Disposal of QuicConnection is done by Connection
+        Connections[0] = conn;
+
+        await conn.SetupClientAsync(connectCancel);
+
+        // TODO: authentication (e.g. password)
 
         while (true)
         {
-            nodeIdCancel.ThrowIfCancellationRequested();
-            // FIXME: this message has not meaningful but seems working as a kind of "ready"
-            if (await conn.ReceiveMessageAsync<ITcpMessage>(Connection.ChannelType.Control, nodeIdCancel) is NodeIdMessage nodeIdMsg)
+            connectCancel.ThrowIfCancellationRequested();
+
+            if (await conn.ReceiveControlMessageAsync(connectCancel) is NodeIdMessage nodeIdMsg)
             {
+                NodeId = nodeIdMsg.NodeId;
                 Logger.Debug("Client", $"Received NodeId={nodeIdMsg.NodeId}");
                 break;
             }
@@ -59,17 +80,14 @@ public class SyncClient : SyncNode
     protected override void ProcessControlMessages()
     {
         if (!conn.Connected) return;
-        ITcpMessage msg;
-        while (conn.TryReceiveMessage<ITcpMessage>(Connection.ChannelType.Control, out msg))
+        IControlMessage msg;
+        while (conn.TryReceiveControlMessage(out msg))
         {
-            HandleTcpMessage(msg);
+            HandleControlMessage(msg);
         }
-
-        // FIXME
-        ProcessAudioMessages();
     }
 
-    void HandleTcpMessage(ITcpMessage msg)
+    void HandleControlMessage(IControlMessage msg)
     {
         switch (msg)
         {
@@ -88,7 +106,7 @@ public class SyncClient : SyncNode
 
                 Logger.Debug("Client", $"Received ObjectId={id}");
 
-                InvokeObjectCreated(id);
+                AfterObjectCreated(id);
 
                 break;
             }
@@ -99,17 +117,8 @@ public class SyncClient : SyncNode
 
                 Logger.Debug("Client", $"Received Deletion of ObjectId={id}");
 
-                InvokeObjectDeleted(id);
+                AfterObjectDeleted(id);
 
-                break;
-            }
-            case SymbolRegisteredMessage symMsg:
-            {
-                SymbolTable.Add(symMsg.Symbol, symMsg.SymbolId);
-                if (symbolNotifier.IsWaiting(symMsg.Symbol))
-                    symbolNotifier.Notify(symMsg.Symbol, symMsg.SymbolId);
-
-                Logger.Debug("Client", $"Received Symbol {symMsg.Symbol}->{symMsg.SymbolId}");
                 break;
             }
             case EventSentMessage eventSentMessage:
@@ -124,19 +133,10 @@ public class SyncClient : SyncNode
         }
     }
 
-    void ProcessAudioMessages()
-    {
-        AudioDataMessage msg;
-        while (conn.TryReceiveMessage<AudioDataMessage>(Connection.ChannelType.Audio, out msg))
-        {
-            HandleAudioDataMessage(msg);
-        }
-    }
-
     public override async Task<uint> CreateObject()
     {
         Logger.Debug("Client", "Creating object");
-        conn.SendMessage<ITcpMessage>(Connection.ChannelType.Control, new CreateObjectMessage());
+        conn.SendControlMessage(new CreateObjectMessage());
         var tcs = new TaskCompletionSource<uint>();
         lock (creationQueue)
         {
@@ -151,20 +151,7 @@ public class SyncClient : SyncNode
     public override void DeleteObject(uint id)
     {
         Logger.Debug("Client", $"Deleting ObjectId={id}");
-        conn.SendMessage<ITcpMessage>(Connection.ChannelType.Control, new DeleteObjectMessage { ObjectId = id });
-    }
-
-    protected override async Task<uint> InternSymbol(string symbol)
-    {
-        if (SymbolTable.Forward.ContainsKey(symbol))
-        {
-            // No wait if the symbol is already registered
-            return SymbolTable.Forward[symbol];
-        }
-
-        conn.SendMessage<ITcpMessage>(Connection.ChannelType.Control, new RegisterSymbolMessage { Symbol = symbol });
-
-        return await symbolNotifier.Wait(symbol);
+        conn.SendControlMessage(new DeleteObjectMessage { ObjectId = id });
     }
 
     protected override void OnNewBlob(BlobHandle handle, Blob blob)
@@ -174,16 +161,29 @@ public class SyncClient : SyncNode
 
     protected override void RequestBlob(BlobHandle handle)
     {
-        conn.SendMessage<IBlobMessage>(
-            Connection.ChannelType.Blob,
+        conn.SendBlobMessage(
             new BlobRequestMessage { Handle = handle }
         );
     }
 
     public override void Dispose()
     {
-        conn.Dispose();
-        signaler.Dispose();
+        if (conn != null)
+        {
+            conn.Disconnect();
+
+            if (keyLogFile != "")
+            {
+                using (var writer = new System.IO.StreamWriter(keyLogFile))
+                {
+                    writer.WriteLine(conn.GetKeyLog());
+                }
+            }
+
+            conn.Dispose();
+        }
+
+        base.Dispose();
     }
 }
 

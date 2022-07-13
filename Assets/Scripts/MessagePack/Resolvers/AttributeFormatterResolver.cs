@@ -1,51 +1,55 @@
-﻿using MessagePack.Formatters;
-using System;
+﻿// Copyright (c) All contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System.Linq;
 using System.Reflection;
-using System.Linq; // require UNITY_WSA
+using MessagePack.Formatters;
+using MessagePack.Internal;
 
 namespace MessagePack.Resolvers
 {
     /// <summary>
-    /// Get formatter from [MessaegPackFromatter] attribute.
+    /// Get formatter from <see cref="MessagePackFormatterAttribute"/>.
     /// </summary>
     public sealed class AttributeFormatterResolver : IFormatterResolver
     {
-        public static IFormatterResolver Instance = new AttributeFormatterResolver();
+        /// <summary>
+        /// The singleton instance that can be used.
+        /// </summary>
+        public static readonly AttributeFormatterResolver Instance = new AttributeFormatterResolver();
 
-        AttributeFormatterResolver()
+        private AttributeFormatterResolver()
         {
-
         }
 
         public IMessagePackFormatter<T> GetFormatter<T>()
         {
-            return FormatterCache<T>.formatter;
+            return FormatterCache<T>.Formatter;
         }
 
-        static class FormatterCache<T>
+        private static class FormatterCache<T>
         {
-            public static readonly IMessagePackFormatter<T> formatter;
+            public static readonly IMessagePackFormatter<T> Formatter;
 
             static FormatterCache()
             {
-#if UNITY_WSA && !NETFX_CORE
+#if UNITY_2018_3_OR_NEWER && !NETFX_CORE
                 var attr = (MessagePackFormatterAttribute)typeof(T).GetCustomAttributes(typeof(MessagePackFormatterAttribute), true).FirstOrDefault();
 #else
-                var attr = typeof(T).GetTypeInfo().GetCustomAttribute<MessagePackFormatterAttribute>();
+                MessagePackFormatterAttribute attr = typeof(T).GetTypeInfo().GetCustomAttribute<MessagePackFormatterAttribute>();
 #endif
                 if (attr == null)
                 {
                     return;
                 }
 
-                if (attr.Arguments == null)
+                var formatterType = attr.FormatterType;
+                if (formatterType.IsGenericType && !formatterType.IsConstructedGenericType)
                 {
-                    formatter = (IMessagePackFormatter<T>)Activator.CreateInstance(attr.FormatterType);
+                    formatterType = formatterType.MakeGenericType(typeof(T).GetGenericArguments());
                 }
-                else
-                {
-                    formatter = (IMessagePackFormatter<T>)Activator.CreateInstance(attr.FormatterType, attr.Arguments);
-                }
+
+                Formatter = (IMessagePackFormatter<T>)ResolverUtilities.ActivateFormatter(formatterType, attr.Arguments);
             }
         }
     }

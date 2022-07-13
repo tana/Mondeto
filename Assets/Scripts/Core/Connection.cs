@@ -1,227 +1,192 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Linq;
-using Microsoft.MixedReality.WebRTC;
-using MessagePack;
 using System.Threading.Channels;
+using MessagePack;
+using Mondeto.Core.QuicWrapper;
 
 namespace Mondeto.Core
 {
 
 public class Connection : IDisposable
 {
-    public enum ChannelType
-    {
-        Sync = 0, Control = 1, Blob = 2, Audio = 3
-    }
-
     public bool Connected { get; private set; } = false;
 
     public delegate void OnDisconnectHandler();
     public event OnDisconnectHandler OnDisconnect;
 
-    PeerConnection pc;
+    QuicConnection quicConnection;
 
-    DataChannel[] channels = new DataChannel[4];
-    ChannelType[] channelTypes = { ChannelType.Sync, ChannelType.Control, ChannelType.Blob, ChannelType.Audio };
-    string[] channelLabels = { "sync", "control", "blob", "audio" };
+    Channel<IDatagramMessage> datagramReceiveChannel = Channel.CreateUnbounded<IDatagramMessage>();
 
-    // System.Threading.Channels.Channel for inter-thread communications
-    //  (For usage, see https://devblogs.microsoft.com/dotnet/an-introduction-to-system-threading-channels/ )
-    // This is not a built-in class, but (in Unity) can be installed by adding three DLLs.
-    //  (see https://yotiky.hatenablog.com/entry/unity_channels )
-    Channel<byte[]>[] threadChannels;
+    QuicStream controlStream;
+    TaskCompletionSource<QuicStream> controlStreamTCS;
+    MessagePackReceiver<IControlMessage> controlReceiver;
 
-    public Connection()
+    QuicStream blobStream;
+    TaskCompletionSource<QuicStream> blobStreamTCS;
+    MessagePackReceiver<IBlobMessage> blobReceiver;
+
+    internal Connection(QuicConnection quicConnection)
     {
-        pc = new PeerConnection();
+        this.quicConnection = quicConnection;
 
-        threadChannels = new Channel<byte[]>[channels.Length];
-        for (int i = 0; i < channels.Length; i++)
-        {
-            threadChannels[i] = Channel.CreateUnbounded<byte[]>();
-        }
+        this.quicConnection.DatagramReceived += (_, data) => {
+            var msg = MessagePackSerializer.Deserialize<IDatagramMessage>(data);
+            datagramReceiveChannel.Writer.WriteAsync(msg);
+        };
+
+        this.quicConnection.Disconnected += _ => {
+            Logger.Debug("Connection", "disconnected");
+            Connected = false;
+            OnDisconnect?.Invoke();
+        };
     }
 
-    public async Task SetupAsync(Signaler signaler, bool isServer, uint clientNodeId = 0)
+    public async Task SetupServerAsync()
     {
-        await pc.InitializeAsync(new PeerConnectionConfiguration {
-            IceServers = new List<IceServer> {
-                new IceServer { Urls = { signaler.IceServerUrl } }
-            }
-        });
+        Logger.Debug("Connection", "Server setup start");
 
-        var tcs = new TaskCompletionSource<bool>();
+        // Server waits client to create streams
+        // The first created stream is the control stream, and the second is the blob stream
+        controlStreamTCS = new TaskCompletionSource<QuicStream>();
+        blobStreamTCS = new TaskCompletionSource<QuicStream>();
 
-        // Do signaling
-        //  https://microsoft.github.io/MixedReality-WebRTC/manual/cs/cs-signaling.html
-        //  https://microsoft.github.io/MixedReality-WebRTC/manual/cs/helloworld-cs-signaling-core3.html
-
-        pc.LocalSdpReadytoSend += (SdpMessage sdpMessage) => {
-            // ここはawaitではなくWaitにしないとSocketが切れる．スレッドセーフ関係?
-            signaler.SendSdpAsync(sdpMessage.Type == SdpMessageType.Offer, sdpMessage.Content, clientNodeId).Wait();
-        };
-        pc.IceCandidateReadytoSend += (IceCandidate candidate) => {
-            signaler.SendIceAsync(candidate.SdpMid, candidate.SdpMlineIndex, candidate.Content, clientNodeId).Wait();
-        };
-
-        pc.IceStateChanged += (IceConnectionState state) => {
-            Logger.Debug("Connection", $"ICE state changed to {state}");
-            // https://microsoft.github.io/MixedReality-WebRTC/versions/release/2.0/api/Microsoft.MixedReality.WebRTC.IceConnectionState.html
-            if (state == IceConnectionState.Connected)
+        quicConnection.PeerStreamStarted += (_, stream) => {
+            if (controlStream == null)
             {
-                Connected = true;
+                controlStreamTCS.SetResult(stream);
             }
-            if (state == IceConnectionState.Closed || state == IceConnectionState.Disconnected || state == IceConnectionState.Failed)
+            else if (blobStream == null)
             {
-                Connected = false;
-                OnDisconnect();
-            }
-
-            if (!isServer && state == IceConnectionState.Failed)
-            {
-                tcs.SetException(new ConnectionException("Failed to establish a WebRTC connection"));
+                blobStreamTCS.SetResult(stream);
             }
         };
 
-        signaler.SdpReceived += async (bool isOffer, string sdp, uint cid) => {
-            if (isServer && cid != clientNodeId)
-            {
-                // ignore messages for other clients
-                return;
-            }
+        controlStream = await controlStreamTCS.Task;
+        controlReceiver = new MessagePackReceiver<IControlMessage>(controlStream);
 
-            await pc.SetRemoteDescriptionAsync(new SdpMessage {
-                Type = isOffer ? SdpMessageType.Offer : SdpMessageType.Answer,
-                Content = sdp
-            });
-            if (isOffer)
-            {
-                pc.CreateAnswer();
-            }
-        };
-        signaler.IceReceived += (string sdpMid, int sdpMLineIndex, string candidate, uint cid) => {
-            if (isServer && cid != clientNodeId)
-            {
-                // ignore messages for other clients
-                return;
-            }
+        blobStream = await blobStreamTCS.Task;
+        blobReceiver = new MessagePackReceiver<IBlobMessage>(blobStream);
 
-            pc.AddIceCandidate(new IceCandidate {
-                SdpMid = sdpMid,
-                SdpMlineIndex = sdpMLineIndex,
-                Content = candidate
-            });
-            //Logger.Write((isServer ? "Server: " : "Client: ") + $"{sdpMid} {sdpMLineIndex} {candidate}");
-        };
+        Connected = true;
 
-        if (isServer)
-        {
-            TaskCompletionSource<DataChannel>[] completionSources = channelTypes.Select(
-                _ => new TaskCompletionSource<DataChannel>()
-            ).ToArray();
-
-            pc.DataChannelAdded += (dc) => {
-                foreach (var type in channelTypes)
-                {
-                    if (dc.Label == channelLabels[(int)type])
-                        completionSources[(int)type].SetResult(dc);
-                }
-            };
-
-            Logger.Debug("Connection", "Server is ready for signaling");
-            await signaler.NotifyReadyAsync(clientNodeId);
-
-            Logger.Debug("Connection", "Server: Waiting for DC");
-            foreach (var type in channelTypes)
-            {
-                channels[(int)type] = await completionSources[(int)type].Task;
-            }
-        }
-        else
-        {
-            // Define channels
-            // Sync channel (unreliable)
-            channels[(int)ChannelType.Sync] = await pc.AddDataChannelAsync(
-                channelLabels[(int)ChannelType.Sync], ordered: false, reliable: false);
-            // Message channel (reliable but order is not guaranteed)
-            channels[(int)ChannelType.Control] = await pc.AddDataChannelAsync(
-                channelLabels[(int)ChannelType.Control], ordered: false, reliable: true);
-            // Blob channel (reliable and ordered)
-            channels[(int)ChannelType.Blob] = await pc.AddDataChannelAsync(
-                channelLabels[(int)ChannelType.Blob], ordered: true, reliable: true);
-            // Audio channel (unreliable)
-            channels[(int)ChannelType.Audio] = await pc.AddDataChannelAsync(
-                channelLabels[(int)ChannelType.Audio], ordered: false, reliable: false);
-
-            Logger.Debug("Connection", "Client: Waiting for server ready");
-            await signaler.WaitReadyAsync();
-
-            pc.CreateOffer();
-        }
-
-        foreach (var (dc, idx) in channels.Select((dc, idx) => (dc, idx)))
-        {
-            dc.MessageReceived += (data) => {
-                threadChannels[idx].Writer.TryWrite(data);  // Always succeeds because the Channel is unbounded
-            };
-            dc.StateChanged += () => {
-                Logger.Debug("Connection", $"DC {(ChannelType)idx} state changed to {dc.State}");
-                if (dc.State == DataChannel.ChannelState.Closing) {
-                    // Disconnect handling
-                    Connected = false;
-                }
-            };
-        }
-
-        //await Task.Delay(5000);
-
-        if (!isServer)
-        {
-            // FIXME: Waiting pc.Connected not work in server (cannot establish a connection to client)
-            //        In server, should wait until all DataChannels are added?
-            pc.Connected += () => {
-                tcs.SetResult(true);
-            };
-            await tcs.Task;
-        }
+        Logger.Debug("Connection", "Server setup complete");
     }
 
-    // Generic type specification is necessary to specify msg is interface type, not message type itself
-    public void SendMessage<T>(ChannelType type, T msg)
+    public async Task SetupClientAsync(CancellationToken cancel)
     {
-        byte[] buf = MessagePackSerializer.Serialize<T>(msg);
-        channels[(int)type].SendMessage(buf);
+        Logger.Debug("Connection", "Client setup start");
+
+        // Wait until connection completes
+        var connectTCS = new TaskCompletionSource<int>();
+        cancel.Register(() => connectTCS.SetCanceled());
+        quicConnection.Connected += (_) => {
+            connectTCS.SetResult(0);
+        };
+        await connectTCS.Task;
+
+        // Client creates streams
+        controlStream = quicConnection.OpenStream();
+        controlReceiver = new MessagePackReceiver<IControlMessage>(controlStream);
+
+        controlStream.Start(immediate: true);   // immediately notify to server even if no data is transmitted
+
+        blobStream = quicConnection.OpenStream();
+        blobReceiver = new MessagePackReceiver<IBlobMessage>(blobStream);
+
+        blobStream.Start(immediate: true);   // immediately notify to server even if no data is transmitted
+
+        Connected = true;
+
+        Logger.Debug("Connection", "Client setup complete");
     }
 
-    public bool TryReceiveMessage<T>(ChannelType type, out T msg)
+    public void SendDatagramMessage(IDatagramMessage msg, Action acknowledgeCallback = null)
     {
-        byte[] buf;
-        if (threadChannels[(int)type].Reader.TryRead(out buf))
+        if (!Connected) return;
+
+        var msgBinary = MessagePackSerializer.Serialize(msg);
+        if (msgBinary.Length > quicConnection.DatagramMaxLength)
         {
-            msg = MessagePackSerializer.Deserialize<T>(buf);
-            return true;
+            // Ignore message that is too long.
+            // Because acknowledgeCallback is not called, it is same as a packet loss for callers of this function.
+            return;
         }
-        else
-        {
-            msg = default(T);
-            return false;
-        }
+        quicConnection.SendDatagram(msgBinary, acknowledgeCallback);
     }
 
-    public async Task<T> ReceiveMessageAsync<T>(ChannelType type, CancellationToken cancel = default)
+    public void SendControlMessage(IControlMessage msg)
     {
-        byte[] buf = await threadChannels[(int)type].Reader.ReadAsync(cancel);
-        return MessagePackSerializer.Deserialize<T>(buf);
+        controlStream.Send(MessagePackSerializer.Serialize(msg));
+    }
+
+    public void SendBlobMessage(IBlobMessage msg)
+    {
+        blobStream.Send(MessagePackSerializer.Serialize(msg));
+    }
+
+    public bool TryReceiveDatagramMessage(out IDatagramMessage msg)
+    {
+        return datagramReceiveChannel.Reader.TryRead(out msg);
+    }
+
+    public bool TryReceiveControlMessage(out IControlMessage msg)
+    {
+        return controlReceiver.TryReceive(out msg);
+    }
+
+    public bool TryReceiveBlobMessage(out IBlobMessage msg)
+    {
+        return blobReceiver.TryReceive(out msg);
+    }
+
+    public async Task<IDatagramMessage> ReceiveDatagramMessageAsync(CancellationToken cancel = default)
+    {
+        return await datagramReceiveChannel.Reader.ReadAsync(cancel);
+    }
+
+    public async Task<IControlMessage> ReceiveControlMessageAsync(CancellationToken cancel = default)
+    {
+        return await controlReceiver.ReceiveAsync(cancel);
+    }
+
+    public async Task<IBlobMessage> ReceiveBlobMessageAsync(CancellationToken cancel = default)
+    {
+        return await blobReceiver.ReceiveAsync(cancel);
+    }
+
+    public void Disconnect()
+    {
+        quicConnection.Shutdown(0);
     }
 
     public void Dispose()
     {
-        pc.Close();
-        pc.Dispose();
+        if (controlReceiver != null)
+        {
+            controlReceiver.Dispose();
+        }
+
+        if (blobReceiver != null)
+        {
+            blobReceiver.Dispose();
+        }
+
+        if (controlStream != null)
+        {
+            controlStream.Dispose();
+        }
+
+        if (blobStream != null)
+        {
+            blobStream.Dispose();
+        }
+
+        quicConnection.Dispose();
     }
+
+    public string GetKeyLog() => quicConnection.GetKeyLog();
 }
 
 } // end namespace

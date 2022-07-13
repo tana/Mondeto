@@ -7,13 +7,6 @@
       "dependencies": {},
       "hash": "9e2163616b9c527fa9461544e2bcc5f93fd12d83"
     },
-    "com.microsoft.mixedreality.webrtc": {
-      "version": "2.0.2",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {},
-      "url": "https://pkgs.dev.azure.com/aipmr/MixedReality-Unity-Packages/_packaging/Unity-packages/npm/registry"
-    },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
       "depth": 0,

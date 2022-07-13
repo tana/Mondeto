@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Net;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 using Mondeto.Core;
@@ -47,11 +48,18 @@ public class SyncBehaviour : MonoBehaviour
 
         if (IsServer)
         {
-            Node = new SyncServer(Settings.Instance.SignalerUrlForServer);
+            Node = new SyncServer(
+                new IPEndPoint(IPAddress.Parse(Settings.Instance.IPAddressToListen), Settings.Instance.PortToListen),
+                Settings.Instance.TlsPrivateKeyFile, Settings.Instance.TlsCertificateFile
+            );
         }
         else
         {
-            Node = new SyncClient(Settings.Instance.SignalerUrlForClient);
+            Node = new SyncClient(
+                Settings.Instance.HostToConnect, Settings.Instance.PortToConnect,
+                noCertValidation: Settings.Instance.SkipCertificateValidation,
+                keyLogFile: Environment.GetEnvironmentVariable("SSLKEYLOGFILE") ?? ""
+            );
         }
 
         Node.ObjectCreated += OnObjectCreated;

@@ -30,7 +30,7 @@ public class SyncObject
     public const int AudioSamplingRate = 48000;
     // In Opus, only some specific values are allowed for frame size.
     //  See: https://opus-codec.org/docs/opus_api-1.3.1/group__opus__encoder.html#ga4ae9905859cd241ef4bb5c59cd5e5309
-    public const int OpusFrameSize = 960;
+    public const int OpusFrameSize = 1920;
     public const int OpusBitrate = 64000;
     Queue<float> audioSendQueue = new Queue<float>();
     float[] samplesToEncode = new float[OpusFrameSize];

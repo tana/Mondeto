@@ -1,10 +1,10 @@
-﻿#if !UNITY_WSA
+﻿// Copyright (c) All contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace MessagePack.Internal
 {
@@ -22,18 +22,18 @@ namespace MessagePack.Internal
 
         public static bool IsAnonymous(this System.Reflection.TypeInfo type)
         {
-            return type.GetCustomAttribute<CompilerGeneratedAttribute>() != null
-                && type.IsGenericType && type.Name.Contains("AnonymousType")
-                && (type.Name.StartsWith("<>") || type.Name.StartsWith("VB$"))
-                && (type.Attributes & TypeAttributes.NotPublic) == TypeAttributes.NotPublic;
+            return type.Namespace == null
+                   && type.IsSealed
+                   && (type.Name.StartsWith("<>f__AnonymousType", StringComparison.Ordinal)
+                       || type.Name.StartsWith("<>__AnonType", StringComparison.Ordinal)
+                       || type.Name.StartsWith("VB$AnonymousType_", StringComparison.Ordinal))
+                   && type.IsDefined(typeof(CompilerGeneratedAttribute), false);
         }
 
         public static bool IsIndexer(this System.Reflection.PropertyInfo propertyInfo)
         {
             return propertyInfo.GetIndexParameters().Length > 0;
         }
-
-#if NETSTANDARD
 
         public static bool IsConstructedGenericType(this System.Reflection.TypeInfo type)
         {
@@ -50,8 +50,10 @@ namespace MessagePack.Internal
             return propInfo.SetMethod;
         }
 
-#endif
+        public static bool HasPrivateCtorForSerialization(this TypeInfo type)
+        {
+            var markedCtor = type.DeclaredConstructors.SingleOrDefault(x => x.GetCustomAttribute<SerializationConstructorAttribute>(false) != null);
+            return markedCtor?.Attributes.HasFlag(MethodAttributes.Private) ?? false;
+        }
     }
 }
-
-#endif

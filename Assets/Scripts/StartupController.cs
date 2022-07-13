@@ -15,9 +15,16 @@ namespace Mondeto
 public class StartupController : MonoBehaviour
 {
     public Toggle ServerToggle;
-    public InputField ServerUrlInput;
+    public InputField IPAddressToListenInput;
+    public InputField PortToListenInput;
+    public InputField TlsPrivateKeyFileInput;
+    public InputField TlsCertificateFileInput;
+
     public Toggle ClientToggle;
-    public InputField ClientUrlInput;
+    public InputField HostToConnectInput;
+    public InputField PortToConnectInput;
+    public Toggle SkipCertificateValidationToggle;
+
     public InputField AvatarInput;
 
     public Text AvatarInfo;
@@ -44,12 +51,6 @@ public class StartupController : MonoBehaviour
             Settings.Instance.SceneFile = extractedDir + "/scene.yml";
         }
 
-        // Initialize MixedReality-WebRTC on Android
-        if (Application.platform == RuntimePlatform.Android)
-        {
-            Microsoft.MixedReality.WebRTC.Unity.Android.Initialize();
-        }
-
         if (!Application.isEditor)
         {
             // Parse command line args using state machine
@@ -72,11 +73,11 @@ public class StartupController : MonoBehaviour
                             XRGeneralSettings.Instance.Manager.DeinitializeLoader();
                         }
                     }
-                    else if (arg.StartsWith("wss://") || arg.StartsWith("ws://"))
+                    else
                     {
-                        // Set signaler URL if URL is specified as a command line argument
-                        Settings.Instance.SignalerUrlForClient = arg;
-                        Settings.Instance.SignalerUrlForServer = arg;
+                        // Set hostname or IP address if it is specified as a command line argument
+                        Settings.Instance.HostToConnect = arg;
+                        Settings.Instance.IPAddressToListen = arg;
                     }
                 }
                 else if (state == "--scene")    // after "--scene" flag
@@ -121,15 +122,29 @@ public class StartupController : MonoBehaviour
 
     void SettingsToGui()
     {
-        ServerUrlInput.text = Settings.Instance.SignalerUrlForServer;
-        ClientUrlInput.text = Settings.Instance.SignalerUrlForClient;
+        IPAddressToListenInput.text = Settings.Instance.IPAddressToListen;
+        PortToListenInput.text = Settings.Instance.PortToListen.ToString();
+        TlsPrivateKeyFileInput.text = Settings.Instance.TlsPrivateKeyFile;
+        TlsCertificateFileInput.text = Settings.Instance.TlsCertificateFile;
+
+        HostToConnectInput.text = Settings.Instance.HostToConnect;
+        PortToConnectInput.text = Settings.Instance.PortToConnect.ToString();
+        SkipCertificateValidationToggle.isOn = Settings.Instance.SkipCertificateValidation;
+
         AvatarInput.text = Settings.Instance.AvatarPath;
     }
 
     void GuiToSettings()
     {
-        Settings.Instance.SignalerUrlForServer = ServerUrlInput.text;
-        Settings.Instance.SignalerUrlForClient = ClientUrlInput.text;
+        Settings.Instance.IPAddressToListen = IPAddressToListenInput.text;
+        Settings.Instance.PortToListen = int.Parse(PortToListenInput.text);
+        Settings.Instance.TlsPrivateKeyFile = TlsPrivateKeyFileInput.text;
+        Settings.Instance.TlsCertificateFile = TlsCertificateFileInput.text;
+
+        Settings.Instance.HostToConnect = HostToConnectInput.text;
+        Settings.Instance.PortToConnect = int.Parse(PortToConnectInput.text);
+        Settings.Instance.SkipCertificateValidation = SkipCertificateValidationToggle.isOn;
+
         Settings.Instance.AvatarPath = AvatarInput.text;
     }
 
@@ -196,8 +211,14 @@ public class StartupController : MonoBehaviour
 
     public void OnToggleChanged()
     {
-        ServerUrlInput.interactable = ServerToggle.isOn;
-        ClientUrlInput.interactable = ClientToggle.isOn;
+        IPAddressToListenInput.interactable = ServerToggle.isOn;
+        PortToListenInput.interactable = ServerToggle.isOn;
+        TlsPrivateKeyFileInput.interactable = ServerToggle.isOn;
+        TlsCertificateFileInput.interactable = ServerToggle.isOn;
+
+        HostToConnectInput.interactable = ClientToggle.isOn;
+        PortToConnectInput.interactable = ClientToggle.isOn;
+        SkipCertificateValidationToggle.interactable = ClientToggle.isOn;
     }
 
     public void OnStartClicked()

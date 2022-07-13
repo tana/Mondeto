@@ -9,9 +9,9 @@ This project was supported by [The MITOU Program](https://www.ipa.go.jp/english/
 Mondeto uses many third-party libraries and data.
 The following are credits for these third-party works.
 
-### MixedReality-WebRTC
-- [LICENSE](ThirdPartyLicenses/MixedReality-WebRTC/LICENSE)
-- [NOTICE](ThirdPartyLicenses/MixedReality-WebRTC/NOTICE) (Because MixedReality-WebRTC itself uses other open source works)
+### MsQuic
+- [LICENSE](ThirdPartyLicenses/MsQuic/LICENSE)
+- [THIRD-PARTY-NOTICES](ThirdPartyLicenses/MsQuic/THIRD-PARTY-NOTICES) (including license of OpenSSL used in MsQuic library)
 
 ### MessagePack for C\#
 - [LICENSE](ThirdPartyLicenses/MessagePack-CSharp/LICENSE)
@@ -24,9 +24,6 @@ The following are credits for these third-party works.
 
 ### UniTask
 - [LICENSE](ThirdPartyLicenses/UniTask/LICENSE)
-
-### LitJSON
-- [COPYING](ThirdPartyLicenses/LitJSON/COPYING)
 
 ### YamlDotNet
 - [LICENSE.txt](ThirdPartyLicenses/YamlDotNet/LICENSE.txt)
@@ -49,6 +46,10 @@ There are some modified files (paths are relative to root directory of UnityChan
 ### System.Threading.Channels
 - [LICENSE.txt](ThirdPartyLicenses/System.Threading.Channels/LICENSE.txt)
 - [THIRD-PARTY-NOTICES.txt](ThirdPartyLicenses/System.Threading.Channels/THIRD-PARTY-NOTICES.txt)
+
+### System.IO.Pipelines
+- [LICENSE.txt](ThirdPartyLicenses/System.IO.Pipelines/LICENSE.TXT)
+- [THIRD-PARTY-NOTICES.txt](ThirdPartyLicenses/System.IO.Pipelines/THIRD-PARTY-NOTICES.TXT)
 
 ### WebAssembly for .NET
 - [LICENSE](ThirdPartyLicenses/dotnet-webassembly/LICENSE)
