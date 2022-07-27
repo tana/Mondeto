@@ -37,7 +37,15 @@ public class ColliderSync : MonoBehaviour, ITag
         }
         else if (obj.HasTag("model"))
         {
-            GetComponent<ModelSync>().LoadComplete += AddMeshCollidersForModel;
+            var modelSync = GetComponent<ModelSync>();
+            if (modelSync.Loaded)
+            {
+                AddMeshCollidersForModel(modelSync);
+            }
+            else
+            {
+                modelSync.LoadComplete += AddMeshCollidersForModel;
+            }
         }
         else if (obj.HasTag("plane") || obj.HasTag("cylinder"))
         {

@@ -464,7 +464,7 @@ public class PlayerAvatar : MonoBehaviour, ITag
             obj.WriteLog("PlayerAvatar", $"LicenseType={meta.LicenseType}");
             obj.WriteLog("PlayerAvatar", $"OtherLicenseUrl={meta.OtherLicenseUrl}");
 
-            UniGLTF.RuntimeGltfInstance instance = await ctx.LoadAsync(new VRMShaders.RuntimeOnlyAwaitCaller());
+            UniGLTF.RuntimeGltfInstance instance = await ctx.LoadAsync(new VRMShaders.ImmediateCaller());   // This is not actually async because of ImmediateCaller
 
             instance.EnableUpdateWhenOffscreen();
             instance.ShowMeshes();

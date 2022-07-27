@@ -10,6 +10,7 @@ public class ModelSync : MonoBehaviour, ITag
 {
     public delegate void LoadCompleteDelegate(ModelSync ms);
     public event LoadCompleteDelegate LoadComplete;
+    public bool Loaded = false;
 
     List<GameObject> meshes;
 
@@ -33,25 +34,33 @@ public class ModelSync : MonoBehaviour, ITag
         // https://vrm-c.github.io/UniVRM/ja/api/sample/SimpleViewer.html
         // https://github.com/vrm-c/UniVRM/blob/e91ab9fc519aa387dc9b39044aa2189ff0382f15/Assets/VRM_Samples/SimpleViewer/ViewerUI.cs
         // Currently, only GLB (glTF binary format) is supported because it is self-contained
-        UniGLTF.GltfData gltf = new UniGLTF.GlbBinaryParser(blob.Data, blob.ToString()).Parse();
-        using (var ctx = new UniGLTF.ImporterContext(gltf))
+        try
         {
-            UniGLTF.RuntimeGltfInstance instance = await ctx.LoadAsync(new VRMShaders.RuntimeOnlyAwaitCaller());
+            UniGLTF.GltfData gltf = new UniGLTF.GlbBinaryParser(blob.Data, blob.ToString()).Parse();
+            using (var ctx = new UniGLTF.ImporterContext(gltf))
+            {
+                UniGLTF.RuntimeGltfInstance instance = await ctx.LoadAsync(new VRMShaders.ImmediateCaller());   // This is not actually async because of ImmediateCaller
 
-            // Move the model inside this gameObject
-            instance.Root.transform.SetParent(transform);
-            instance.Root.transform.localPosition = Vector3.zero;
-            instance.Root.transform.localRotation = Quaternion.identity;
+                // Move the model inside this gameObject
+                instance.Root.transform.SetParent(transform);
+                instance.Root.transform.localPosition = Vector3.zero;
+                instance.Root.transform.localRotation = Quaternion.identity;
 
-            instance.ShowMeshes();
+                instance.ShowMeshes();
 
-            // For GetMeshes
-            meshes = instance.Nodes.Select(tf => tf.gameObject).ToList();
+                // For GetMeshes
+                meshes = instance.Nodes.Select(tf => tf.gameObject).ToList();
+            }
+        }
+        catch (System.Exception e)
+        {
+            obj.WriteErrorLog("Model", e.ToString());
         }
 
         obj.WriteDebugLog("Model", "Model load completed");
 
         LoadComplete?.Invoke(this);
+        Loaded = true;
     }
 
     public List<GameObject> GetMeshes()
