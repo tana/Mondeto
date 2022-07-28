@@ -23,7 +23,7 @@ Languages | [English](README.md) | 日本語
     - もしくは、[mainブランチの（ほぼ）最新のビルド](https://1drv.ms/f/s!AvizOnmg-QO6hplqj7dZul1EnOJtcA)も使用可能です。
 1. `Mondeto.exe`を起動する。
 1. `Client`にチェックを入れる。    
-    - デフォルトでは開発者が用意したサーバにつながるようになっていますが、`Signaler`のURLを変更することで別のサーバにも接続できます。
+    - デフォルトでは開発者が用意したサーバにつながるようになっていますが、ホスト名とポート番号を指定することで別のサーバにも接続できます。
 1. `Start`ボタンを押すとサーバに接続できます。
 
 操作方法は[こちら](https://github.com/tana/Mondeto/wiki/Controls) をご覧ください。

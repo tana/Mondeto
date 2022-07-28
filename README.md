@@ -23,7 +23,7 @@ An open, flexible, and secure online virtual reality system.
     - Alternatively, [(almost) the latest build of main branch](https://1drv.ms/f/s!AvizOnmg-QO6hplqj7dZul1EnOJtcA) is available.
 1. Launch the executable `Mondeto.exe`.
 1. Check the `Client` checkbox.
-    - By default, it will connect to the server provided by the developer. However, you can connect to other servers by setting the `Signaler` URL.
+    - By default, it will connect to the server provided by the developer. However, you can connect to other servers by specifying hostname and port number.
 1. Press `Start` to connect.
 
 For controls, please see [this page](https://github.com/tana/Mondeto/wiki/Controls).
