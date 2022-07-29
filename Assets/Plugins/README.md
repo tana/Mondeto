@@ -21,3 +21,5 @@
 
 - `x86_64/msquic.dll`
     - [MsQuic](https://github.com/microsoft/msquic) native library for x86_64 Windows (compiled with OpenSSL)
+- `x86_64/libmsquic.so` and `x86_64/libmsquic.lttng.so`
+    - [MsQuic](https://github.com/microsoft/msquic) native library for x86_64 Linux (compiled with OpenSSL)
