@@ -91,6 +91,7 @@ public class StartupController : MonoBehaviour
         if (Application.isBatchMode)
         {
             Mondeto.Core.Logger.Log("StartupController", "Running as batch mode. Starting dedicated server scene");
+            SettingsManager.Instance.DumpSettings();
             SceneManager.LoadScene("WalkServer");
         }
 

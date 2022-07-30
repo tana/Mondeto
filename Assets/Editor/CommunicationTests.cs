@@ -25,7 +25,8 @@ class CommunicationTests
         // FIXME: Fail to connect (ALPN negotiation error) when server uses IPAddress.Loopback or client uses localhost. Probably related to IPv6.
         server = new SyncServer(
             new IPEndPoint(IPAddress.Any, Port),
-            @"Assets/Editor/testCert/test.key", @"Assets/Editor/testCert/test.crt"
+            UnityEngine.Application.streamingAssetsPath + "/testCert/test.key",
+            UnityEngine.Application.streamingAssetsPath + "/testCert/test.crt"
         );
         client = new SyncClient(
             "127.0.0.1", Port,
