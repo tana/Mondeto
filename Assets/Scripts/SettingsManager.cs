@@ -34,6 +34,8 @@ public class SettingsManager
         {
             // If the settings file is not exist (first launch), set default settings
 
+            Settings.Instance.TlsPrivateKeyFile = Application.streamingAssetsPath + "/testCert/test.key";
+            Settings.Instance.TlsCertificateFile = Application.streamingAssetsPath + "/testCert/test.crt";
             Settings.Instance.AvatarPath = Application.streamingAssetsPath + "/default_avatar.vrm";
             Settings.Instance.MimeTypesPath = Application.streamingAssetsPath + "/config/mime.types";
             Settings.Instance.SceneFile = Application.streamingAssetsPath + "/scene.yml";

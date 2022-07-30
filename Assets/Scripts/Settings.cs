@@ -17,11 +17,11 @@ public class Settings
     // Server settings
     public string IPAddressToListen = "0.0.0.0";
     public int PortToListen = 15902;
-    public string TlsPrivateKeyFile = "";
-    public string TlsCertificateFile = "";
+    public string TlsPrivateKeyFile = "Assets/StreamingAssets/testCert/test.key";
+    public string TlsCertificateFile = "Assets/StreamingAssets/testCert/test.crt";
 
     // Client settings
-    public string HostToConnect = "127.0.0.1";
+    public string HostToConnect = "devel.luftmensch.info";
     public int PortToConnect = 15902;
     public bool SkipCertificateValidation = false;
 
