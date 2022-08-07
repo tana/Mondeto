@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
+using Mondeto.Core;
 using YamlDotNet.Serialization;
 
 namespace Mondeto
@@ -19,6 +21,8 @@ public class Settings
     public int PortToListen = 15902;
     public string TlsPrivateKeyFile = "Assets/StreamingAssets/testCert/test.key";
     public string TlsCertificateFile = "Assets/StreamingAssets/testCert/test.crt";
+    public AuthType AuthType = AuthType.None;
+    public Dictionary<string, string> PasswordHashes = new();   // Each value is SHA-256 hash (hexadecimal) of UTF-8 encoded password.
 
     // Client settings
     public string HostToConnect = "devel.luftmensch.info";

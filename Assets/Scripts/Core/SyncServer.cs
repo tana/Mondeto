@@ -51,19 +51,47 @@ public class SyncServer : SyncNode
             // Create connection for a new client
             var conn = new Connection(quicConnection);
 
-            uint clientNodeId = nodeIdRegistry.Create();  // Assign a new node ID
-            Logger.Log("Server", $"Accepting connection from {ep} as NodeId {clientNodeId}");
+            Logger.Log("Server", $"Accepting connection from {ep}");
             await conn.SetupServerAsync();
 
-            await InitClient(conn, clientNodeId);
+            await InitClient(conn);
         };
 
         // Start accepting client connection
         listener.Start(new byte[][] { SyncNode.Alpn }, endPoint, privateKeyPath, certificatePath);
     }
 
-    async Task InitClient(Connection conn, uint clientId)
+    async Task InitClient(Connection conn)
     {
+        // Authentication
+        if (Settings.Instance.AuthType != AuthType.None)
+        {
+            conn.SendControlMessage(new AuthRequiredMessage { Type = Settings.Instance.AuthType });
+
+            IControlMessage msg = await conn.ReceiveControlMessageAsync();
+
+            if (Settings.Instance.AuthType == AuthType.Password
+                && msg is PasswordAuthMessage passwordAuthMsg)
+            {
+                var sha = System.Security.Cryptography.SHA256.Create();
+                byte[] hash = sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(passwordAuthMsg.Password));
+                string hashStr = hash.Select(b => $"{b:x2}").Aggregate("", (l, r) => l + r);
+
+                if (!Settings.Instance.PasswordHashes.ContainsKey(passwordAuthMsg.UserName)
+                    || hashStr != Settings.Instance.PasswordHashes[passwordAuthMsg.UserName].ToLower())
+                {
+                    // Authentication failed
+                    conn.Disconnect();
+                    conn.Dispose();
+
+                    Logger.Log("Server", "Password authentication failed");
+                }
+            }
+        }
+        // Authentication succeeded
+
+        uint clientId = nodeIdRegistry.Create();  // Assign a new node ID
+
         lock (clients)
         {
             clients[clientId] = conn;

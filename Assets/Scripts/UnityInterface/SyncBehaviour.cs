@@ -60,6 +60,8 @@ public class SyncBehaviour : MonoBehaviour
                 noCertValidation: Settings.Instance.SkipCertificateValidation,
                 keyLogFile: Environment.GetEnvironmentVariable("SSLKEYLOGFILE") ?? ""
             );
+
+            // ((SyncClient)Node).PasswordRequestCallback = AskUserNameAndPassword;
         }
 
         Node.ObjectCreated += OnObjectCreated;
@@ -342,6 +344,10 @@ public class SyncBehaviour : MonoBehaviour
 
         LoadingScreen.SetActive(false);
     }
+
+    // async Task<(string, string)> AskUserNameAndPassword()
+    // {
+    // }
 
     public void OnDestroy()
     {

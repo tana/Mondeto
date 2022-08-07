@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,6 +25,8 @@ public class SyncClient : SyncNode
 
     bool noCertValidation;
     string keyLogFile = "";
+
+    public Func<Task<(string userName, string password)>> PasswordRequestCallback = null;
 
     public SyncClient(string serverHost, int serverPort, bool noCertValidation = false, string keyLogFile = "")
         : base()
@@ -58,17 +61,26 @@ public class SyncClient : SyncNode
 
         await conn.SetupClientAsync(connectCancel);
 
-        // TODO: authentication (e.g. password)
-
         while (true)
         {
             connectCancel.ThrowIfCancellationRequested();
 
-            if (await conn.ReceiveControlMessageAsync(connectCancel) is NodeIdMessage nodeIdMsg)
+            IControlMessage msg = await conn.ReceiveControlMessageAsync(connectCancel);
+
+            if (msg is NodeIdMessage nodeIdMsg)
             {
                 NodeId = nodeIdMsg.NodeId;
                 Logger.Debug("Client", $"Received NodeId={nodeIdMsg.NodeId}");
                 break;
+            }
+            else if (msg is AuthRequiredMessage authReqMsg)
+            {
+                if (authReqMsg.Type == AuthType.Password && PasswordRequestCallback != null)
+                {
+                    var (userName, password) = await PasswordRequestCallback();
+                    
+                    conn.SendControlMessage(new PasswordAuthMessage { UserName = userName, Password = password });
+                }
             }
         }
 

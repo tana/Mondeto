@@ -318,6 +318,8 @@ public class AudioDataMessage : IDatagramMessage
 [MessagePack.Union(4, typeof(DeleteObjectMessage))]
 [MessagePack.Union(5, typeof(ObjectDeletedMessage))]
 [MessagePack.Union(8, typeof(EventSentMessage))]
+[MessagePack.Union(9, typeof(AuthRequiredMessage))]
+[MessagePack.Union(10, typeof(PasswordAuthMessage))]
 public interface IControlMessage
 {
 }
@@ -374,6 +376,30 @@ public class EventSentMessage : IControlMessage
     public uint Receiver;   // Object ID of the receiver
     [Key(3)]
     public IValue[] Args;
+}
+
+public enum AuthType
+{
+    None = 0,   // Actually, this is not used at this time.
+    Password = 1
+}
+
+// (Server to Client)
+[MessagePackObject]
+public class AuthRequiredMessage : IControlMessage
+{
+    [Key(0)]
+    public AuthType Type;
+}
+
+// (Client to Server)
+[MessagePackObject]
+public class PasswordAuthMessage : IControlMessage
+{
+    [Key(0)]
+    public string UserName;
+    [Key(1)]
+    public string Password; // This field is plaintext but whole communication channel is encrypted
 }
 
 // Messages for blob transfer on blob stream (reliable)
