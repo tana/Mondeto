@@ -28,13 +28,22 @@ public class SyncServer : SyncNode
     IPEndPoint endPoint;
     string privateKeyPath;
     string certificatePath;
+    AuthType authType;
+    Dictionary<string, byte[]> passwordHashes = new();
 
-    public SyncServer(IPEndPoint endPoint, string privateKeyPath, string certificatePath)
+    public SyncServer(IPEndPoint endPoint, string privateKeyPath, string certificatePath,
+        AuthType authType = AuthType.None, Dictionary<string, byte[]> passwordHashes = null)
         : base()
     {
         this.endPoint = endPoint;
         this.privateKeyPath = privateKeyPath;
         this.certificatePath = certificatePath;
+        this.authType = authType;
+
+        if (passwordHashes != null)
+        {
+            this.passwordHashes = passwordHashes;
+        }
     }
 
 #pragma warning disable CS1998
@@ -64,21 +73,20 @@ public class SyncServer : SyncNode
     async Task InitClient(Connection conn)
     {
         // Authentication
-        if (Settings.Instance.AuthType != AuthType.None)
+        if (authType != AuthType.None)
         {
-            conn.SendControlMessage(new AuthRequiredMessage { Type = Settings.Instance.AuthType });
+            conn.SendControlMessage(new AuthRequiredMessage { Type = authType });
 
             IControlMessage msg = await conn.ReceiveControlMessageAsync();
 
-            if (Settings.Instance.AuthType == AuthType.Password
+            if (authType == AuthType.Password
                 && msg is PasswordAuthMessage passwordAuthMsg)
             {
                 var sha = System.Security.Cryptography.SHA256.Create();
                 byte[] hash = sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(passwordAuthMsg.Password));
-                string hashStr = hash.Select(b => $"{b:x2}").Aggregate("", (l, r) => l + r);
 
-                if (!Settings.Instance.PasswordHashes.ContainsKey(passwordAuthMsg.UserName)
-                    || hashStr != Settings.Instance.PasswordHashes[passwordAuthMsg.UserName].ToLower())
+                if (!passwordHashes.ContainsKey(passwordAuthMsg.UserName)
+                    || !hash.SequenceEqual(passwordHashes[passwordAuthMsg.UserName]))
                 {
                     // Authentication failed
                     conn.Disconnect();

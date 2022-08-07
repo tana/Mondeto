@@ -48,9 +48,23 @@ public class SyncBehaviour : MonoBehaviour
 
         if (IsServer)
         {
+            Dictionary<string, byte[]> passwordHashes = new();
+            // Convert hexadecimal hash into binary
+            foreach (var (userName, hash) in Settings.Instance.PasswordHashes)
+            {
+                byte[] hashBin = new byte[hash.Length / 2];
+                for (int i = 0; i < hashBin.Length; i++)
+                {
+                    hashBin[i] = byte.Parse(hash.Substring(2 * i, 2), System.Globalization.NumberStyles.HexNumber);
+                }
+
+                passwordHashes[userName] = hashBin;
+            }
+
             Node = new SyncServer(
                 new IPEndPoint(IPAddress.Parse(Settings.Instance.IPAddressToListen), Settings.Instance.PortToListen),
-                Settings.Instance.TlsPrivateKeyFile, Settings.Instance.TlsCertificateFile
+                Settings.Instance.TlsPrivateKeyFile, Settings.Instance.TlsCertificateFile,
+                Settings.Instance.AuthType, passwordHashes
             );
         }
         else
