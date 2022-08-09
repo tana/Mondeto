@@ -32,12 +32,29 @@ public class SyncBehaviour : MonoBehaviour
 
     // For initial blob loading
     bool isFirst = true;
+
     public GameObject LoadingScreen;
+    public Canvas PasswordAuthDialog;
+    public UnityEngine.UI.InputField UserNameInput;
+    public UnityEngine.UI.InputField PasswordInput;
+
     const float FadeOutDuration = 1.0f;
+
+    TaskCompletionSource<int> passwordSubmitTcs;
 
     // Start is called before the first frame update
     async void Start()
     {
+        if (PasswordAuthDialog != null)
+        {
+            // auth dialog should be rendered after loading screen which ignores Z-test
+            int loadingScreenRenderQueue = LoadingScreen.GetComponentInChildren<Renderer>().material.renderQueue;
+            foreach (var graphic in PasswordAuthDialog.GetComponentsInChildren<UnityEngine.UI.Graphic>())
+            {
+                graphic.material.renderQueue = loadingScreenRenderQueue + 1;
+            }
+        }
+
         if (Application.isEditor)
         {
             // Load settings (because Startup scene is probably not used in Editor)
@@ -75,7 +92,7 @@ public class SyncBehaviour : MonoBehaviour
                 keyLogFile: Environment.GetEnvironmentVariable("SSLKEYLOGFILE") ?? ""
             );
 
-            // ((SyncClient)Node).PasswordRequestCallback = AskUserNameAndPassword;
+            ((SyncClient)Node).PasswordRequestCallback = AskUserNameAndPassword;
         }
 
         Node.ObjectCreated += OnObjectCreated;
@@ -359,9 +376,29 @@ public class SyncBehaviour : MonoBehaviour
         LoadingScreen.SetActive(false);
     }
 
-    // async Task<(string, string)> AskUserNameAndPassword()
-    // {
-    // }
+    async Task<(string, string)> AskUserNameAndPassword()
+    {
+        Mondeto.Core.Logger.Debug("SyncBehaviour", "asking password");
+
+        // Display password auth dialog
+        PasswordAuthDialog.gameObject.SetActive(true);
+
+        passwordSubmitTcs = new TaskCompletionSource<int>();
+        await passwordSubmitTcs.Task;   // Wait until Submit button is clicked
+
+        string userName = UserNameInput.text;
+        string password = PasswordInput.text;
+
+        // Hide dialog
+        PasswordAuthDialog.gameObject.SetActive(false);
+
+        return (userName, password);
+    }
+
+    public void OnPasswordSubmitClicked()
+    {
+        passwordSubmitTcs?.SetResult(0);    // Result value is not used
+    }
 
     public void OnDestroy()
     {
